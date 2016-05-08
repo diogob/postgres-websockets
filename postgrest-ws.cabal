@@ -24,6 +24,7 @@ library
                      , websockets >= 0.9 && < 0.10
                      , wai-websockets >= 3.0 && < 4
                      , postgrest >= 0.3 && < 0.4
+                     , postgresql-libpq
   default-language:    Haskell2010
   default-extensions: OverloadedStrings
 
