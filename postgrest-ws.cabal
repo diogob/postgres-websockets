@@ -18,12 +18,12 @@ library
   ghc-options:         -Wall
   exposed-modules:     PostgRESTWS
   build-depends:       base >= 4.7 && < 5
-                     , hasql-pool
-                     , text
-                     , wai
-                     , websockets
-                     , wai-websockets
-                     , postgrest
+                     , hasql-pool >= 0.4 && < 0.5
+                     , text >= 1.2 && < 2
+                     , wai >= 3.2 && < 4
+                     , websockets >= 0.9 && < 0.10
+                     , wai-websockets >= 3.0 && < 4
+                     , postgrest >= 0.3 && < 0.4
   default-language:    Haskell2010
   default-extensions: OverloadedStrings
 
@@ -31,14 +31,14 @@ executable postgrest-ws-exe
   hs-source-dirs:      app
   main-is:             Main.hs
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
-  build-depends:       base
-                     , transformers
-                     , string-conversions
-                     , hasql
-                     , hasql-pool
-                     , warp
-                     , unix
-                     , jwt
+  build-depends:       base >= 4.7 && < 5
+                     , transformers >= 0.4 && < 0.5
+                     , string-conversions >= 0.4 && < 0.5
+                     , hasql >= 0.19 && < 0.20
+                     , hasql-pool >= 0.4 && < 0.5
+                     , warp >= 3.2 && < 4
+                     , unix >= 2.7 && < 3
+                     , jwt >= 0.7 && < 1
                      , postgrest
                      , postgrest-ws
   default-language:    Haskell2010
