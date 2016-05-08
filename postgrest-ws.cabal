@@ -16,9 +16,16 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   ghc-options:         -Wall
-  exposed-modules:     Lib
+  exposed-modules:     PostgRESTWS
   build-depends:       base >= 4.7 && < 5
+                     , hasql-pool
+                     , text
+                     , wai
+                     , websockets
+                     , wai-websockets
+                     , postgrest
   default-language:    Haskell2010
+  default-extensions: OverloadedStrings
 
 executable postgrest-ws-exe
   hs-source-dirs:      app
@@ -33,10 +40,6 @@ executable postgrest-ws-exe
                      , unix
                      , jwt
                      , postgrest
-                     , text
-                     , wai
-                     , websockets
-                     , wai-websockets
                      , postgrest-ws
   default-language:    Haskell2010
   default-extensions: OverloadedStrings

@@ -3,12 +3,12 @@
 module Main where
 
 
-import           PostgREST.App
 import           PostgREST.Config                     (AppConfig (..),
                                                        minimumPgVersion,
                                                        prettyVersion,
                                                        readOptions)
 import           PostgREST.DbStructure
+import           PostgRESTWS
 
 import           Control.Monad
 import           Control.Monad.IO.Class               (liftIO)
@@ -24,10 +24,6 @@ import           System.IO                            (BufferMode (..),
                                                        hSetBuffering, stderr,
                                                        stdin, stdout)
 import           Web.JWT                              (secret)
-import qualified Data.Text as T
-import qualified Network.Wai                     as Wai
-import qualified Network.WebSockets              as WS
-import qualified Network.Wai.Handler.WebSockets  as WS
 
 #ifndef mingw32_HOST_OS
 import           System.Posix.Signals
@@ -88,11 +84,4 @@ main = do
         liftIO $ atomicWriteIORef refDbStructure s
    ) Nothing
 #endif
-  let app :: Wai.Application
-      app = WS.websocketsOr WS.defaultConnectionOptions wsApp $ postgrest conf refDbStructure pool
-        where
-          wsApp :: WS.ServerApp
-          wsApp pending_conn = do
-            conn <- WS.acceptRequest pending_conn
-            WS.sendTextData conn ("Hello, client!" :: T.Text)
-  runSettings appSettings app
+  runSettings appSettings $ postgrestWsApp conf refDbStructure pool
