@@ -20,12 +20,19 @@ import Network.HTTP.Types.Header (hAuthorization)
 import Data.Time.Clock.POSIX     (getPOSIXTime, POSIXTime)
 import PostgREST.Auth            (jwtClaims, claimsToSQL)
 import qualified Data.HashMap.Strict           as M
+import qualified Database.PostgreSQL.LibPQ     as PQ
+
+import           GHC.Conc           ( atomically )
+import           Control.Concurrent ( threadWaitReadSTM )
+import Data.Monoid
 
 postgrestWsApp :: PGR.AppConfig
                     -> IORef PGR.DbStructure
                     -> H.Pool
+                    -> PQ.Connection
                     -> Wai.Application
-postgrestWsApp conf refDbStructure pool =
+
+postgrestWsApp conf refDbStructure pool pqCon =
   WS.websocketsOr WS.defaultConnectionOptions wsApp $ postgrest conf refDbStructure pool
   where
     wsApp :: WS.ServerApp
@@ -35,18 +42,14 @@ postgrestWsApp conf refDbStructure pool =
         claimsOrExpired = jwtClaims jwtSecret tokenStr time
       case claimsOrExpired of
         Left e -> rejectRequest e
-        Right claims ->
-          if M.null claims && not (T.null tokenStr)
-            then rejectRequest "Invalid JWT"
-            else do
+        Right claims -> do
               -- role claim defaults to anon if not specified in jwt
               -- We should accept only after verifying JWT
               conn <- WS.acceptRequest pendingConn
-              forever $ sessionHandler conn
+              forever $ sessionHandler pqCon conn
       where
         rejectRequest = WS.rejectRequest pendingConn . T.encodeUtf8
         jwtSecret = configJwtSecret conf
-        sessionHandler = chooseSession headers
         headers = WS.requestHeaders $ WS.pendingRequest pendingConn
         lookupHeader = flip lookup headers
         auth = fromMaybe "" $ lookupHeader hAuthorization
@@ -54,11 +57,19 @@ postgrestWsApp conf refDbStructure pool =
                     ("Bearer" : t : _) -> t
                     _                  -> ""
 
-sessionRecorder :: WS.Connection -> IO ()
-sessionRecorder = undefined
-
-sessionPlayer :: WS.Connection -> IO ()
-sessionPlayer = undefined
-
-chooseSession :: WS.Headers -> WS.Connection -> IO ()
-chooseSession = undefined
+sessionHandler :: PQ.Connection -> WS.Connection -> IO ()
+sessionHandler pqCon wsCon = do
+  putStrLn "WS session..."
+  _ <- PQ.exec pqCon "LISTEN server"
+  putStrLn "Listening to server channel..."
+  mNotification <- PQ.notifies pqCon
+  putStrLn "Checking PG notification..."
+  print mNotification
+  case mNotification of
+    Nothing -> putStrLn "Notification queue empty"
+    Just notification -> do
+      print $ "server -> client: " <> PQ.notifyExtra notification
+      WS.sendTextData wsCon $ PQ.notifyExtra notification
+  clientMessage <- WS.receiveData wsCon
+  _ <- PQ.exec pqCon ("NOTIFY client, '" <> clientMessage <> "'")
+  print $ "client -> server: " <> clientMessage

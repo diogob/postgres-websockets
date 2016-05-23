@@ -29,6 +29,7 @@ library
                      , postgresql-libpq
                      , time
                      , unordered-containers >= 0.2
+                     , postgresql-libpq >= 0.9 && < 1.0
   default-language:    Haskell2010
   default-extensions: OverloadedStrings
 
@@ -46,6 +47,7 @@ executable postgrest-ws-exe
                      , jwt >= 0.7 && < 1
                      , postgrest
                      , postgrest-ws
+                     , postgresql-libpq >= 0.9 && < 1.0
   default-language:    Haskell2010
   default-extensions: OverloadedStrings
 

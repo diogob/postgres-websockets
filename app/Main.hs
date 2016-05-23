@@ -31,6 +31,7 @@ import           Control.Concurrent                   (myThreadId)
 import           Data.IORef
 import           Control.Exception.Base               (throwTo, AsyncException(..))
 #endif
+import qualified Database.PostgreSQL.LibPQ            as PQ
 
 isServerVersionSupported :: H.Session Bool
 isServerVersionSupported = do
@@ -69,6 +70,7 @@ main = do
     getDbStructure (cs $ configSchema conf)
 
   refDbStructure <- newIORef $ either (error.show) id result
+  notificationsCon <- PQ.connectdb pgSettings
 
 #ifndef mingw32_HOST_OS
   tid <- myThreadId
@@ -84,4 +86,4 @@ main = do
         liftIO $ atomicWriteIORef refDbStructure s
    ) Nothing
 #endif
-  runSettings appSettings $ postgrestWsApp conf refDbStructure pool
+  runSettings appSettings $ postgrestWsApp conf refDbStructure pool notificationsCon
