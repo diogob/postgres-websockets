@@ -7,14 +7,16 @@ resolver: nightly-2016-05-07
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
+- '../postgrest'
+
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps:
   - Ranged-sets-0.3.0
   - hasql-pool-0.4.1
   - hasql-transaction-0.4.4.1
+  - hasql-0.19.12
   - bytestring-tree-builder-0.2.6
   - postgresql-error-codes-1
-  - postgrest-0.3.1.1
 
 # Override default flag values for local packages and extra-deps
 flags: {}
