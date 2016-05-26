@@ -9,7 +9,7 @@ a look at the docs at the [PostgREST website](http://postgrest.com).
 This project extends these ideas assuming that websockets can be used as conduits for database notifications
 in the form of PostgreSQL's [LISTEN](https://www.postgresql.org/docs/current/static/sql-listen.html)/[NOTIFY](https://www.postgresql.org/docs/current/static/sql-notify.html) commands.
 
-The server provided will do basic two things (on top of already existing PostgREST functionality):
+The server provided will do basically two things (on top of already existing PostgREST functionality):
 
  * Allow opening websockets with multiple channels and relay messages to the database.
    * Every message sent to the websocket becomes a **NOTIFY** using the websocket channel (given by the JWT) and the content of the message as the payload.
