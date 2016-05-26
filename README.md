@@ -1,7 +1,7 @@
 # PostgREST-WS
 
 PostgREST-WS is an extension of [PostgREST](https://github.com/begriffs/postgrest) 
-that adds websockets capabilites to the HTTP layer on top of [PosttgreSQL](https://www.postgresql.org).
+that adds websockets capabilites to the HTTP layer on top of [PostgreSQL](https://www.postgresql.org).
 
 To understand the concept of mapping a database schema directly to an HTTP API watch the video and take
 a look at the docs at the [PostgREST website](http://postgrest.com).
