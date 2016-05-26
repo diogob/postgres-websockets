@@ -3,8 +3,7 @@ function createWebSocket(path) {
     if(host == '') host = 'localhost';
     var uri = 'ws://' + host + ':3000' + path;
 
-    var Socket = "MozWebSocket" in window ? MozWebSocket : WebSocket;
-    return new Socket(uri);
+    return new WebSocket(uri);
 }
 
 function onMessage(event) {

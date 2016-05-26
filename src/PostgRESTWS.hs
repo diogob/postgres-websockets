@@ -46,6 +46,7 @@ postgrestWsApp conf refDbStructure pool pqCon =
               -- role claim defaults to anon if not specified in jwt
               -- We should accept only after verifying JWT
               conn <- WS.acceptRequest pendingConn
+              putStrLn "WS session..."
               forever $ sessionHandler pqCon conn
       where
         rejectRequest = WS.rejectRequest pendingConn . T.encodeUtf8
@@ -59,7 +60,6 @@ postgrestWsApp conf refDbStructure pool pqCon =
 
 sessionHandler :: PQ.Connection -> WS.Connection -> IO ()
 sessionHandler pqCon wsCon = do
-  putStrLn "WS session..."
   _ <- PQ.exec pqCon "LISTEN server"
   putStrLn "Listening to server channel..."
   mNotification <- PQ.notifies pqCon
@@ -70,6 +70,7 @@ sessionHandler pqCon wsCon = do
     Just notification -> do
       print $ "server -> client: " <> PQ.notifyExtra notification
       WS.sendTextData wsCon $ PQ.notifyExtra notification
+  putStrLn "Checking WS notification..."
   clientMessage <- WS.receiveData wsCon
   _ <- PQ.exec pqCon ("NOTIFY client, '" <> clientMessage <> "'")
   print $ "client -> server: " <> clientMessage
