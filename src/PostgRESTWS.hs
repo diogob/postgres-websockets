@@ -39,27 +39,24 @@ postgrestWsApp conf refDbStructure pool pqCon =
     wsApp :: WS.ServerApp
     wsApp pendingConn = do
       time <- getPOSIXTime
+      print jwtToken
       let
-        claimsOrExpired = jwtClaims jwtSecret tokenStr time
+        claimsOrExpired = jwtClaims jwtSecret jwtToken time
       case claimsOrExpired of
         Left e -> rejectRequest e
         Right claims -> do
               -- role claim defaults to anon if not specified in jwt
               -- We should accept only after verifying JWT
               conn <- WS.acceptRequest pendingConn
-              putStrLn "WS session..."
+              putStrLn "WS session with claims:"
+              print claims
               forever $ notifySession (channel claims) pqCon conn
       where
         channel cl = let A.String s = (cl M.! "channel") in T.encodeUtf8 s
         sessionHandler = notifySession >> listenSession
         rejectRequest = WS.rejectRequest pendingConn . T.encodeUtf8
         jwtSecret = configJwtSecret conf
-        headers = WS.requestHeaders $ WS.pendingRequest pendingConn
-        lookupHeader = flip lookup headers
-        auth = fromMaybe "" $ lookupHeader hAuthorization
-        tokenStr = case T.split (== ' ') (T.decodeUtf8 auth) of
-                    ("Bearer" : t : _) -> t
-                    _                  -> ""
+        jwtToken = T.decodeUtf8 $ BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
 
 notifySession :: BS.ByteString
                     -> PQ.Connection

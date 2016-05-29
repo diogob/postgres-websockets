@@ -16,11 +16,11 @@ function onMessage(event) {
 $(document).ready(function () {
     $('#join-form').submit(function () {
         $('#warnings').html('');
-        var user = $('#user').val();
-        var ws = createWebSocket('/');
+        var jwt = $('#jwt').val();
+        var ws = createWebSocket('/' + jwt);
 
         ws.onopen = function() {
-            ws.send('Hi! I am ' + user);
+            ws.send('Hi!');
         };
 
         ws.onmessage = onMessage;
