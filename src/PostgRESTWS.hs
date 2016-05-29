@@ -21,10 +21,11 @@ import Data.Time.Clock.POSIX     (getPOSIXTime, POSIXTime)
 import PostgREST.Auth            (jwtClaims, claimsToSQL)
 import qualified Data.HashMap.Strict           as M
 import qualified Database.PostgreSQL.LibPQ     as PQ
+import           Data.String.Conversions              (cs)
 
-import           GHC.Conc           ( atomically )
-import           Control.Concurrent ( threadWaitReadSTM )
+import qualified Data.ByteString as BS
 import Data.Monoid
+import qualified Data.Aeson as A
 
 postgrestWsApp :: PGR.AppConfig
                     -> IORef PGR.DbStructure
@@ -47,8 +48,10 @@ postgrestWsApp conf refDbStructure pool pqCon =
               -- We should accept only after verifying JWT
               conn <- WS.acceptRequest pendingConn
               putStrLn "WS session..."
-              forever $ sessionHandler pqCon conn
+              forever $ notifySession (channel claims) pqCon conn
       where
+        channel cl = let A.String s = (cl M.! "channel") in T.encodeUtf8 s
+        sessionHandler = notifySession >> listenSession
         rejectRequest = WS.rejectRequest pendingConn . T.encodeUtf8
         jwtSecret = configJwtSecret conf
         headers = WS.requestHeaders $ WS.pendingRequest pendingConn
@@ -58,9 +61,23 @@ postgrestWsApp conf refDbStructure pool pqCon =
                     ("Bearer" : t : _) -> t
                     _                  -> ""
 
-sessionHandler :: PQ.Connection -> WS.Connection -> IO ()
-sessionHandler pqCon wsCon = do
-  _ <- PQ.exec pqCon "LISTEN server"
+notifySession :: BS.ByteString
+                    -> PQ.Connection
+                    -> WS.Connection
+                    -> IO ()
+notifySession channel pqCon wsCon = do
+  putStrLn "Checking WS notification..."
+  clientMessage <- WS.receiveData wsCon
+  _ <- PQ.exec pqCon ("NOTIFY " <> channel <> ", '" <> clientMessage <> "'")
+  print $ "client -> server: " <> clientMessage
+
+listenSession :: BS.ByteString
+                    -> PGR.AppConfig
+                    -> WS.Connection
+                    -> IO ()
+listenSession channel conf wsCon = do
+  pqCon <- PQ.connectdb pgSettings
+  _ <- PQ.exec pqCon $ "LISTEN " <> channel
   putStrLn "Listening to server channel..."
   mNotification <- PQ.notifies pqCon
   putStrLn "Checking PG notification..."
@@ -70,7 +87,5 @@ sessionHandler pqCon wsCon = do
     Just notification -> do
       print $ "server -> client: " <> PQ.notifyExtra notification
       WS.sendTextData wsCon $ PQ.notifyExtra notification
-  putStrLn "Checking WS notification..."
-  clientMessage <- WS.receiveData wsCon
-  _ <- PQ.exec pqCon ("NOTIFY client, '" <> clientMessage <> "'")
-  print $ "client -> server: " <> clientMessage
+  where
+      pgSettings = cs $ configDatabase conf
