@@ -25,7 +25,12 @@ $(document).ready(function () {
 
         ws.onmessage = onMessage;
 
-        $('#join').append('Connecting...');
+        $('#message-form').submit(function () {
+          var text = $('#text').val();
+          ws.send(text);
+          $('#text').val('');
+          return false;
+        });
 
         return false;
     });
