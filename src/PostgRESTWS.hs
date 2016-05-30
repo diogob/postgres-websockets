@@ -14,7 +14,7 @@ import GHC.IORef
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 
-import Control.Monad (forever)
+import Control.Monad (forever, void)
 import Data.Maybe (fromMaybe)
 import Network.HTTP.Types.Header (hAuthorization)
 import Data.Time.Clock.POSIX     (getPOSIXTime, POSIXTime)
@@ -26,6 +26,12 @@ import           Data.String.Conversions              (cs)
 import qualified Data.ByteString as BS
 import Data.Monoid
 import qualified Data.Aeson as A
+
+import Control.Concurrent (forkIO, threadWaitReadSTM)
+import Control.Exception (throwIO, catch)
+import Control.Exception.Base (IOException)
+import           GHC.Conc           ( atomically )
+import           GHC.IO.Exception ( ioe_location )
 
 postgrestWsApp :: PGR.AppConfig
                     -> IORef PGR.DbStructure
@@ -50,10 +56,10 @@ postgrestWsApp conf refDbStructure pool pqCon =
               conn <- WS.acceptRequest pendingConn
               putStrLn "WS session with claims:"
               print claims
+              _ <- forkIO $ listenSession (channel claims) conf conn
               forever $ notifySession (channel claims) pqCon conn
       where
         channel cl = let A.String s = (cl M.! "channel") in T.encodeUtf8 s
-        sessionHandler = notifySession >> listenSession
         rejectRequest = WS.rejectRequest pendingConn . T.encodeUtf8
         jwtSecret = configJwtSecret conf
         jwtToken = T.decodeUtf8 $ BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
@@ -76,13 +82,23 @@ listenSession channel conf wsCon = do
   pqCon <- PQ.connectdb pgSettings
   _ <- PQ.exec pqCon $ "LISTEN " <> channel
   putStrLn "Listening to server channel..."
-  mNotification <- PQ.notifies pqCon
-  putStrLn "Checking PG notification..."
-  print mNotification
-  case mNotification of
-    Nothing -> putStrLn "Notification queue empty"
-    Just notification -> do
-      print $ "server -> client: " <> PQ.notifyExtra notification
-      WS.sendTextData wsCon $ PQ.notifyExtra notification
+  forever $ fetch pqCon
   where
-      pgSettings = cs $ configDatabase conf
+    pgSettings = cs $ configDatabase conf
+    fetch con = do
+      mNotification <- PQ.notifies con
+      putStrLn "Checking PG notification..."
+      print mNotification
+      case mNotification of
+        Nothing -> do
+          putStrLn "Notification queue empty"
+          mfd <- PQ.socket con
+          case mfd of
+            Nothing  -> error "test"
+            Just fd -> do
+              (waitRead, _) <- threadWaitReadSTM fd
+              atomically waitRead
+              void $ PQ.consumeInput con
+        Just notification -> do
+          print $ "server -> client: " <> PQ.notifyExtra notification
+          WS.sendTextData wsCon $ PQ.notifyExtra notification
