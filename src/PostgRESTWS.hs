@@ -14,7 +14,7 @@ import GHC.IORef
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 
-import Control.Monad (forever, void)
+import Control.Monad (forever, void, when)
 import Data.Maybe (fromMaybe)
 import Network.HTTP.Types.Header (hAuthorization)
 import Data.Time.Clock.POSIX     (getPOSIXTime, POSIXTime)
@@ -56,10 +56,16 @@ postgrestWsApp conf refDbStructure pool pqCon =
               conn <- WS.acceptRequest pendingConn
               putStrLn "WS session with claims:"
               print claims
-              _ <- forkIO $ listenSession (channel claims) conf conn
-              forever $ notifySession (channel claims) pqCon conn
+              when (hasRead claims) $
+                void $ forkIO $ listenSession (channel claims) conf conn
+              when (hasWrite claims) $
+                forever $ notifySession (channel claims) pqCon conn
       where
-        channel cl = let A.String s = (cl M.! "channel") in T.encodeUtf8 s
+        claimAsBS name cl = let A.String s = (cl M.! name) in T.encodeUtf8 s
+        channel = claimAsBS ("channel" :: T.Text)
+        mode = claimAsBS ("mode" :: T.Text)
+        hasRead cl = mode cl == "r" || mode cl == "rw"
+        hasWrite cl = mode cl == "w" || mode cl == "rw"
         rejectRequest = WS.rejectRequest pendingConn . T.encodeUtf8
         jwtSecret = configJwtSecret conf
         jwtToken = T.decodeUtf8 $ BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
