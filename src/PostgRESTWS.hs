@@ -2,38 +2,37 @@ module PostgRESTWS
   ( postgrestWsApp
   ) where
 
-import qualified Network.Wai                     as Wai
-import qualified Network.WebSockets              as WS
-import qualified Network.Wai.Handler.WebSockets  as WS
-import           PostgREST.App    as PGR
-import           PostgREST.Config as PGR
-import           PostgREST.Types  as PGR
-import qualified Hasql.Pool as H
-import GHC.IORef
+import           GHC.IORef
+import qualified Hasql.Pool                     as H
+import qualified Network.Wai                    as Wai
+import qualified Network.Wai.Handler.WebSockets as WS
+import qualified Network.WebSockets             as WS
+import           PostgREST.App                  as PGR
+import           PostgREST.Config               as PGR
+import           PostgREST.Types                as PGR
 
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as T
+import qualified Data.Text                      as T
+import qualified Data.Text.Encoding             as T
 
-import Control.Monad (forever, void, when)
-import Data.Time.Clock.POSIX (getPOSIXTime)
-import PostgREST.Auth (jwtClaims)
-import qualified Data.HashMap.Strict           as M
-import qualified Database.PostgreSQL.LibPQ     as PQ
-import           Data.String.Conversions              (cs)
+import           Control.Monad                  (forever, void, when)
+import qualified Data.HashMap.Strict            as M
+import           Data.String.Conversions        (cs)
+import           Data.Time.Clock.POSIX          (getPOSIXTime)
+import qualified Database.PostgreSQL.LibPQ      as PQ
+import           PostgREST.Auth                 (jwtClaims)
 
-import qualified Data.ByteString as BS
-import Data.Monoid
-import qualified Data.Aeson as A
+import qualified Data.Aeson                     as A
+import qualified Data.ByteString                as BS
+import           Data.Monoid
 
-import Control.Concurrent (forkIO, threadWaitReadSTM)
-import GHC.Conc (atomically)
+import           Control.Concurrent             (forkIO, threadWaitReadSTM)
+import           GHC.Conc                       (atomically)
 
 postgrestWsApp :: PGR.AppConfig
                     -> IORef PGR.DbStructure
                     -> H.Pool
                     -> PQ.Connection
                     -> Wai.Application
-
 postgrestWsApp conf refDbStructure pool pqCon =
   WS.websocketsOr WS.defaultConnectionOptions wsApp $ postgrest conf refDbStructure pool
   where
@@ -68,6 +67,7 @@ postgrestWsApp conf refDbStructure pool pqCon =
         -- the first char in path is '/' the rest is the token
         jwtToken = T.decodeUtf8 $ BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
 
+-- private functions
 notifySession :: BS.ByteString
                     -> PQ.Connection
                     -> WS.Connection
