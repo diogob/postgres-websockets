@@ -15,10 +15,8 @@ import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 
 import Control.Monad (forever, void, when)
-import Data.Maybe (fromMaybe)
-import Network.HTTP.Types.Header (hAuthorization)
-import Data.Time.Clock.POSIX     (getPOSIXTime, POSIXTime)
-import PostgREST.Auth            (jwtClaims, claimsToSQL)
+import Data.Time.Clock.POSIX (getPOSIXTime)
+import PostgREST.Auth (jwtClaims)
 import qualified Data.HashMap.Strict           as M
 import qualified Database.PostgreSQL.LibPQ     as PQ
 import           Data.String.Conversions              (cs)
@@ -27,11 +25,9 @@ import qualified Data.ByteString as BS
 import Data.Monoid
 import qualified Data.Aeson as A
 
-import Control.Concurrent (forkIO, threadWaitReadSTM)
-import Control.Exception (throwIO, catch)
-import Control.Exception.Base (IOException)
-import           GHC.Conc           ( atomically )
-import           GHC.IO.Exception ( ioe_location )
+import Control.Concurrent (forkIO, threadWaitReadSTM, killThread)
+import GHC.Conc (atomically)
+
 
 postgrestWsApp :: PGR.AppConfig
                     -> IORef PGR.DbStructure
