@@ -37,6 +37,8 @@ postgrestWsApp :: PGR.AppConfig
 postgrestWsApp conf refDbStructure pool pqCon =
   WS.websocketsOr WS.defaultConnectionOptions wsApp $ postgrest conf refDbStructure pool
   where
+    -- when the websocket is closed a ConnectionClosed Exception is triggered
+    -- this kills all children and frees resources for us
     wsApp :: WS.ServerApp
     wsApp pendingConn = do
       time <- getPOSIXTime
@@ -48,8 +50,11 @@ postgrestWsApp conf refDbStructure pool pqCon =
               -- role claim defaults to anon if not specified in jwt
               -- We should accept only after verifying JWT
               conn <- WS.acceptRequest pendingConn
+              -- each websocket needs its own listen connection to avoid
+              -- handling of multiple waiting threads in the same connection
               when (hasRead claims) $
                 void $ forkIO $ listenSession (channel claims) conf conn
+              -- all websockets share a single connection to NOTIFY
               when (hasWrite claims) $
                 forever $ notifySession (channel claims) pqCon conn
       where
@@ -60,15 +65,17 @@ postgrestWsApp conf refDbStructure pool pqCon =
         hasWrite cl = mode cl == "w" || mode cl == "rw"
         rejectRequest = WS.rejectRequest pendingConn . T.encodeUtf8
         jwtSecret = configJwtSecret conf
+        -- the first char in path is '/' the rest is the token
         jwtToken = T.decodeUtf8 $ BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
 
 notifySession :: BS.ByteString
                     -> PQ.Connection
                     -> WS.Connection
                     -> IO ()
-notifySession channel pqCon wsCon = do
-  clientMessage <- WS.receiveData wsCon
-  void $ PQ.exec pqCon ("NOTIFY " <> channel <> ", '" <> clientMessage <> "'")
+notifySession channel pqCon wsCon =
+  WS.receiveData wsCon >>= notify
+  where
+    notify msg = void $ PQ.exec pqCon ("NOTIFY " <> channel <> ", '" <> msg <> "'")
 
 listenSession :: BS.ByteString
                     -> PGR.AppConfig
@@ -76,9 +83,11 @@ listenSession :: BS.ByteString
                     -> IO ()
 listenSession channel conf wsCon = do
   pqCon <- PQ.connectdb pgSettings
-  _ <- PQ.exec pqCon $ "LISTEN " <> channel
-  forever $ fetch pqCon
+  listen pqCon
+  waitForNotifications pqCon
   where
+    waitForNotifications = forever . fetch
+    listen con = void $ PQ.exec con $ "LISTEN " <> channel
     pgSettings = cs $ configDatabase conf
     fetch con = do
       mNotification <- PQ.notifies con
