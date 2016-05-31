@@ -25,9 +25,8 @@ import qualified Data.ByteString as BS
 import Data.Monoid
 import qualified Data.Aeson as A
 
-import Control.Concurrent (forkIO, threadWaitReadSTM, killThread)
+import Control.Concurrent (forkIO, threadWaitReadSTM)
 import GHC.Conc (atomically)
-
 
 postgrestWsApp :: PGR.AppConfig
                     -> IORef PGR.DbStructure
@@ -41,7 +40,6 @@ postgrestWsApp conf refDbStructure pool pqCon =
     wsApp :: WS.ServerApp
     wsApp pendingConn = do
       time <- getPOSIXTime
-      print jwtToken
       let
         claimsOrExpired = jwtClaims jwtSecret jwtToken time
       case claimsOrExpired of
@@ -50,8 +48,6 @@ postgrestWsApp conf refDbStructure pool pqCon =
               -- role claim defaults to anon if not specified in jwt
               -- We should accept only after verifying JWT
               conn <- WS.acceptRequest pendingConn
-              putStrLn "WS session with claims:"
-              print claims
               when (hasRead claims) $
                 void $ forkIO $ listenSession (channel claims) conf conn
               when (hasWrite claims) $
@@ -71,10 +67,8 @@ notifySession :: BS.ByteString
                     -> WS.Connection
                     -> IO ()
 notifySession channel pqCon wsCon = do
-  putStrLn "Checking WS notification..."
   clientMessage <- WS.receiveData wsCon
-  _ <- PQ.exec pqCon ("NOTIFY " <> channel <> ", '" <> clientMessage <> "'")
-  print $ "client -> server: " <> clientMessage
+  void $ PQ.exec pqCon ("NOTIFY " <> channel <> ", '" <> clientMessage <> "'")
 
 listenSession :: BS.ByteString
                     -> PGR.AppConfig
@@ -83,24 +77,19 @@ listenSession :: BS.ByteString
 listenSession channel conf wsCon = do
   pqCon <- PQ.connectdb pgSettings
   _ <- PQ.exec pqCon $ "LISTEN " <> channel
-  putStrLn "Listening to server channel..."
   forever $ fetch pqCon
   where
     pgSettings = cs $ configDatabase conf
     fetch con = do
       mNotification <- PQ.notifies con
-      putStrLn "Checking PG notification..."
-      print mNotification
       case mNotification of
         Nothing -> do
-          putStrLn "Notification queue empty"
           mfd <- PQ.socket con
           case mfd of
-            Nothing  -> error "test"
+            Nothing  -> error "Error checking for PostgreSQL notifications"
             Just fd -> do
               (waitRead, _) <- threadWaitReadSTM fd
               atomically waitRead
               void $ PQ.consumeInput con
-        Just notification -> do
-          print $ "server -> client: " <> PQ.notifyExtra notification
+        Just notification ->
           WS.sendTextData wsCon $ PQ.notifyExtra notification
