@@ -20,7 +20,23 @@ The server provided will do basically two things (on top of already existing Pos
 
 We still do not provide pre-compiled binaries, so you will have to build the server from source.
 I recommend the use of [Stack](http://docs.haskellstack.org/en/stable/README/).
-Having installed stack the following 
+You also need to have [git](https://git-scm.com) installed to download the source code.
+Having installed stack the following commands should install `postgrest-ws` into your `~/.local/bin` directory:
+
+```bash
+$ git clone https://github.com/diogob/postgrest-ws.git
+$ cd postgrest-ws
+$ stack setup
+$ stack build
+```
+
+After the build you should be able to run the server using `~/.local/bin/postgrest-ws` (you can add `~/.local/bin` to your PATH variable):
+
+```bash
+~/.local/bin/postgrest-ws
+```
+
+the above command will display the options that you can use. For more information on parameters and how to server you can take a look at the [PostgREST documentation](http://postgrest.com/install/server/#running-the-server) on the subject since `postgrest-ws` does not change anything.
 
 ## Opening notification channels
 
