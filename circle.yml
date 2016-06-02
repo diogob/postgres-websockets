@@ -1,0 +1,18 @@
+dependencies:
+  cache_directories:
+    - "~/.stack"
+    - ".stack-work"
+  pre:
+    - curl -L https://github.com/commercialhaskell/stack/releases/download/v1.1.2/stack-1.1.2-linux-x86_64.tar.gz | tar zx -C /tmp
+    - sudo mv /tmp/stack-1.1.2-linux-x86_64/stack /usr/bin
+  override:
+    - stack setup
+    - rm -fr $(stack path --dist-dir) $(stack path --local-install-root)
+    - stack install hlint packdeps cabal-install
+    - stack build
+    - stack build --test --no-run-tests
+
+test:
+  override:
+    - git ls-files | grep '\.l\?hs$' | xargs stack exec -- hlint -X QuasiQuotes "$@"
+    - stack sdist
