@@ -18,7 +18,9 @@ The server provided will do basically two things (on top of already existing Pos
 
 ## Running the server
 
-**TODO**
+We still do not provide pre-compiled binaries, so you will have to build the server from source.
+I recommend the use of [Stack](http://docs.haskellstack.org/en/stable/README/).
+Having installed stack the following 
 
 ## Opening notification channels
 

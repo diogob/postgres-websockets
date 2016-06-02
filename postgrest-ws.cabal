@@ -35,7 +35,7 @@ library
   default-language:    Haskell2010
   default-extensions: OverloadedStrings
 
-executable postgrest-ws-exe
+executable postgrest-ws
   hs-source-dirs:      app
   main-is:             Main.hs
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
