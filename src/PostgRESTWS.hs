@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module PostgRESTWS
   ( postgrestWsApp
   ) where
@@ -23,10 +25,20 @@ import           PostgREST.Auth                 (jwtClaims)
 
 import qualified Data.Aeson                     as A
 import qualified Data.ByteString                as BS
+import           Data.ByteString.Lazy           (toStrict)
 import           Data.Monoid
 
 import           Control.Concurrent             (forkIO, threadWaitReadSTM)
 import           GHC.Conc                       (atomically)
+
+import           GHC.Generics
+
+data Message = Message
+  { userClaims  :: A.Object
+  , payload :: T.Text
+  } deriving (Show, Eq, Generic)
+
+instance A.ToJSON Message
 
 postgrestWsApp :: PGR.AppConfig
                     -> IORef PGR.DbStructure
@@ -55,7 +67,7 @@ postgrestWsApp conf refDbStructure pool pqCon =
                 void $ forkIO $ listenSession (channel claims) conf conn
               -- all websockets share a single connection to NOTIFY
               when (hasWrite claims) $
-                forever $ notifySession (channel claims) pqCon conn
+                forever $ notifySession (channel claims) claims pqCon conn
       where
         claimAsBS name cl = let A.String s = (cl M.! name) in T.encodeUtf8 s
         channel = claimAsBS ("channel" :: T.Text)
@@ -68,14 +80,19 @@ postgrestWsApp conf refDbStructure pool pqCon =
         jwtToken = T.decodeUtf8 $ BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
 
 -- private functions
+-- Having both channel and claims as parameters seem redundant
+-- But it allows the function to ignore the claims structure and the source
+-- of the channel
 notifySession :: BS.ByteString
+                    -> A.Object
                     -> PQ.Connection
                     -> WS.Connection
                     -> IO ()
-notifySession channel pqCon wsCon =
-  WS.receiveData wsCon >>= notify
+notifySession channel claims pqCon wsCon =
+  WS.receiveData wsCon >>= (notify . jsonMsg)
   where
     notify msg = void $ PQ.exec pqCon ("NOTIFY " <> channel <> ", '" <> msg <> "'")
+    jsonMsg = toStrict . A.encode . Message claims . T.decodeUtf8
 
 listenSession :: BS.ByteString
                     -> PGR.AppConfig
