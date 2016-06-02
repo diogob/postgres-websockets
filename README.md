@@ -79,7 +79,3 @@ ws.onmessage = function(event){
 ```
 
 You will find a complete example under the folder [client-example](https://github.com/diogob/postgrest-ws/tree/master/client-example).
-
-## Reacting to messages on the server
-
-**TODO**
