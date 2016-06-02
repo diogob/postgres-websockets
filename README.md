@@ -1,4 +1,4 @@
-# PostgREST-WS
+# PostgREST-WS [![CircleCI](https://circleci.com/gh/diogob/postgrest-ws.svg?style=svg)](https://circleci.com/gh/diogob/postgrest-ws)
 
 PostgREST-WS is an extension of [PostgREST](https://github.com/begriffs/postgrest) 
 that adds websockets capabilites to the HTTP layer on top of [PostgreSQL](https://www.postgresql.org).
