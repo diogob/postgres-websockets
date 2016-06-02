@@ -25,7 +25,11 @@ The server provided will do basically two things (on top of already existing Pos
 To open a notification channel you need to specify a JWT that authorizes you to do so.
 The JWT should contain a claim **channel** for the channel name and a claim **mode** that tells what operations are allowed (**r** for read, **w** for write or **rw** for both).
 
-Other claims will be just set as database session variables under `postgrest.claims` just as in [this PostgREST example](http://postgrest.com/examples/users/#same-role-users).
+Other claims will be sent as a json field called `userClaims` in the notify message.
+We cannot set them as database variables we we would do in other PostgREST calls because the
+client reading the notification will not be sharing the same transaction as the client that generates the NOTIFY.
+
+The content of the message is added to the notification in a field called `payload`.
 
 To open a websocket for the channel **chat** in mode rw (read and write) we could use the JavaScript code:
 ```javascript
@@ -42,13 +46,20 @@ To send anything we can use:
 ```javascript
 ws.send('Hi!');
 ```        
+
+In the example above the message received by the database client listening will be:
+```json
+{"userClaims":{"mode":"rw","channel":"chat"}, "payload": "Hi!"}
+```
+
 To receive messages from the database we use a callback on the `onmessage` event like this:
 
 ```javascript
 ws.onmessage = function(event){
-    console.log('Message received: ' + event.data);
+    console.log('Message received: ' + event.data.payload);
 }
-```    
+```
+
 You will find a complete example under the folder [client-example](https://github.com/diogob/postgrest-ws/tree/master/client-example).
 
 ## Reacting to messages on the server
