@@ -30,6 +30,8 @@ stack setup
 stack build
 ```
 
+If you have any problems processing any Postgres related library on a Mac, try installing [Postgres.app](http://postgresapp.com/).
+
 After the build you should be able to run the server using `~/.local/bin/postgrest-ws` (you can add `~/.local/bin` to your PATH variable):
 
 ```bash
