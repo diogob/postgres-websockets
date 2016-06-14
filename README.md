@@ -24,10 +24,10 @@ You also need to have [git](https://git-scm.com) installed to download the sourc
 Having installed stack the following commands should install `postgrest-ws` into your `~/.local/bin` directory:
 
 ```bash
-$ git clone https://github.com/diogob/postgrest-ws.git
-$ cd postgrest-ws
-$ stack setup
-$ stack build
+git clone https://github.com/diogob/postgrest-ws.git
+cd postgrest-ws
+stack setup
+stack build
 ```
 
 After the build you should be able to run the server using `~/.local/bin/postgrest-ws` (you can add `~/.local/bin` to your PATH variable):
