@@ -44,7 +44,7 @@ To open a notification channel you need to specify a JWT that authorizes you to 
 The JWT should contain a claim **channel** for the channel name and a claim **mode** that tells what operations are allowed (**r** for read, **w** for write or **rw** for both).
 
 Other claims will be sent as a json field called `userClaims` in the notify message.
-We cannot set them as database variables we we would do in other PostgREST calls because the
+We cannot set them as database variables as we would do in other PostgREST calls because the
 client reading the notification will not be sharing the same transaction as the client that generates the NOTIFY.
 
 The content of the message is added to the notification in a field called `payload`.
