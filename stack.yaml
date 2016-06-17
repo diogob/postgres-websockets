@@ -1,20 +1,20 @@
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
-resolver: nightly-2016-05-07
+resolver: lts-6.2
 
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
 - location: 
     git: 'git@github.com:begriffs/postgrest.git'
-    commit: '24dd4e8626674a631a5c4edcb572384125eac212'
+    commit: 'v0.3.2.0'
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps:
+  - bytestring-tree-builder-0.2.7
+  - hasql-0.19.12
   - Ranged-sets-0.3.0
   - hasql-pool-0.4.1
-  - hasql-transaction-0.4.4.1
-  - hasql-0.19.12
-  - bytestring-tree-builder-0.2.6
+  - hasql-transaction-0.4.5
   - postgresql-error-codes-1
 
 flags: {}
