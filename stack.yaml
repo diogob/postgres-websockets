@@ -4,9 +4,6 @@ resolver: lts-6.2
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
-- location: 
-    git: 'git@github.com:begriffs/postgrest.git'
-    commit: 'v0.3.2.0'
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps:
@@ -16,6 +13,7 @@ extra-deps:
   - hasql-pool-0.4.1
   - hasql-transaction-0.4.5
   - postgresql-error-codes-1
+  - postgrest-0.3.2.0
 
 flags: {}
 
