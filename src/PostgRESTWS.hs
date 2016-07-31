@@ -82,7 +82,7 @@ postgrestWsApp conf refDbStructure pool pqCon =
 -- private functions
 -- Having both channel and claims as parameters seem redundant
 -- But it allows the function to ignore the claims structure and the source
--- of the channel
+-- of the channel, so all claims decoding can be coded in the caller
 notifySession :: BS.ByteString
                     -> A.Object
                     -> PQ.Connection
