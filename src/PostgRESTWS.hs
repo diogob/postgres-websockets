@@ -4,6 +4,7 @@ module PostgRESTWS
   ( postgrestWsApp
   ) where
 
+import           Protolude
 import           GHC.IORef
 import qualified Hasql.Pool                     as H
 import qualified Network.Wai                    as Wai
@@ -17,22 +18,14 @@ import qualified Data.Text                      as T
 import qualified Data.Text.Encoding             as T
 import qualified Data.Text.Encoding.Error       as T
 
-import           Control.Monad                  (forever, void, when)
 import qualified Data.HashMap.Strict            as M
-import           Data.String.Conversions        (cs)
 import           Data.Time.Clock.POSIX          (getPOSIXTime)
 import qualified Database.PostgreSQL.LibPQ      as PQ
 import           PostgREST.Auth                 (jwtClaims)
 
 import qualified Data.Aeson                     as A
 import qualified Data.ByteString                as BS
-import           Data.ByteString.Lazy           (toStrict)
-import           Data.Monoid
-
-import           Control.Concurrent             (forkIO, threadWaitReadSTM)
-import           GHC.Conc                       (atomically)
-
-import           GHC.Generics
+import qualified Data.ByteString.Lazy           as BL
 
 data Message = Message
   { userClaims  :: A.Object
@@ -92,9 +85,9 @@ notifySession :: BS.ByteString
 notifySession channel claims pqCon wsCon =
   WS.receiveData wsCon >>= (notify . jsonMsg)
   where
-    notify msg = void $ PQ.exec pqCon ("NOTIFY " <> channel <> ", '" <> msg <> "'")
+    notify mesg = void $ PQ.exec pqCon ("NOTIFY " <> channel <> ", '" <> mesg <> "'")
     -- we need to decode the bytestring to re-encode valid JSON for the notification
-    jsonMsg = toStrict . A.encode . Message claims . T.decodeUtf8With T.lenientDecode
+    jsonMsg = BL.toStrict . A.encode . Message claims . T.decodeUtf8With T.lenientDecode
 
 listenSession :: BS.ByteString
                     -> PGR.AppConfig
@@ -107,14 +100,14 @@ listenSession channel conf wsCon = do
   where
     waitForNotifications = forever . fetch
     listen con = void $ PQ.exec con $ "LISTEN " <> channel
-    pgSettings = cs $ configDatabase conf
+    pgSettings = toS $ configDatabase conf
     fetch con = do
       mNotification <- PQ.notifies con
       case mNotification of
         Nothing -> do
           mfd <- PQ.socket con
           case mfd of
-            Nothing  -> error "Error checking for PostgreSQL notifications"
+            Nothing  -> panic "Error checking for PostgreSQL notifications"
             Just fd -> do
               (waitRead, _) <- threadWaitReadSTM fd
               atomically waitRead
