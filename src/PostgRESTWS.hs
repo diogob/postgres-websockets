@@ -19,18 +19,16 @@ import qualified Data.Text.Encoding             as T
 import qualified Data.Text.Encoding.Error       as T
 
 import qualified Data.HashMap.Strict            as M
-import           Data.Time.Clock.POSIX          (getPOSIXTime)
+import           Data.Time.Clock.POSIX          (POSIXTime, getPOSIXTime)
 import qualified Database.PostgreSQL.LibPQ      as PQ
 import           PostgREST.Auth                 (jwtClaims)
 
 import qualified Data.Aeson                     as A
 import qualified Data.ByteString                as BS
 import qualified Data.ByteString.Lazy           as BL
+import           Web.JWT                        (Secret)
 
-data Message = Message
-  { userClaims  :: A.Object
-  , payload :: T.Text
-  } deriving (Show, Eq, Generic)
+data Message = Message A.Object T.Text deriving (Show, Eq, Generic)
 
 instance A.ToJSON Message
 
@@ -48,32 +46,50 @@ postgrestWsApp conf refDbStructure pool pqCon =
     wsApp pendingConn = do
       time <- getPOSIXTime
       let
-        claimsOrExpired = jwtClaims jwtSecret jwtToken time
-      case claimsOrExpired of
+        claimsOrError = validateClaims jwtSecret jwtToken time
+      case claimsOrError of
         Left e -> rejectRequest e
-        Right claims -> do
+        Right (channel, mode, claims) -> do
               -- role claim defaults to anon if not specified in jwt
               -- We should accept only after verifying JWT
               conn <- WS.acceptRequest pendingConn
               -- each websocket needs its own listen connection to avoid
               -- handling of multiple waiting threads in the same connection
-              when (hasRead claims) $
-                void $ forkIO $ listenSession (channel claims) conf conn
+              when (hasRead mode) $
+                void $ forkIO $ listenSession channel conf conn
               -- all websockets share a single connection to NOTIFY
-              when (hasWrite claims) $
-                forever $ notifySession (channel claims) claims pqCon conn
+              when (hasWrite mode) $
+                forever $ notifySession channel claims pqCon conn
       where
-        claimAsBS name cl = let A.String s = (cl M.! name) in T.encodeUtf8 s
-        channel = claimAsBS ("channel" :: T.Text)
-        mode = claimAsBS ("mode" :: T.Text)
-        hasRead cl = mode cl == "r" || mode cl == "rw"
-        hasWrite cl = mode cl == "w" || mode cl == "rw"
+        hasRead m = m == ("r" :: ByteString) || m == ("rw" :: ByteString)
+        hasWrite m = m == ("w" :: ByteString) || m == ("rw" :: ByteString)
         rejectRequest = WS.rejectRequest pendingConn . T.encodeUtf8
         jwtSecret = configJwtSecret conf
         -- the first char in path is '/' the rest is the token
         jwtToken = T.decodeUtf8 $ BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
 
 -- private functions
+
+type Claims = M.HashMap Text A.Value
+type ConnectionInfo = (ByteString, ByteString, Claims)
+
+validateClaims :: Secret -> Text -> POSIXTime -> Either Text ConnectionInfo
+validateClaims jwtSecret jwtToken time = do
+  cl <- jwtClaims jwtSecret jwtToken time
+  jChannel <- claimAsJSON "channel" cl
+  jMode <- claimAsJSON "mode" cl
+  channel <- value2BS jChannel
+  mode <- value2BS jMode
+  Right (channel, mode, cl)
+  where
+    value2BS val = case val of
+      A.String s -> Right $ T.encodeUtf8 s
+      _ -> Left "claim is not string value"
+    claimAsJSON :: Text -> Claims -> Either Text A.Value
+    claimAsJSON name cl = case M.lookup name cl of
+      Just el -> Right el
+      Nothing -> Left (name <> " not in claims")
+
 -- Having both channel and claims as parameters seem redundant
 -- But it allows the function to ignore the claims structure and the source
 -- of the channel, so all claims decoding can be coded in the caller
