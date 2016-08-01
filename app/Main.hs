@@ -3,6 +3,7 @@
 module Main where
 
 
+import           Protolude
 import           PostgREST.Config                     (AppConfig (..),
                                                        minimumPgVersion,
                                                        prettyVersion,
@@ -10,37 +11,33 @@ import           PostgREST.Config                     (AppConfig (..),
 import           PostgREST.DbStructure
 import           PostgRESTWS
 
-import           Control.Monad
-import           Control.Monad.IO.Class               (liftIO)
-import           Data.Monoid                          ((<>))
-import           Data.String.Conversions              (cs)
 import qualified Hasql.Query                          as H
 import qualified Hasql.Session                        as H
 import qualified Hasql.Decoders                       as HD
 import qualified Hasql.Encoders                       as HE
 import qualified Hasql.Pool                           as P
 import           Network.Wai.Handler.Warp
-import           System.IO                            (BufferMode (..),
-                                                       hSetBuffering, stderr,
-                                                       stdin, stdout)
+import           System.IO                            ( BufferMode (..)
+                                                      , hSetBuffering
+                                                      )
+
 import           Web.JWT                              (secret)
 
 #ifndef mingw32_HOST_OS
 import           System.Posix.Signals
-import           Control.Concurrent                   (myThreadId)
 import           Data.IORef
-import           Control.Exception.Base               (throwTo, AsyncException(..))
 #endif
 import qualified Database.PostgreSQL.LibPQ            as PQ
+import           Data.Function (id)
 
 isServerVersionSupported :: H.Session Bool
 isServerVersionSupported = do
   ver <- H.query () pgVersion
-  return $ read (cs ver) >= minimumPgVersion
+  return $ toInteger ver >= minimumPgVersion
  where
   pgVersion =
     H.statement "SHOW server_version_num"
-      HE.unit (HD.singleRow $ HD.value HD.text) True
+      HE.unit (HD.singleRow $ HD.value HD.int4) True
 
 main :: IO ()
 main = do
@@ -50,26 +47,25 @@ main = do
 
   conf <- readOptions
   let port = configPort conf
-      pgSettings = cs (configDatabase conf)
+      pgSettings = toS (configDatabase conf)
       appSettings = setPort port
-                  . setServerName (cs $ "postgrest/" <> prettyVersion)
+                  . setServerName (toS $ "postgrest/" <> prettyVersion)
                   $ defaultSettings
 
   unless (secret "secret" /= configJwtSecret conf) $
-    putStrLn "WARNING, running in insecure mode, JWT secret is the default value"
-  Prelude.putStrLn $ "Listening on port " ++
-    (show $ configPort conf :: String)
+    putStrLn ("WARNING, running in insecure mode, JWT secret is the default value" :: Text)
+  putStrLn $ ("Listening on port " :: Text) <> show (configPort conf)
 
   pool <- P.acquire (configPool conf, 10, pgSettings)
 
   result <- P.use pool $ do
     supported <- isServerVersionSupported
-    unless supported $ error (
+    unless supported $ panic (
       "Cannot run in this PostgreSQL version, PostgREST needs at least "
       <> show minimumPgVersion)
-    getDbStructure (cs $ configSchema conf)
+    getDbStructure (toS $ configSchema conf)
 
-  refDbStructure <- newIORef $ either (error.show) id result
+  refDbStructure <- newIORef $ either (panic . show) id result
   notificationsCon <- PQ.connectdb pgSettings
 
 #ifndef mingw32_HOST_OS
@@ -82,7 +78,7 @@ main = do
 
   void $ installHandler sigHUP (
       Catch . void . P.use pool $ do
-        s <- getDbStructure (cs $ configSchema conf)
+        s <- getDbStructure (toS $ configSchema conf)
         liftIO $ atomicWriteIORef refDbStructure s
    ) Nothing
 #endif
