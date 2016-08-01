@@ -15,6 +15,7 @@ import           PostgREST.Types                as PGR
 
 import qualified Data.Text                      as T
 import qualified Data.Text.Encoding             as T
+import qualified Data.Text.Encoding.Error       as T
 
 import           Control.Monad                  (forever, void, when)
 import qualified Data.HashMap.Strict            as M
@@ -92,7 +93,8 @@ notifySession channel claims pqCon wsCon =
   WS.receiveData wsCon >>= (notify . jsonMsg)
   where
     notify msg = void $ PQ.exec pqCon ("NOTIFY " <> channel <> ", '" <> msg <> "'")
-    jsonMsg = toStrict . A.encode . Message claims . T.decodeUtf8
+    -- we need to decode the bytestring to re-encode valid JSON for the notification
+    jsonMsg = toStrict . A.encode . Message claims . T.decodeUtf8With T.lenientDecode
 
 listenSession :: BS.ByteString
                     -> PGR.AppConfig
