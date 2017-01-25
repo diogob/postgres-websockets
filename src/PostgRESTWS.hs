@@ -53,6 +53,8 @@ postgrestWsApp conf refDbStructure pool pqCon =
               -- role claim defaults to anon if not specified in jwt
               -- We should accept only after verifying JWT
               conn <- WS.acceptRequest pendingConn
+              -- Fork a pinging thread to ensure browser connections stay alive
+              WS.forkPingThread conn 30
               -- each websocket needs its own listen connection to avoid
               -- handling of multiple waiting threads in the same connection
               when (hasRead mode) $
