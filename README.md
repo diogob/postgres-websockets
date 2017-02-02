@@ -1,3 +1,4 @@
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/51b906e726214165a786bc5bcd544f37)](https://www.codacy.com/app/diogob/postgrest-ws?utm_source=github.com&utm_medium=referral&utm_content=diogob/postgrest-ws&utm_campaign=badger)
 # PostgREST-WS [![CircleCI](https://circleci.com/gh/diogob/postgrest-ws.svg?style=svg)](https://circleci.com/gh/diogob/postgrest-ws)
 
 PostgREST-WS is an extension of [PostgREST](https://github.com/begriffs/postgrest) 
