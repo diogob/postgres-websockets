@@ -57,11 +57,15 @@ postgrestWsApp conf refDbStructure pool pqCon getTime =
               WS.forkPingThread conn 30
               -- each websocket needs its own listen connection to avoid
               -- handling of multiple waiting threads in the same connection
-              when (hasRead mode) $
-                void $ forkIO $ listenSession channel conf conn
+              listenSessionFinished <- if hasRead mode
+                then forkAndWait $ listenSession channel conf conn
+                else newMVar ()
               -- all websockets share a single connection to NOTIFY
-              when (hasWrite mode) $
-                forever $ notifySession channel claims pqCon conn
+              notifySessionFinished <- if hasWrite mode
+                then forkAndWait $ forever $ notifySession channel claims pqCon conn
+                else newMVar ()
+              takeMVar listenSessionFinished
+              takeMVar notifySessionFinished
       where
         hasRead m = m == ("r" :: ByteString) || m == ("rw" :: ByteString)
         hasWrite m = m == ("w" :: ByteString) || m == ("rw" :: ByteString)
@@ -134,3 +138,9 @@ listenSession channel conf wsCon = do
               void $ PQ.consumeInput con
         Just notification ->
           WS.sendTextData wsCon $ PQ.notifyExtra notification
+
+forkAndWait :: IO () -> IO (MVar ())
+forkAndWait io = do
+  mvar <- newEmptyMVar
+  void $ forkFinally io (\_ -> putMVar mvar ())
+  return mvar
