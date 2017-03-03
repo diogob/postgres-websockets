@@ -20,7 +20,7 @@ $(document).ready(function () {
         var ws = createWebSocket('/' + jwt);
 
         ws.onopen = function() {
-            ws.send('Hi!');
+            alert("Connection ready, try sending a message in the field bellow.");
         };
 
         ws.onmessage = onMessage;

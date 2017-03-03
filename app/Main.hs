@@ -2,42 +2,47 @@
 
 module Main where
 
-
 import           Protolude
 import           PostgREST.Config                     (AppConfig (..),
+                                                       PgVersion (..),
                                                        minimumPgVersion,
                                                        prettyVersion,
                                                        readOptions)
+import           PostgREST.Error                      (prettyUsageError)
+import           PostgREST.OpenAPI                    (isMalformedProxyUri)
 import           PostgREST.DbStructure
 import           PostgRESTWS
 
+import           Control.AutoUpdate
+import           Data.ByteString.Base64               (decode)
+import           Data.String                          (IsString (..))
+import           Data.Text                            (stripPrefix, pack, replace)
+import           Data.Text.IO                         (hPutStrLn, readFile)
+import           Data.Function                        (id)
+import           Data.Time.Clock.POSIX                (getPOSIXTime)
 import qualified Hasql.Query                          as H
 import qualified Hasql.Session                        as H
 import qualified Hasql.Decoders                       as HD
 import qualified Hasql.Encoders                       as HE
 import qualified Hasql.Pool                           as P
 import           Network.Wai.Handler.Warp
-import           System.IO                            ( BufferMode (..)
-                                                      , hSetBuffering
-                                                      )
+import           System.IO                            (BufferMode (..),
+                                                       hSetBuffering)
+import qualified Database.PostgreSQL.LibPQ            as PQ
 
-import           Web.JWT                              (secret)
-
+import           Data.IORef
 #ifndef mingw32_HOST_OS
 import           System.Posix.Signals
-import           Data.IORef
 #endif
-import qualified Database.PostgreSQL.LibPQ            as PQ
-import           Data.Function (id)
 
 isServerVersionSupported :: H.Session Bool
 isServerVersionSupported = do
   ver <- H.query () pgVersion
-  return $ toInteger ver >= minimumPgVersion
+  return $ ver >= pgvNum minimumPgVersion
  where
   pgVersion =
-    H.statement "SHOW server_version_num"
-      HE.unit (HD.singleRow $ HD.value HD.int4) True
+    H.statement "SELECT current_setting('server_version_num')::integer"
+      HE.unit (HD.singleRow $ HD.value HD.int4) False
 
 main :: IO ()
 main = do
@@ -45,15 +50,19 @@ main = do
   hSetBuffering stdin  LineBuffering
   hSetBuffering stderr NoBuffering
 
-  conf <- readOptions
-  let port = configPort conf
+  conf <- loadSecretFile =<< readOptions
+  let host = configHost conf
+      port = configPort conf
+      proxy = configProxyUri conf
       pgSettings = toS (configDatabase conf)
-      appSettings = setPort port
+      appSettings = setHost ((fromString . toS) host)
+                  . setPort port
                   . setServerName (toS $ "postgrest/" <> prettyVersion)
                   $ defaultSettings
 
-  unless (secret "secret" /= configJwtSecret conf) $
-    putStrLn ("WARNING, running in insecure mode, JWT secret is the default value" :: Text)
+  when (isMalformedProxyUri $ toS <$> proxy) $ panic
+    "Malformed proxy uri, a correct example: https://example.com:8443/basePath"
+
   putStrLn $ ("Listening on port " :: Text) <> show (configPort conf)
 
   pool <- P.acquire (configPool conf, 10, pgSettings)
@@ -62,8 +71,12 @@ main = do
     supported <- isServerVersionSupported
     unless supported $ panic (
       "Cannot run in this PostgreSQL version, PostgREST needs at least "
-      <> show minimumPgVersion)
+      <> pgvName minimumPgVersion)
     getDbStructure (toS $ configSchema conf)
+
+  forM_ (lefts [result]) $ \e -> do
+    hPutStrLn stderr (prettyUsageError e)
+    exitFailure
 
   refDbStructure <- newIORef $ either (panic . show) id result
   notificationsCon <- PQ.connectdb pgSettings
@@ -82,4 +95,34 @@ main = do
         liftIO $ atomicWriteIORef refDbStructure s
    ) Nothing
 #endif
-  runSettings appSettings $ postgrestWsApp conf refDbStructure pool notificationsCon
+
+  -- ask for the OS time at most once per second
+  getTime <- mkAutoUpdate
+    defaultUpdateSettings { updateAction = getPOSIXTime }
+
+  runSettings appSettings $ postgrestWsApp conf refDbStructure pool notificationsCon getTime
+
+loadSecretFile :: AppConfig -> IO AppConfig
+loadSecretFile conf = extractAndTransform mSecret
+  where
+    mSecret   = decodeUtf8 <$> configJwtSecret conf
+    isB64     = configJwtSecretIsBase64 conf
+
+    extractAndTransform :: Maybe Text -> IO AppConfig
+    extractAndTransform Nothing  = return conf
+    extractAndTransform (Just s) =
+      fmap setSecret $ transformString isB64 =<<
+        case stripPrefix "@" s of
+            Nothing       -> return s
+            Just filename -> readFile (toS filename)
+
+    transformString :: Bool -> Text -> IO ByteString
+    transformString False t = return . encodeUtf8 $ t
+    transformString True  t =
+      case decode (encodeUtf8 $ replaceUrlChars t) of
+        Left errMsg -> panic $ pack errMsg
+        Right bs    -> return bs
+
+    setSecret bs = conf { configJwtSecret = Just bs }
+
+    replaceUrlChars = replace "_" "/" . replace "-" "+" . replace "." "="

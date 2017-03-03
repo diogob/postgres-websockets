@@ -13,22 +13,21 @@ import qualified Network.WebSockets             as WS
 import           PostgREST.App                  as PGR
 import           PostgREST.Config               as PGR
 import           PostgREST.Types                as PGR
+import           PostgREST.Auth                as PGR
 
-import qualified Data.Text                      as T
-import qualified Data.Text.Encoding             as T
 import qualified Data.Text.Encoding.Error       as T
 
 import qualified Data.HashMap.Strict            as M
-import           Data.Time.Clock.POSIX          (POSIXTime, getPOSIXTime)
+import           Data.Time.Clock.POSIX          (POSIXTime)
 import qualified Database.PostgreSQL.LibPQ      as PQ
 import           PostgREST.Auth                 (jwtClaims)
 
 import qualified Data.Aeson                     as A
 import qualified Data.ByteString                as BS
 import qualified Data.ByteString.Lazy           as BL
-import           Web.JWT                        (Secret)
+import           Web.JWT                        (Secret, binarySecret)
 
-data Message = Message A.Object T.Text deriving (Show, Eq, Generic)
+data Message = Message A.Object Text deriving (Show, Eq, Generic)
 
 instance A.ToJSON Message
 
@@ -36,15 +35,16 @@ postgrestWsApp :: PGR.AppConfig
                     -> IORef PGR.DbStructure
                     -> H.Pool
                     -> PQ.Connection
+                    -> IO POSIXTime
                     -> Wai.Application
-postgrestWsApp conf refDbStructure pool pqCon =
-  WS.websocketsOr WS.defaultConnectionOptions wsApp $ postgrest conf refDbStructure pool
+postgrestWsApp conf refDbStructure pool pqCon getTime =
+  WS.websocketsOr WS.defaultConnectionOptions wsApp $ postgrest conf refDbStructure pool getTime
   where
     -- when the websocket is closed a ConnectionClosed Exception is triggered
     -- this kills all children and frees resources for us
     wsApp :: WS.ServerApp
     wsApp pendingConn = do
-      time <- getPOSIXTime
+      time <- getTime
       let
         claimsOrError = validateClaims jwtSecret jwtToken time
       case claimsOrError of
@@ -65,19 +65,21 @@ postgrestWsApp conf refDbStructure pool pqCon =
       where
         hasRead m = m == ("r" :: ByteString) || m == ("rw" :: ByteString)
         hasWrite m = m == ("w" :: ByteString) || m == ("rw" :: ByteString)
-        rejectRequest = WS.rejectRequest pendingConn . T.encodeUtf8
-        jwtSecret = configJwtSecret conf
+        rejectRequest = WS.rejectRequest pendingConn . encodeUtf8
+        jwtSecret = binarySecret <$> configJwtSecret conf
         -- the first char in path is '/' the rest is the token
-        jwtToken = T.decodeUtf8 $ BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
+        jwtToken = decodeUtf8 $ BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
 
 -- private functions
 
 type Claims = M.HashMap Text A.Value
 type ConnectionInfo = (ByteString, ByteString, Claims)
 
-validateClaims :: Secret -> Text -> POSIXTime -> Either Text ConnectionInfo
+validateClaims :: Maybe Secret -> Text -> POSIXTime -> Either Text ConnectionInfo
 validateClaims jwtSecret jwtToken time = do
-  cl <- jwtClaims jwtSecret jwtToken time
+  cl <- case jwtClaims jwtSecret jwtToken time of
+    PGR.JWTClaims c -> Right c
+    _ -> Left "Error"
   jChannel <- claimAsJSON "channel" cl
   jMode <- claimAsJSON "mode" cl
   channel <- value2BS jChannel
@@ -85,7 +87,7 @@ validateClaims jwtSecret jwtToken time = do
   Right (channel, mode, cl)
   where
     value2BS val = case val of
-      A.String s -> Right $ T.encodeUtf8 s
+      A.String s -> Right $ encodeUtf8 s
       _ -> Left "claim is not string value"
     claimAsJSON :: Text -> Claims -> Either Text A.Value
     claimAsJSON name cl = case M.lookup name cl of
@@ -105,7 +107,7 @@ notifySession channel claims pqCon wsCon =
   where
     notify mesg = void $ PQ.exec pqCon ("NOTIFY " <> channel <> ", '" <> mesg <> "'")
     -- we need to decode the bytestring to re-encode valid JSON for the notification
-    jsonMsg = BL.toStrict . A.encode . Message claims . T.decodeUtf8With T.lenientDecode
+    jsonMsg = BL.toStrict . A.encode . Message claims . decodeUtf8With T.lenientDecode
 
 listenSession :: BS.ByteString
                     -> PGR.AppConfig

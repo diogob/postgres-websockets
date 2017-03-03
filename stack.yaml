@@ -1,20 +1,8 @@
-# Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
-resolver: lts-6.10
-
-# Local packages, usually specified by relative directory name
-packages:
-- '.'
-
-# Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
+resolver: lts-8.0
 extra-deps:
-  - bytestring-tree-builder-0.2.7
-  - hasql-0.19.12
   - Ranged-sets-0.3.0
   - hasql-pool-0.4.1
-  - hasql-transaction-0.4.5
-  - postgresql-error-codes-1
-  - postgrest-0.3.2.0
-
-flags: {}
-
-extra-package-dbs: []
+  - postgrest-0.4.0.0
+  - optparse-applicative-0.12.1.0
+ghc-options:
+  postgrest-ws: -O2 -Werror -Wall -fwarn-identities -fno-warn-redundant-constraints

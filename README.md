@@ -1,6 +1,6 @@
 # PostgREST-WS [![CircleCI](https://circleci.com/gh/diogob/postgrest-ws.svg?style=svg)](https://circleci.com/gh/diogob/postgrest-ws)
 
-PostgREST-WS is an extension of [PostgREST](https://github.com/begriffs/postgrest) 
+PostgREST-WS is an extension of [PostgREST](https://github.com/begriffs/postgrest)
 that adds websockets capabilites to the HTTP layer on top of [PostgreSQL](https://www.postgresql.org).
 
 To understand the concept of mapping a database schema directly to an HTTP API watch the video and take
@@ -38,7 +38,9 @@ After the build you should be able to run the server using `~/.local/bin/postgre
 ~/.local/bin/postgrest-ws
 ```
 
-the above command will display the options that you can use. For more information on parameters and how to server you can take a look at the [PostgREST documentation](http://postgrest.com/install/server/#running-the-server) on the subject since `postgrest-ws` does not change anything.
+the above command will display the options that you can use.
+For more information on parameters and how to server you can take a look at the [PostgREST documentation](https://postgrest.com/en/v0.4/admin.html) on the subject since `postgrest-ws` does not change anything.
+The sample config file provided in the `sample.conf` file comes with a weak jwt secret just for testing and is used in the sample client and in the example bellow.
 
 ## Opening notification channels
 
@@ -53,8 +55,8 @@ The content of the message is added to the notification in a field called `paylo
 
 To open a websocket for the channel **chat** in mode rw (read and write) we could use the JavaScript code:
 ```javascript
-var jwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjaGFubmVsIjoiY2hhdCIsIm1vZGUiOiJydyJ9\
-._w1IGqgRfLM6epJwy6wBWOZOeSILEpJozR64qVuFgpU',
+var jwt = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2RlIjoicnciLCJjaGFubmVsI\
+joiY2hhdCJ9.aMsIxB6f-dDuJJWt6hvebrs7CvBkvLClBmQjqaeYXb0',
     host = window.location.hostname,
     uri = 'ws://' + host + ':3000/' + jwt,
     ws = new WebSocket(uri);
@@ -81,3 +83,4 @@ ws.onmessage = function(event){
 ```
 
 You will find a complete example under the folder [client-example](https://github.com/diogob/postgrest-ws/tree/master/client-example).
+The example uses the [sample configuration file](https://github.com/diogob/postgrest-ws/tree/master/sample.conf).
