@@ -17,6 +17,7 @@ library
   hs-source-dirs:      src
   ghc-options:         -Wall
   exposed-modules:     PostgRESTWS
+  other-modules:       PostgRESTWS.Claims
   build-depends:       base >= 4.7 && < 5
                      , hasql-pool >= 0.4 && < 0.5
                      , text >= 1.2 && < 2
