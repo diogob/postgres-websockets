@@ -35,40 +35,35 @@ postgrestWsApp :: PGR.AppConfig
                     -> IO POSIXTime
                     -> Wai.Application
 postgrestWsApp conf refDbStructure pool pqCon getTime =
-  WS.websocketsOr WS.defaultConnectionOptions wsApp $ postgrest conf refDbStructure pool getTime
+  WS.websocketsOr WS.defaultConnectionOptions (wsApp conf getTime pqCon) $ postgrest conf refDbStructure pool getTime
+-- when the websocket is closed a ConnectionClosed Exception is triggered
+-- this kills all children and frees resources for us
+wsApp :: PGR.AppConfig -> IO POSIXTime -> PQ.Connection -> WS.ServerApp
+wsApp conf getTime pqCon pendingConn = getTime >>= forkSessionsWhenTokenIsValid . validateClaims (configJwtSecret conf) jwtToken
   where
-    -- when the websocket is closed a ConnectionClosed Exception is triggered
-    -- this kills all children and frees resources for us
-    wsApp :: WS.ServerApp
-    wsApp pendingConn = do
-      time <- getTime
-      let
-        claimsOrError = validateClaims (configJwtSecret conf) jwtToken time
-      case claimsOrError of
-        Left e -> rejectRequest e
-        Right (channel, mode, claims) -> do
-              -- role claim defaults to anon if not specified in jwt
-              -- We should accept only after verifying JWT
-              conn <- WS.acceptRequest pendingConn
-              -- Fork a pinging thread to ensure browser connections stay alive
-              WS.forkPingThread conn 30
-              -- each websocket needs its own listen connection to avoid
-              -- handling of multiple waiting threads in the same connection
-              listenSessionFinished <- if hasRead mode
-                then forkAndWait $ listenSession channel conf conn
-                else newMVar ()
-              -- all websockets share a single connection to NOTIFY
-              notifySessionFinished <- if hasWrite mode
-                then forkAndWait $ forever $ notifySession channel claims pqCon conn
-                else newMVar ()
-              takeMVar listenSessionFinished
-              takeMVar notifySessionFinished
-      where
-        hasRead m = m == ("r" :: ByteString) || m == ("rw" :: ByteString)
-        hasWrite m = m == ("w" :: ByteString) || m == ("rw" :: ByteString)
-        rejectRequest = WS.rejectRequest pendingConn . encodeUtf8
-        -- the first char in path is '/' the rest is the token
-        jwtToken = decodeUtf8 $ BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
+    forkSessionsWhenTokenIsValid = either rejectRequest forkSessions
+    hasRead m = m == ("r" :: ByteString) || m == ("rw" :: ByteString)
+    hasWrite m = m == ("w" :: ByteString) || m == ("rw" :: ByteString)
+    rejectRequest = WS.rejectRequest pendingConn . encodeUtf8
+    -- the first char in path is '/' the rest is the token
+    jwtToken = decodeUtf8 $ BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
+    forkSessions (channel, mode, claims) = do
+          -- role claim defaults to anon if not specified in jwt
+          -- We should accept only after verifying JWT
+          conn <- WS.acceptRequest pendingConn
+          -- Fork a pinging thread to ensure browser connections stay alive
+          WS.forkPingThread conn 30
+          -- each websocket needs its own listen connection to avoid
+          -- handling of multiple waiting threads in the same connection
+          listenSessionFinished <- if hasRead mode
+            then forkAndWait $ listenSession channel conf conn
+            else newMVar ()
+          -- all websockets share a single connection to NOTIFY
+          notifySessionFinished <- if hasWrite mode
+            then forkAndWait $ forever $ notifySession channel claims pqCon conn
+            else newMVar ()
+          takeMVar listenSessionFinished
+          takeMVar notifySessionFinished
 
 -- private functions
 
