@@ -1,18 +1,13 @@
 {-# LANGUAGE DeriveGeneric #-}
 
 module PostgRESTWS
-  ( postgrestWsApp
+  ( postgrestWsMiddleware
   ) where
 
 import           Protolude
-import           GHC.IORef
-import qualified Hasql.Pool                     as H
 import qualified Network.Wai                    as Wai
 import qualified Network.Wai.Handler.WebSockets as WS
 import qualified Network.WebSockets             as WS
-import           PostgREST.App                  as PGR
-import           PostgREST.Config               as PGR
-import           PostgREST.Types                as PGR
 
 import qualified Data.Text.Encoding.Error       as T
 
@@ -28,18 +23,15 @@ data Message = Message A.Object Text deriving (Show, Eq, Generic)
 
 instance A.ToJSON Message
 
-postgrestWsApp :: PGR.AppConfig
-                    -> IORef PGR.DbStructure
-                    -> H.Pool
-                    -> PQ.Connection
-                    -> IO POSIXTime
-                    -> Wai.Application
-postgrestWsApp conf refDbStructure pool pqCon getTime =
-  WS.websocketsOr WS.defaultConnectionOptions (wsApp conf getTime pqCon) $ postgrest conf refDbStructure pool getTime
+postgrestWsMiddleware :: Text -> Maybe ByteString -> IO POSIXTime -> PQ.Connection -> Wai.Application -> Wai.Application
+postgrestWsMiddleware = WS.websocketsOr WS.defaultConnectionOptions `compose` wsApp
+  where
+    compose = (.) . (.) . (.) . (.)
+
 -- when the websocket is closed a ConnectionClosed Exception is triggered
 -- this kills all children and frees resources for us
-wsApp :: PGR.AppConfig -> IO POSIXTime -> PQ.Connection -> WS.ServerApp
-wsApp conf getTime pqCon pendingConn = getTime >>= forkSessionsWhenTokenIsValid . validateClaims (configJwtSecret conf) jwtToken
+wsApp :: Text -> Maybe ByteString -> IO POSIXTime -> PQ.Connection -> WS.ServerApp
+wsApp pgSettings mSecret getTime pqCon pendingConn = getTime >>= forkSessionsWhenTokenIsValid . validateClaims mSecret jwtToken
   where
     forkSessionsWhenTokenIsValid = either rejectRequest forkSessions
     hasRead m = m == ("r" :: ByteString) || m == ("rw" :: ByteString)
@@ -56,7 +48,7 @@ wsApp conf getTime pqCon pendingConn = getTime >>= forkSessionsWhenTokenIsValid 
           -- each websocket needs its own listen connection to avoid
           -- handling of multiple waiting threads in the same connection
           listenSessionFinished <- if hasRead mode
-            then forkAndWait $ listenSession channel conf conn
+            then forkAndWait $ listenSession channel pgSettings conn
             else newMVar ()
           -- all websockets share a single connection to NOTIFY
           notifySessionFinished <- if hasWrite mode
@@ -83,17 +75,16 @@ notifySession channel claims pqCon wsCon =
     jsonMsg = BL.toStrict . A.encode . Message claims . decodeUtf8With T.lenientDecode
 
 listenSession :: BS.ByteString
-                    -> PGR.AppConfig
+                    -> Text
                     -> WS.Connection
                     -> IO ()
-listenSession channel conf wsCon = do
-  pqCon <- PQ.connectdb pgSettings
+listenSession channel pgSettings wsCon = do
+  pqCon <- PQ.connectdb $ toS pgSettings
   listen pqCon
   waitForNotifications pqCon
   where
     waitForNotifications = forever . fetch
     listen con = void $ PQ.exec con $ "LISTEN " <> channel
-    pgSettings = toS $ configDatabase conf
     fetch con = do
       mNotification <- PQ.notifies con
       case mNotification of

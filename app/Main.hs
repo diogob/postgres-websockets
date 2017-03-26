@@ -11,6 +11,7 @@ import           PostgREST.Config                     (AppConfig (..),
 import           PostgREST.Error                      (prettyUsageError)
 import           PostgREST.OpenAPI                    (isMalformedProxyUri)
 import           PostgREST.DbStructure
+import           PostgREST.App                        (postgrest)
 import           PostgRESTWS
 
 import           Control.AutoUpdate
@@ -100,7 +101,9 @@ main = do
   getTime <- mkAutoUpdate
     defaultUpdateSettings { updateAction = getPOSIXTime }
 
-  runSettings appSettings $ postgrestWsApp conf refDbStructure pool notificationsCon getTime
+  runSettings appSettings $
+    postgrestWsMiddleware (configDatabase conf) (configJwtSecret conf) getTime notificationsCon $
+    postgrest conf refDbStructure pool getTime
 
 loadSecretFile :: AppConfig -> IO AppConfig
 loadSecretFile conf = extractAndTransform mSecret
