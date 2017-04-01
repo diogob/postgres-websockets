@@ -18,6 +18,8 @@ library
   ghc-options:         -Wall
   exposed-modules:     PostgRESTWS
   other-modules:       PostgRESTWS.Claims
+                     , PostgRESTWS.Database
+                     , PostgRESTWS.Types
   build-depends:       base >= 4.7 && < 5
                      , hasql-pool >= 0.4 && < 0.5
                      , text >= 1.2 && < 2
@@ -34,6 +36,8 @@ library
                      , aeson >= 0.11
                      , protolude >= 0.1.6 && < 0.2
                      , jwt >= 0.7.2 && < 0.8
+                     , hasql >= 0.19
+                     , either
   default-language:    Haskell2010
   default-extensions: OverloadedStrings, NoImplicitPrelude
 
@@ -43,8 +47,8 @@ executable postgrest-ws
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base >= 4.7 && < 5
                      , transformers >= 0.4 && < 0.6
-                     , hasql >= 0.19 && < 0.20
-                     , hasql-pool >= 0.4 && < 0.5
+                     , hasql >= 0.19
+                     , hasql-pool >= 0.4
                      , warp >= 3.2 && < 4
                      , unix >= 2.7 && < 3
                      , jwt >= 0.7 && < 1

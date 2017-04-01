@@ -8,6 +8,7 @@ import           Protolude
 import qualified Network.Wai                    as Wai
 import qualified Network.Wai.Handler.WebSockets as WS
 import qualified Network.WebSockets             as WS
+import qualified Hasql.Pool                     as H
 
 import qualified Data.Text.Encoding.Error       as T
 
@@ -18,19 +19,20 @@ import qualified Data.ByteString                as BS
 import qualified Data.ByteString.Lazy           as BL
 
 import PostgRESTWS.Claims
+import PostgRESTWS.Database
 
 data Message = Message A.Object Text deriving (Show, Eq, Generic)
 
 instance A.ToJSON Message
 
-postgrestWsMiddleware :: Text -> Maybe ByteString -> IO POSIXTime -> PQ.Connection -> Wai.Application -> Wai.Application
+postgrestWsMiddleware :: Text -> Maybe ByteString -> IO POSIXTime -> H.Pool -> Wai.Application -> Wai.Application
 postgrestWsMiddleware = WS.websocketsOr WS.defaultConnectionOptions `compose` wsApp
   where
     compose = (.) . (.) . (.) . (.)
 
 -- when the websocket is closed a ConnectionClosed Exception is triggered
 -- this kills all children and frees resources for us
-wsApp :: Text -> Maybe ByteString -> IO POSIXTime -> PQ.Connection -> WS.ServerApp
+wsApp :: Text -> Maybe ByteString -> IO POSIXTime -> H.Pool -> WS.ServerApp
 wsApp pgSettings mSecret getTime pqCon pendingConn = getTime >>= forkSessionsWhenTokenIsValid . validateClaims mSecret jwtToken
   where
     forkSessionsWhenTokenIsValid = either rejectRequest forkSessions
@@ -64,13 +66,13 @@ wsApp pgSettings mSecret getTime pqCon pendingConn = getTime >>= forkSessionsWhe
 -- of the channel, so all claims decoding can be coded in the caller
 notifySession :: BS.ByteString
                     -> A.Object
-                    -> PQ.Connection
+                    -> H.Pool
                     -> WS.Connection
                     -> IO ()
-notifySession channel claims pqCon wsCon =
-  WS.receiveData wsCon >>= (notify . jsonMsg)
+notifySession channel claims pool wsCon =
+  WS.receiveData wsCon >>= (void . send . jsonMsg)
   where
-    notify mesg = void $ PQ.exec pqCon ("NOTIFY " <> channel <> ", '" <> mesg <> "'")
+    send = notify pool channel
     -- we need to decode the bytestring to re-encode valid JSON for the notification
     jsonMsg = BL.toStrict . A.encode . Message claims . decodeUtf8With T.lenientDecode
 

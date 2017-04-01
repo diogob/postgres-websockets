@@ -29,7 +29,6 @@ import qualified Hasql.Pool                           as P
 import           Network.Wai.Handler.Warp
 import           System.IO                            (BufferMode (..),
                                                        hSetBuffering)
-import qualified Database.PostgreSQL.LibPQ            as PQ
 
 import           Data.IORef
 #ifndef mingw32_HOST_OS
@@ -80,7 +79,6 @@ main = do
     exitFailure
 
   refDbStructure <- newIORef $ either (panic . show) id result
-  notificationsCon <- PQ.connectdb pgSettings
 
 #ifndef mingw32_HOST_OS
   tid <- myThreadId
@@ -102,7 +100,7 @@ main = do
     defaultUpdateSettings { updateAction = getPOSIXTime }
 
   runSettings appSettings $
-    postgrestWsMiddleware (configDatabase conf) (configJwtSecret conf) getTime notificationsCon $
+    postgrestWsMiddleware (configDatabase conf) (configJwtSecret conf) getTime pool $
     postgrest conf refDbStructure pool getTime
 
 loadSecretFile :: AppConfig -> IO AppConfig
