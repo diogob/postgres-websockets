@@ -13,7 +13,6 @@ import qualified Hasql.Pool                     as H
 import qualified Data.Text.Encoding.Error       as T
 
 import           Data.Time.Clock.POSIX          (POSIXTime)
-import qualified Database.PostgreSQL.LibPQ      as PQ
 import qualified Data.Aeson                     as A
 import qualified Data.ByteString                as BS
 import qualified Data.ByteString.Lazy           as BL
@@ -80,26 +79,7 @@ listenSession :: BS.ByteString
                     -> Text
                     -> WS.Connection
                     -> IO ()
-listenSession channel pgSettings wsCon = do
-  pqCon <- PQ.connectdb $ toS pgSettings
-  listen pqCon
-  waitForNotifications pqCon
-  where
-    waitForNotifications = forever . fetch
-    listen con = void $ PQ.exec con $ "LISTEN " <> channel
-    fetch con = do
-      mNotification <- PQ.notifies con
-      case mNotification of
-        Nothing -> do
-          mfd <- PQ.socket con
-          case mfd of
-            Nothing  -> panic "Error checking for PostgreSQL notifications"
-            Just fd -> do
-              (waitRead, _) <- threadWaitReadSTM fd
-              atomically waitRead
-              void $ PQ.consumeInput con
-        Just notification ->
-          WS.sendTextData wsCon $ PQ.notifyExtra notification
+listenSession channel pgSettings wsCon = onNotification channel pgSettings $ WS.sendTextData wsCon
 
 forkAndWait :: IO () -> IO (MVar ())
 forkAndWait io = do
