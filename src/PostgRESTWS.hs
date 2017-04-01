@@ -49,7 +49,7 @@ wsApp pgSettings mSecret getTime pqCon pendingConn = getTime >>= forkSessionsWhe
           -- each websocket needs its own listen connection to avoid
           -- handling of multiple waiting threads in the same connection
           listenSessionFinished <- if hasRead mode
-            then forkAndWait $ listenSession channel pgSettings conn
+            then forkAndWait $ listenSession channel (toS pgSettings) conn
             else newMVar ()
           -- all websockets share a single connection to NOTIFY
           notifySessionFinished <- if hasWrite mode
@@ -75,8 +75,8 @@ notifySession channel claims pool wsCon =
     -- we need to decode the bytestring to re-encode valid JSON for the notification
     jsonMsg = BL.toStrict . A.encode . Message claims . decodeUtf8With T.lenientDecode
 
-listenSession :: BS.ByteString
-                    -> Text
+listenSession :: ByteString
+                    -> ByteString
                     -> WS.Connection
                     -> IO ()
 listenSession channel pgSettings wsCon = onNotification channel pgSettings $ WS.sendTextData wsCon

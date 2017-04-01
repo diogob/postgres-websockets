@@ -20,7 +20,7 @@ notify pool channel mesg =
      mapError = mapLeft (NotifyError . show)
 
 onNotification :: ByteString
-                    -> Text
+                    -> ByteString
                     -> (ByteString -> IO())
                     -> IO ()
 onNotification channel pgSettings sendNotification = do
