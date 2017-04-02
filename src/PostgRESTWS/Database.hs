@@ -19,17 +19,21 @@ notify pool channel mesg =
      mapError :: Either UsageError () -> Either Error ()
      mapError = mapLeft (NotifyError . show)
 
-onNotification :: ByteString
-                    -> ByteString
-                    -> (ByteString -> IO())
-                    -> IO ()
-onNotification channel pgSettings sendNotification = do
+onNotification :: ByteString -> ByteString -> (ByteString -> IO()) -> IO ()
+onNotification channel pgSettings sendNotification =
+  openNotificationConnection channel pgSettings >>= waitForNotifications sendNotification
+
+openNotificationConnection :: ByteString -> ByteString -> IO PQ.Connection
+openNotificationConnection channel pgSettings = do
   pqCon <- PQ.connectdb $ toS pgSettings
   listen pqCon
-  waitForNotifications pqCon
+  return pqCon
   where
-    waitForNotifications = forever . fetch
     listen con = void $ PQ.exec con $ "LISTEN " <> channel
+
+waitForNotifications :: (ByteString -> IO()) -> PQ.Connection -> IO ()
+waitForNotifications sendNotification = forever . fetch
+  where
     fetch con = do
       mNotification <- PQ.notifies con
       case mNotification of
