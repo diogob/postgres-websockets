@@ -20,6 +20,7 @@ library
   other-modules:       PostgRESTWS.Claims
                      , PostgRESTWS.Database
                      , PostgRESTWS.Types
+                     , PostgRESTWS.Broadcast
   build-depends:       base >= 4.7 && < 5
                      , hasql-pool >= 0.4 && < 0.5
                      , text >= 1.2 && < 2
@@ -39,6 +40,7 @@ library
                      , hasql >= 0.19
                      , either
                      , stm-containers
+                     , stm
   default-language:    Haskell2010
   default-extensions: OverloadedStrings, NoImplicitPrelude
 
