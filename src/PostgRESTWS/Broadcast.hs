@@ -13,7 +13,7 @@ import Control.Concurrent.STM.TQueue
 data SourceCommands = Open ByteString | Close ByteString
 data Message = Message { channel :: ByteString
                , payload :: ByteString
-               }
+               } deriving (Eq, Show)
 
 data Multiplexer = Multiplexer { channels :: ChannelMap
                                , src :: ThreadId
