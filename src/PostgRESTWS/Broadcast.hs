@@ -10,7 +10,7 @@ import qualified STMContainers.Map as M
 import Control.Concurrent.STM.TChan
 import Control.Concurrent.STM.TQueue
 
-data SourceCommands = Open ByteString | Close ByteString
+data SourceCommands = Open ByteString | Close ByteString deriving (Show)
 data Message = Message { channel :: ByteString
                , payload :: ByteString
                } deriving (Eq, Show)
