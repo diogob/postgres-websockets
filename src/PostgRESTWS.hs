@@ -20,8 +20,12 @@ import qualified Data.ByteString.Lazy           as BL
 import PostgRESTWS.Claims
 import PostgRESTWS.Database
 import PostgRESTWS.Broadcast (Multiplexer, onMessage, readTChan)
+import qualified PostgRESTWS.Broadcast as B
 
-data Message = Message A.Object Text deriving (Show, Eq, Generic)
+data Message = Message
+  { claims :: A.Object
+  , payload :: Text
+  } deriving (Show, Eq, Generic)
 
 instance A.ToJSON Message
 
@@ -39,11 +43,9 @@ wsApp mSecret getTime pqCon multi pendingConn = getTime >>= forkSessionsWhenToke
     hasRead m = m == ("r" :: ByteString) || m == ("rw" :: ByteString)
     hasWrite m = m == ("w" :: ByteString) || m == ("rw" :: ByteString)
     rejectRequest = WS.rejectRequest pendingConn . encodeUtf8
-    toBS :: Show a => a -> ByteString
-    toBS = show
     -- the first char in path is '/' the rest is the token
     jwtToken = decodeUtf8 $ BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
-    forkSessions (channel, mode, claims) = do
+    forkSessions (channel, mode, validClaims) = do
           -- role claim defaults to anon if not specified in jwt
           -- We should accept only after verifying JWT
           conn <- WS.acceptRequest pendingConn
@@ -54,10 +56,10 @@ wsApp mSecret getTime pqCon multi pendingConn = getTime >>= forkSessionsWhenToke
 
           when (hasRead mode) $
             onMessage multi channel (\ch ->
-              (atomically $ readTChan ch) >>= WS.sendTextData conn . toBS)
+              forever $ (atomically $ readTChan ch) >>= WS.sendTextData conn . B.payload)
           -- all websockets share a single connection to NOTIFY
           notifySessionFinished <- if hasWrite mode
-            then forkAndWait $ forever $ notifySession channel claims pqCon conn
+            then forkAndWait $ forever $ notifySession channel validClaims pqCon conn
             else newMVar ()
           takeMVar notifySessionFinished
 
@@ -71,12 +73,12 @@ notifySession :: BS.ByteString
                     -> H.Pool
                     -> WS.Connection
                     -> IO ()
-notifySession channel claims pool wsCon =
+notifySession channel claimsToSend pool wsCon =
   WS.receiveData wsCon >>= (void . send . jsonMsg)
   where
     send = notify pool channel
     -- we need to decode the bytestring to re-encode valid JSON for the notification
-    jsonMsg = BL.toStrict . A.encode . Message claims . decodeUtf8With T.lenientDecode
+    jsonMsg = BL.toStrict . A.encode . Message claimsToSend . decodeUtf8With T.lenientDecode
 
 forkAndWait :: IO () -> IO (MVar ())
 forkAndWait io = do

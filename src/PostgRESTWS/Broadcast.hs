@@ -20,13 +20,12 @@ data Message = Message { channel :: ByteString
                , payload :: ByteString
                } deriving (Eq, Show)
 
-data Multiplexer = Multiplexer { channels :: ChannelMap
+data Multiplexer = Multiplexer { channels :: M.Map ByteString Channel
                                , src :: ThreadId
                                , commands :: TQueue SourceCommands
                                , messages :: TQueue Message
                                }
 
-type ChannelMap = M.Map ByteString Channel
 data Channel = Channel { broadcast :: TChan Message
                        , listeners :: Integer
                        , close :: STM ()
@@ -62,20 +61,22 @@ openChannel multi chan = do
     return newChannel
 
 closeChannel ::  Multiplexer -> ByteString -> STM ()
-closeChannel multi chan = do
-    M.delete chan (channels multi)
-    writeTQueue (commands multi) (Close chan)
+closeChannel multi chan = writeTQueue (commands multi) (Close chan)
 
 onMessage :: Multiplexer -> ByteString -> (TChan Message -> IO()) -> IO ()
 onMessage multi chan action = do
   listener <- atomically $ do
-    c <- liftA2 fromMaybe (openChannel multi chan) (M.lookup chan (channels multi))
+    mC <- M.lookup chan (channels multi)
+    c <- case mC of
+              Nothing -> openChannel multi chan
+              Just ch -> return ch
     M.delete chan (channels multi)
     let newChannel = Channel{ broadcast = broadcast c, listeners = listeners c + 1, close = close c}
     M.insert newChannel chan (channels multi)
     dupTChan $ broadcast newChannel
   void $ forkFinally (action listener) (\_ -> atomically $ do
-    c <- liftA2 fromMaybe (openChannel multi chan) (M.lookup chan (channels multi))
+    mC <- M.lookup chan (channels multi)
+    let c = fromMaybe (panic $ "trying to remove listener from non existing channel: " <> toS chan) mC
     M.delete chan (channels multi)
     when (listeners c - 1 == 0) $ closeChannel multi chan
     when (listeners c - 1 > 0) $ do
