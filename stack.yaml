@@ -5,4 +5,4 @@ extra-deps:
   - postgrest-0.4.0.0
   - optparse-applicative-0.12.1.0
 ghc-options:
-  postgrest-ws: -O2 -Werror -Wall -fwarn-identities -fno-warn-redundant-constraints
+  postgrest-ws: -O2 -Wall -fwarn-identities -fno-warn-redundant-constraints

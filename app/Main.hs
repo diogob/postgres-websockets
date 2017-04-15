@@ -115,6 +115,7 @@ main = do
           con
       Close ch -> unlisten con ch
     ) (\_ -> return ())
+  void $ forkIO $ forever $ relayMessages multi
   runSettings appSettings $
     postgrestWsMiddleware (configJwtSecret conf) getTime pool multi $
     postgrest conf refDbStructure pool getTime
