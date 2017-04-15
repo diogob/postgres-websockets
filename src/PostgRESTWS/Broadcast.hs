@@ -1,8 +1,13 @@
 module PostgRESTWS.Broadcast ( Multiplexer (src)
                              , Message (..)
+                             , SourceCommands (..)
                              , newMultiplexer
                              , onMessage
                              , relayMessages
+                             -- reexports
+                             , readTQueue
+                             , writeTQueue
+                             , readTChan
                              ) where
 
 import Protolude

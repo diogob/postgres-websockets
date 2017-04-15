@@ -1,40 +1,43 @@
 module PostgRESTWS.Database
   ( notify
-  , onNotification
+  , listen
+  , unlisten
+  , waitForNotifications
   ) where
 
 import Protolude
 import Hasql.Pool (Pool, UsageError, use)
 import Hasql.Session (sql)
+import Hasql.Connection (Connection, withLibPQConnection)
 import qualified Database.PostgreSQL.LibPQ      as PQ
 import Data.Either.Combinators
 
 import PostgRESTWS.Types
 
 notify :: Pool -> ByteString -> ByteString -> IO (Either Error ())
-
 notify pool channel mesg =
    mapError <$> use pool (sql ("NOTIFY " <> channel <> ", '" <> mesg <> "'"))
    where
      mapError :: Either UsageError () -> Either Error ()
      mapError = mapLeft (NotifyError . show)
 
-onNotification :: ByteString -> ByteString -> (ByteString -> IO()) -> IO ()
-onNotification channel pgSettings sendNotification =
-  openNotificationConnection channel pgSettings >>= waitForNotifications sendNotification
-
-openNotificationConnection :: ByteString -> ByteString -> IO PQ.Connection
-openNotificationConnection channel pgSettings = do
-  pqCon <- PQ.connectdb $ toS pgSettings
-  listen pqCon
-  return pqCon
+listen :: Connection -> ByteString -> IO ()
+listen con channel =
+  void $ withLibPQConnection con execListen
   where
-    listen con = void $ PQ.exec con $ "LISTEN " <> channel
+    execListen pqCon = void $ PQ.exec pqCon $ "LISTEN " <> channel
 
-waitForNotifications :: (ByteString -> IO()) -> PQ.Connection -> IO ()
+unlisten :: Connection -> ByteString -> IO ()
+unlisten con channel =
+  void $ withLibPQConnection con execListen
+  where
+    execListen pqCon = void $ PQ.exec pqCon $ "UNLISTEN " <> channel
+
+waitForNotifications :: (ByteString -> IO()) -> Connection -> IO ()
 waitForNotifications sendNotification = forever . fetch
   where
-    fetch con = do
+    fetch con = withLibPQConnection con pqFetch
+    pqFetch con = do
       mNotification <- PQ.notifies con
       case mNotification of
         Nothing -> do

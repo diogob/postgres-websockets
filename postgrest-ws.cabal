@@ -18,9 +18,9 @@ library
   ghc-options:         -Wall
   exposed-modules:     PostgRESTWS
                      , PostgRESTWS.Broadcast
+                     , PostgRESTWS.Database
 
   other-modules:       PostgRESTWS.Claims
-                     , PostgRESTWS.Database
                      , PostgRESTWS.Types
   build-depends:       base >= 4.7 && < 5
                      , hasql-pool >= 0.4 && < 0.5

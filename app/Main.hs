@@ -13,6 +13,8 @@ import           PostgREST.OpenAPI                    (isMalformedProxyUri)
 import           PostgREST.DbStructure
 import           PostgREST.App                        (postgrest)
 import           PostgRESTWS
+import           PostgRESTWS.Broadcast
+import           PostgRESTWS.Database
 
 import           Control.AutoUpdate
 import           Data.ByteString.Base64               (decode)
@@ -23,6 +25,7 @@ import           Data.Function                        (id)
 import           Data.Time.Clock.POSIX                (getPOSIXTime)
 import qualified Hasql.Query                          as H
 import qualified Hasql.Session                        as H
+import qualified Hasql.Connection                     as H
 import qualified Hasql.Decoders                       as HD
 import qualified Hasql.Encoders                       as HE
 import qualified Hasql.Pool                           as P
@@ -67,6 +70,9 @@ main = do
 
   pool <- P.acquire (configPool conf, 10, pgSettings)
 
+  conOrError <- H.acquire pgSettings
+  let con = either (panic . show) id conOrError :: H.Connection
+
   result <- P.use pool $ do
     supported <- isServerVersionSupported
     unless supported $ panic (
@@ -99,8 +105,18 @@ main = do
   getTime <- mkAutoUpdate
     defaultUpdateSettings { updateAction = getPOSIXTime }
 
+  multi <- newMultiplexer (\cmds msgs-> do
+    cmd <- atomically $ readTQueue cmds
+    case cmd of
+      Open ch -> do
+        listen con ch
+        void $ forkIO $ waitForNotifications
+          (atomically . writeTQueue msgs . Message ch)
+          con
+      Close ch -> unlisten con ch
+    ) (\_ -> return ())
   runSettings appSettings $
-    postgrestWsMiddleware (configDatabase conf) (configJwtSecret conf) getTime pool $
+    postgrestWsMiddleware (configJwtSecret conf) getTime pool multi $
     postgrest conf refDbStructure pool getTime
 
 loadSecretFile :: AppConfig -> IO AppConfig
