@@ -33,6 +33,7 @@ import           Network.Wai.Handler.Warp
 import           System.IO                            (BufferMode (..),
                                                        hSetBuffering)
 
+import qualified Database.PostgreSQL.LibPQ      as PQ
 import           Data.IORef
 #ifndef mingw32_HOST_OS
 import           System.Posix.Signals
@@ -106,14 +107,17 @@ main = do
     defaultUpdateSettings { updateAction = getPOSIXTime }
 
   multi <- newMultiplexer (\cmds msgs-> do
-    cmd <- atomically $ readTQueue cmds
-    case cmd of
-      Open ch -> do
-        listen con ch
-        void $ forkIO $ waitForNotifications
-          (atomically . writeTQueue msgs . Message ch)
-          con
-      Close ch -> unlisten con ch
+    waitForNotifications
+      (\c m-> atomically $ writeTQueue msgs $ Message c m)
+      con
+    forever $ do
+      traceM $ "Waiting for command..."
+      cmd <- atomically $ readTQueue cmds
+      traceM $ "cmd: " <> show cmd
+      case cmd of
+        Open ch -> listen con ch
+        Close ch -> unlisten con ch
+      traceM $ "cmd: " <> show cmd <> " executed! "
     ) (\_ -> return ())
   void $ forkIO $ forever $ relayMessages multi
   runSettings appSettings $

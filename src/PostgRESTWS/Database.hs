@@ -33,20 +33,20 @@ unlisten con channel =
   where
     execListen pqCon = void $ PQ.exec pqCon $ "UNLISTEN " <> channel
 
-waitForNotifications :: (ByteString -> IO()) -> Connection -> IO ()
-waitForNotifications sendNotification = forever . fetch
+
+waitForNotifications :: (ByteString -> ByteString -> IO()) -> Connection -> IO ()
+waitForNotifications sendNotification con =
+  withLibPQConnection con $ void . forkIO . forever . pqFetch
   where
-    fetch con = withLibPQConnection con pqFetch
-    pqFetch con = do
-      mNotification <- PQ.notifies con
+    pqFetch pqCon = do
+      mNotification <- PQ.notifies pqCon
       case mNotification of
         Nothing -> do
-          mfd <- PQ.socket con
+          mfd <- PQ.socket pqCon
           case mfd of
             Nothing  -> panic "Error checking for PostgreSQL notifications"
             Just fd -> do
-              (waitRead, _) <- threadWaitReadSTM fd
-              atomically waitRead
-              void $ PQ.consumeInput con
+              void $ threadWaitRead fd
+              void $ PQ.consumeInput pqCon
         Just notification ->
-           sendNotification $ PQ.notifyExtra notification
+           sendNotification (PQ.notifyRelname notification) (PQ.notifyExtra notification)
