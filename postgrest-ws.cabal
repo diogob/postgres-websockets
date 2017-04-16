@@ -72,6 +72,7 @@ test-suite postgrest-ws-test
   hs-source-dirs:      test
   main-is:             Spec.hs
   other-modules:       BroadcastSpec
+                     , DatabaseSpec
   build-depends:       base
                      , protolude >= 0.1.6 && < 0.2
                      , postgrest-ws
@@ -80,6 +81,7 @@ test-suite postgrest-ws-test
                      , hspec-wai
                      , hspec-wai-json
                      , aeson
+                     , hasql
                      , hasql-pool
                      , http-types
                      , wai-extra
