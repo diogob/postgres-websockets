@@ -76,7 +76,7 @@ notifySession :: BS.ByteString
 notifySession channel claimsToSend pool wsCon =
   WS.receiveData wsCon >>= (void . send . jsonMsg)
   where
-    send = notify pool channel
+    send = notifyPool pool channel
     -- we need to decode the bytestring to re-encode valid JSON for the notification
     jsonMsg = BL.toStrict . A.encode . Message claimsToSend . decodeUtf8With T.lenientDecode
 
