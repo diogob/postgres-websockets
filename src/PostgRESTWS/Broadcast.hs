@@ -4,6 +4,9 @@ module PostgRESTWS.Broadcast ( Multiplexer (src)
                              , newMultiplexer
                              , onMessage
                              , relayMessages
+                             , relayMessagesForever
+                             , openChannelProducer
+                             , closeChannelProducer
                              -- reexports
                              , readTQueue
                              , writeTQueue
@@ -31,6 +34,15 @@ data Channel = Channel { broadcast :: TChan Message
                        , close :: STM ()
                        }
 
+openChannelProducer :: Multiplexer -> ByteString -> STM ()
+openChannelProducer multi ch = writeTQueue (commands multi) (Open ch)
+
+closeChannelProducer ::  Multiplexer -> ByteString -> STM ()
+closeChannelProducer multi chan = writeTQueue (commands multi) (Close chan)
+
+relayMessagesForever :: Multiplexer -> IO ThreadId
+relayMessagesForever =  forkIO . forever . relayMessages
+
 relayMessages :: Multiplexer -> IO ()
 relayMessages multi =
   atomically $ do
@@ -54,15 +66,12 @@ openChannel multi chan = do
     c <- newBroadcastTChan
     let newChannel = Channel{ broadcast = c
                             , listeners = 0
-                            , close = closeChannel multi chan
+                            , close = closeChannelProducer multi chan
                             }
     M.insert newChannel chan (channels multi)
-    writeTQueue (commands multi) (Open chan)
+    openChannelProducer multi chan
     traceM $ "Open channel " <> toS chan
     return newChannel
-
-closeChannel ::  Multiplexer -> ByteString -> STM ()
-closeChannel multi chan = writeTQueue (commands multi) (Close chan)
 
 onMessage :: Multiplexer -> ByteString -> (TChan Message -> IO()) -> IO ()
 onMessage multi chan action = do
@@ -80,7 +89,7 @@ onMessage multi chan action = do
     mC <- M.lookup chan (channels multi)
     let c = fromMaybe (panic $ "trying to remove listener from non existing channel: " <> toS chan) mC
     M.delete chan (channels multi)
-    when (listeners c - 1 == 0) $ closeChannel multi chan
+    when (listeners c - 1 == 0) $ closeChannelProducer multi chan
     when (listeners c - 1 > 0) $ do
       let newChannel = Channel{ broadcast = broadcast c, listeners = listeners c - 1, close = close c}
       M.insert newChannel chan (channels multi)
