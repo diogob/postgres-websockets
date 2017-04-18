@@ -13,7 +13,6 @@ import           PostgREST.OpenAPI                    (isMalformedProxyUri)
 import           PostgREST.DbStructure
 import           PostgREST.App                        (postgrest)
 import           PostgRESTWS
-import           PostgRESTWS.Broadcast
 import           PostgRESTWS.HasqlBroadcast
 
 import           Control.AutoUpdate

@@ -2,6 +2,8 @@ module PostgRESTWS.HasqlBroadcast
   ( newHasqlBroadcaster
   -- re-export
   , acquire
+  , relayMessages
+  , relayMessagesForever
   ) where
 
 import Protolude
