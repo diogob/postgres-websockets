@@ -22,9 +22,11 @@ spec = describe "newHasqlBroadcaster" $ do
         newConnection connStr =
             either (panic . show) id
             <$> acquire connStr
+            
     it "start listening on a database connection as we send an Open command" $ do
       con <- newConnection "postgres://localhost/postgrest_test"
       multi <- liftIO $ newHasqlBroadcaster con
+
       atomically $ openChannelProducer multi "test"
 
       let statement = H.statement "SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE query ~* 'LISTEN \"test\"')"
@@ -35,6 +37,7 @@ spec = describe "newHasqlBroadcaster" $ do
     it "stops listening on a database connection as we send a Close command" $ do
       con <- newConnection "postgres://localhost/postgrest_test"
       multi <- liftIO $ newHasqlBroadcaster con
+
       atomically $ closeChannelProducer multi "test"
 
       let statement = H.statement "SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE query ~* 'UNLISTEN \"test\"')"
