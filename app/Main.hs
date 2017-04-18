@@ -14,7 +14,6 @@ import           PostgREST.DbStructure
 import           PostgREST.App                        (postgrest)
 import           PostgRESTWS
 import           PostgRESTWS.Broadcast
-import           PostgRESTWS.Database
 import           PostgRESTWS.HasqlBroadcast
 
 import           Control.AutoUpdate
@@ -34,7 +33,6 @@ import           Network.Wai.Handler.Warp
 import           System.IO                            (BufferMode (..),
                                                        hSetBuffering)
 
-import qualified Database.PostgreSQL.LibPQ      as PQ
 import           Data.IORef
 #ifndef mingw32_HOST_OS
 import           System.Posix.Signals

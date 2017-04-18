@@ -70,7 +70,6 @@ openChannel multi chan = do
                             }
     M.insert newChannel chan (channels multi)
     openChannelProducer multi chan
-    traceM $ "Open channel " <> toS chan
     return newChannel
 
 onMessage :: Multiplexer -> ByteString -> (TChan Message -> IO()) -> IO ()
@@ -84,7 +83,6 @@ onMessage multi chan action = do
     let newChannel = Channel{ broadcast = broadcast c, listeners = listeners c + 1, close = close c}
     M.insert newChannel chan (channels multi)
     dupTChan $ broadcast newChannel
-  traceM $ "Add listener to channel " <> toS chan
   void $ forkFinally (action listener) (\_ -> atomically $ do
     mC <- M.lookup chan (channels multi)
     let c = fromMaybe (panic $ "trying to remove listener from non existing channel: " <> toS chan) mC
