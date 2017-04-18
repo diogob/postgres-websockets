@@ -56,7 +56,7 @@ wsApp mSecret getTime pqCon multi pendingConn = getTime >>= forkSessionsWhenToke
 
           when (hasRead mode) $
             onMessage multi channel (\ch ->
-              forever $ (atomically $ readTChan ch) >>= WS.sendTextData conn . B.payload)
+              forever $ atomically (readTChan ch) >>= WS.sendTextData conn . B.payload)
           -- all websockets share a single connection to NOTIFY
           notifySessionFinished <- if hasWrite mode
             then forkAndWait $ forever $ notifySession channel validClaims pqCon conn
