@@ -15,6 +15,7 @@ import           PostgREST.App                        (postgrest)
 import           PostgRESTWS
 import           PostgRESTWS.Broadcast
 import           PostgRESTWS.Database
+import           PostgRESTWS.HasqlBroadcast
 
 import           Control.AutoUpdate
 import           Data.ByteString.Base64               (decode)
@@ -106,20 +107,8 @@ main = do
   getTime <- mkAutoUpdate
     defaultUpdateSettings { updateAction = getPOSIXTime }
 
-  multi <- newMultiplexer (\cmds msgs-> do
-    waitForNotifications
-      (\c m-> atomically $ writeTQueue msgs $ Message c m)
-      con
-    forever $ do
-      traceM $ "Waiting for command..."
-      cmd <- atomically $ readTQueue cmds
-      traceM $ "cmd: " <> show cmd
-      case cmd of
-        Open ch -> listen con ch
-        Close ch -> unlisten con ch
-      traceM $ "cmd: " <> show cmd <> " executed! "
-    ) (\_ -> return ())
-  void $ forkIO $ forever $ relayMessages multi
+  multi <- newHasqlBroadcaster con
+  void $ relayMessagesForever multi
   runSettings appSettings $
     postgrestWsMiddleware (configJwtSecret conf) getTime pool multi $
     postgrest conf refDbStructure pool getTime
