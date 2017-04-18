@@ -16,7 +16,7 @@ import PostgRESTWS.Broadcast
 import PostgRESTWS.HasqlBroadcast
 
 spec :: Spec
-spec = describe "newHasqlBroadcaster" $
+spec = describe "newHasqlBroadcaster" $ do
     it "start listening on a database connection as we send an Open command" $ do
       conOrError <- acquire "postgres://localhost/postgrest_test"
       let con = either (panic . show) id conOrError
@@ -24,6 +24,19 @@ spec = describe "newHasqlBroadcaster" $
       atomically $ openChannelProducer multi "test"
 
       let statement = H.statement "SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE query ~* 'LISTEN \"test\"')"
+                      HE.unit (HD.singleRow $ HD.value HD.bool) False
+          query = H.query () statement
+      resOrError <- H.run query con
+      let result = either (panic . show) id resOrError
+      result `shouldBe` True
+
+    it "stops listening on a database connection as we send a Close command" $ do
+      conOrError <- acquire "postgres://localhost/postgrest_test"
+      let con = either (panic . show) id conOrError
+      multi <- liftIO $ newHasqlBroadcaster con
+      atomically $ closeChannelProducer multi "test"
+
+      let statement = H.statement "SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE query ~* 'UNLISTEN \"test\"')"
                       HE.unit (HD.singleRow $ HD.value HD.bool) False
           query = H.query () statement
       resOrError <- H.run query con
