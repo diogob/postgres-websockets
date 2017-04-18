@@ -19,6 +19,7 @@ library
   exposed-modules:     PostgRESTWS
                      , PostgRESTWS.Broadcast
                      , PostgRESTWS.Database
+                     , PostgRESTWS.HasqlBroadcast
 
   other-modules:       PostgRESTWS.Claims
                      , PostgRESTWS.Types
@@ -73,6 +74,7 @@ test-suite postgrest-ws-test
   main-is:             Spec.hs
   other-modules:       BroadcastSpec
                      , DatabaseSpec
+                     , HasqlBroadcastSpec
   build-depends:       base
                      , protolude >= 0.1.6 && < 0.2
                      , postgrest-ws
