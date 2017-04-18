@@ -12,16 +12,19 @@ import PostgRESTWS.Database
 import PostgRESTWS.Broadcast
 
 newHasqlBroadcaster :: Connection -> IO Multiplexer
-newHasqlBroadcaster con = newMultiplexer (\cmds msgs-> do
-    waitForNotifications
-      (\c m-> atomically $ writeTQueue msgs $ Message c m)
-      con
-    forever $ do
-      traceM $ "Waiting for command..."
-      cmd <- atomically $ readTQueue cmds
-      traceM $ "cmd: " <> show cmd
+newHasqlBroadcaster con = newMultiplexer relayCommands (\_ -> return ())
+  where
+    {- we need to ensure we are listening for database
+    notifications before locking this thread on the forever
+    call, hence the seq -}
+    relayCommands cmds msgs =
+      seq
+        (waitForNotifications (writeNotificationToQueue msgs) con)
+        forever $ readCommand cmds >>= executeCommand con
+    writeNotificationToQueue queue ch m =
+      atomically $ writeTQueue queue $ Message ch m
+    readCommand cmds = atomically $ readTQueue cmds
+    executeCommand dbCon cmd =
       case cmd of
-        Open ch -> listen con ch
-        Close ch -> unlisten con ch
-      traceM $ "cmd: " <> show cmd <> " executed! "
-    ) (\_ -> return ())
+        Open ch -> listen dbCon ch
+        Close ch -> unlisten dbCon ch
