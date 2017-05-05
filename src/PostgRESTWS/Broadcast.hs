@@ -94,21 +94,23 @@ openChannel multi chan = do
 -}
 onMessage :: Multiplexer -> ByteString -> (TChan Message -> IO()) -> IO ()
 onMessage multi chan action = do
-  listener <- atomically $ do
-    mC <- M.lookup chan (channels multi)
-    c <- case mC of
-              Nothing -> openChannel multi chan
-              Just ch -> return ch
-    M.delete chan (channels multi)
-    let newChannel = Channel{ broadcast = broadcast c, listeners = listeners c + 1, close = close c}
-    M.insert newChannel chan (channels multi)
-    dupTChan $ broadcast newChannel
-  void $ forkFinally (action listener) (\_ -> atomically $ do
-    mC <- M.lookup chan (channels multi)
-    let c = fromMaybe (panic $ "trying to remove listener from non existing channel: " <> toS chan) mC
-    M.delete chan (channels multi)
-    when (listeners c - 1 == 0) $ closeChannelProducer multi chan
-    when (listeners c - 1 > 0) $ do
-      let newChannel = Channel{ broadcast = broadcast c, listeners = listeners c - 1, close = close c}
+  listener <- atomically $ openChannelWhenNotFound >>= addListener
+  void $ forkFinally (action listener) disposeListener
+  where
+    disposeListener _ = atomically $ do
+      mC <- M.lookup chan (channels multi)
+      let c = fromMaybe (panic $ "trying to remove listener from non existing channel: " <> toS chan) mC
+      M.delete chan (channels multi)
+      if listeners c - 1 > 0
+        then M.insert Channel{ broadcast = broadcast c, listeners = listeners c - 1, close = close c} chan (channels multi)
+        else closeChannelProducer multi chan
+    openChannelWhenNotFound =
+      M.lookup chan (channels multi) >>= \mC ->
+      case mC of
+            Nothing -> openChannel multi chan
+            Just ch -> return ch
+    addListener ch = do
+      M.delete chan (channels multi)
+      let newChannel = Channel{ broadcast = broadcast ch, listeners = listeners ch + 1, close = close ch}
       M.insert newChannel chan (channels multi)
-    )
+      dupTChan $ broadcast newChannel
