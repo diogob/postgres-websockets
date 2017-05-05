@@ -8,7 +8,7 @@ import           PostgREST.Config                     (AppConfig (..),
                                                        minimumPgVersion,
                                                        prettyVersion,
                                                        readOptions)
-import           PostgREST.Error                      (prettyUsageError)
+import           PostgREST.Error                      (encodeError)
 import           PostgREST.OpenAPI                    (isMalformedProxyUri)
 import           PostgREST.DbStructure
 import           PostgREST.App                        (postgrest)
@@ -80,7 +80,7 @@ main = do
     getDbStructure (toS $ configSchema conf)
 
   forM_ (lefts [result]) $ \e -> do
-    hPutStrLn stderr (prettyUsageError e)
+    hPutStrLn stderr (toS $ encodeError e)
     exitFailure
 
   refDbStructure <- newIORef $ either (panic . show) id result

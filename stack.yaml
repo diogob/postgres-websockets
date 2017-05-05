@@ -2,7 +2,6 @@ resolver: lts-8.11
 extra-deps:
   - Ranged-sets-0.3.0
   - hasql-pool-0.4.1
-  - postgrest-0.4.0.0
-  - optparse-applicative-0.12.1.0
+  - postgrest-0.4.1.0
 ghc-options:
   postgrest-ws: -O2 -Wall -fwarn-identities -fno-warn-redundant-constraints
