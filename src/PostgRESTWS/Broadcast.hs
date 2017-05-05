@@ -1,3 +1,13 @@
+{-|
+Module      : PostgRESTWS.Auth
+Description : PostgRESTWS functions to broadcast messages to several listening clients
+
+This module provides a type called Multiplexer.
+The multiplexer contains a map of channels and a producer thread.
+
+This module avoids any database implementation details, it is used by HasqlBroadcast where
+the database logic is combined.
+-}
 module PostgRESTWS.Broadcast ( Multiplexer (src)
                              , Message (..)
                              , SourceCommands (..)
@@ -7,7 +17,7 @@ module PostgRESTWS.Broadcast ( Multiplexer (src)
                              , relayMessagesForever
                              , openChannelProducer
                              , closeChannelProducer
-                             -- reexports
+                             -- * Re-exports
                              , readTQueue
                              , writeTQueue
                              , readTChan
@@ -34,15 +44,19 @@ data Channel = Channel { broadcast :: TChan Message
                        , close :: STM ()
                        }
 
+-- | Open a multiplexer's channel
 openChannelProducer :: Multiplexer -> ByteString -> STM ()
 openChannelProducer multi ch = writeTQueue (commands multi) (Open ch)
 
+-- | Close a multiplexer's channel
 closeChannelProducer ::  Multiplexer -> ByteString -> STM ()
 closeChannelProducer multi chan = writeTQueue (commands multi) (Close chan)
 
+-- | Opens a thread that relays messages from the producer thread to the channels forever
 relayMessagesForever :: Multiplexer -> IO ThreadId
 relayMessagesForever =  forkIO . forever . relayMessages
 
+-- | Reads the messages from the producer and relays them to the active listeners in their respective channels.
 relayMessages :: Multiplexer -> IO ()
 relayMessages multi =
   atomically $ do
@@ -72,6 +86,12 @@ openChannel multi chan = do
     openChannelProducer multi chan
     return newChannel
 
+{- |  Adds a listener to a certain multiplexer's channel.
+      The listener must be a function that takes a 'TChan Message' and perform any IO action.
+      All listeners run in their own thread.
+      The first listener will open the channel, when a listener dies it will check if there acquire
+      any others and close the channel when that's the case.
+-}
 onMessage :: Multiplexer -> ByteString -> (TChan Message -> IO()) -> IO ()
 onMessage multi chan action = do
   listener <- atomically $ do
