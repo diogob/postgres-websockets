@@ -57,7 +57,7 @@ executable postgrest-ws
                      , warp >= 3.2 && < 4
                      , unix >= 2.7 && < 3
                      , jwt >= 0.7 && < 1
-                     , postgrest
+                     , postgrest >= 0.4.1.0
                      , postgrest-ws
                      , postgresql-libpq >= 0.9 && < 1.0
                      , protolude >= 0.1.6 && < 0.2
