@@ -1,5 +1,5 @@
 {-|
-Module      : PostgRESTWS.Auth
+Module      : PostgRESTWS.Broadcast
 Description : PostgRESTWS functions to broadcast messages to several listening clients
 
 This module provides a type called Multiplexer.
