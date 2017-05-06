@@ -1,3 +1,9 @@
+{-|
+Module      : PostgRESTWS
+Description : PostgRESTWS Middleware, composing this allows postgrest to create
+websockets connections that will communicate with the database through LISTEN/NOTIFY channels.
+
+-}
 {-# LANGUAGE DeriveGeneric #-}
 
 module PostgRESTWS
@@ -29,6 +35,7 @@ data Message = Message
 
 instance A.ToJSON Message
 
+-- | Given a Maybe Secret, a function to fetch the system time, a Hasql Pool and a Multiplexer this will give you a WAI middleware.
 postgrestWsMiddleware :: Maybe ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
 postgrestWsMiddleware =
   WS.websocketsOr WS.defaultConnectionOptions `compose` wsApp
