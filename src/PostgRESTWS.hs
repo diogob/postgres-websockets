@@ -60,13 +60,11 @@ wsApp mSecret getTime pqCon multi pendingConn =
           conn <- WS.acceptRequest pendingConn
           -- Fork a pinging thread to ensure browser connections stay alive
           WS.forkPingThread conn 30
-          -- each websocket needs its own listen connection to avoid
-          -- handling of multiple waiting threads in the same connection
 
           when (hasRead mode) $
             onMessage multi channel (\ch ->
               forever $ atomically (readTChan ch) >>= WS.sendTextData conn . B.payload)
-          -- all websockets share a single connection to NOTIFY
+              
           notifySessionFinished <- if hasWrite mode
             then forkAndWait $ forever $ notifySession channel validClaims pqCon conn
             else newMVar ()
