@@ -30,14 +30,16 @@ data Message = Message
 instance A.ToJSON Message
 
 postgrestWsMiddleware :: Maybe ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
-postgrestWsMiddleware = WS.websocketsOr WS.defaultConnectionOptions `compose` wsApp
+postgrestWsMiddleware =
+  WS.websocketsOr WS.defaultConnectionOptions `compose` wsApp
   where
     compose = (.) . (.) . (.) . (.)
 
 -- when the websocket is closed a ConnectionClosed Exception is triggered
 -- this kills all children and frees resources for us
 wsApp :: Maybe ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> WS.ServerApp
-wsApp mSecret getTime pqCon multi pendingConn = getTime >>= forkSessionsWhenTokenIsValid . validateClaims mSecret jwtToken
+wsApp mSecret getTime pqCon multi pendingConn =
+  getTime >>= forkSessionsWhenTokenIsValid . validateClaims mSecret jwtToken
   where
     forkSessionsWhenTokenIsValid = either rejectRequest forkSessions
     hasRead m = m == ("r" :: ByteString) || m == ("rw" :: ByteString)
