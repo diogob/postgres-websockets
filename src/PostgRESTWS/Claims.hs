@@ -15,7 +15,7 @@ type ConnectionInfo = (ByteString, ByteString, Claims)
 validateClaims :: Maybe ByteString -> Text -> POSIXTime -> Either Text ConnectionInfo
 validateClaims secret jwtToken time = do
   cl <- case jwtClaims jwtSecret jwtToken time of
-    PGR.JWTClaims c -> Right c
+    JWTClaims c -> Right c
     _ -> Left "Error"
   jChannel <- claimAsJSON "channel" cl
   jMode <- claimAsJSON "mode" cl
