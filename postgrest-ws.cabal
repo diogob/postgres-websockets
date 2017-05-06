@@ -22,7 +22,6 @@ library
                      , PostgRESTWS.HasqlBroadcast
 
   other-modules:       PostgRESTWS.Claims
-                     , PostgRESTWS.Types
   build-depends:       base >= 4.7 && < 5
                      , hasql-pool >= 0.4 && < 0.5
                      , text >= 1.2 && < 2

@@ -14,7 +14,7 @@ import Hasql.Connection (Connection, withLibPQConnection)
 import qualified Database.PostgreSQL.LibPQ      as PQ
 import Data.Either.Combinators
 
-import PostgRESTWS.Types
+newtype Error = NotifyError Text
 
 notifyPool :: Pool -> ByteString -> ByteString -> IO (Either Error ())
 notifyPool pool channel mesg =
