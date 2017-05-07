@@ -23,8 +23,7 @@ import qualified Hasql.Session                        as H
 import qualified Hasql.Decoders                       as HD
 import qualified Hasql.Encoders                       as HE
 import qualified Hasql.Pool                           as P
-import Network.Wai
-import Network.HTTP.Types
+import Network.Wai.Application.Static
 
 import           Network.Wai.Handler.Warp
 import           Network.Wai.Middleware.RequestLogger (logStdout)
@@ -72,9 +71,7 @@ main = do
 
   runSettings appSettings $
     postgrestWsMiddleware (configJwtSecret conf) getTime pool multi $
-    logStdout (\_ respond ->
-      respond $ responseLBS status200 [("Content-Type", "text/plain")] "PostgREST-WS is running!"
-    )
+    logStdout $ staticApp $ defaultFileServerSettings "."
 
 loadSecretFile :: AppConfig -> IO AppConfig
 loadSecretFile conf = extractAndTransform mSecret
