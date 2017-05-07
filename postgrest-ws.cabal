@@ -47,6 +47,36 @@ library
   default-language:    Haskell2010
   default-extensions: OverloadedStrings, NoImplicitPrelude
 
+executable postgrest-ws
+  hs-source-dirs:      app
+  main-is:             Main.hs
+  other-modules:       Config
+  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base >= 4.7 && < 5
+                     , transformers >= 0.4 && < 0.6
+                     , hasql >= 0.19
+                     , hasql-pool >= 0.4
+                     , warp >= 3.2 && < 4
+                     , unix >= 2.7 && < 3
+                     , jwt >= 0.7 && < 1
+                     , postgrest-ws
+                     , postgresql-libpq >= 0.9 && < 1.0
+                     , protolude >= 0.1.6 && < 0.2
+                     , base64-bytestring
+                     , bytestring
+                     , configurator
+                     , optparse-applicative
+                     , text
+                     , time
+                     , wai
+                     , wai-extra
+                     , heredoc
+                     , auto-update
+                     , ansi-wl-pprint
+                     , http-types
+  default-language:    Haskell2010
+  default-extensions: OverloadedStrings, NoImplicitPrelude, QuasiQuotes
+
 test-suite postgrest-ws-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
