@@ -71,7 +71,7 @@ main = do
 
   runSettings appSettings $
     postgrestWsMiddleware (configJwtSecret conf) getTime pool multi $
-    logStdout $ staticApp $ defaultFileServerSettings "."
+    logStdout $ staticApp $ defaultFileServerSettings $ toS $ configPath conf
 
 loadSecretFile :: AppConfig -> IO AppConfig
 loadSecretFile conf = extractAndTransform mSecret
