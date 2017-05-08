@@ -1,6 +1,6 @@
 # PostgREST-WS [![CircleCI](https://circleci.com/gh/diogob/postgrest-ws.svg?style=svg)](https://circleci.com/gh/diogob/postgrest-ws)
 
-PostgREST-WS is an extension of [PostgREST](https://github.com/begriffs/postgrest)
+PostgREST-WS is a [WAI](https://hackage.haskell.org/package/wai) middleware designed for use with [PostgREST](https://github.com/begriffs/postgrest)
 that adds websockets capabilites to the HTTP layer on top of [PostgreSQL](https://www.postgresql.org).
 
 To understand the concept of mapping a database schema directly to an HTTP API watch the video and take
@@ -9,7 +9,7 @@ a look at the docs at the [PostgREST website](http://postgrest.com).
 This project extends these ideas assuming that websockets can be used as conduits for database notifications
 in the form of PostgreSQL's [LISTEN](https://www.postgresql.org/docs/current/static/sql-listen.html)/[NOTIFY](https://www.postgresql.org/docs/current/static/sql-notify.html) commands.
 
-The server provided will do basically two things (on top of already existing PostgREST functionality):
+The server provided in this repo is only an example to test the middleware functionality:
 
  * Allow opening websockets with multiple channels and relay messages to the database.
    * Every message sent to the websocket becomes a **NOTIFY** using the websocket channel (given by the JWT) and the content of the message as the payload.
@@ -18,8 +18,8 @@ The server provided will do basically two things (on top of already existing Pos
 
 ## Running the server
 
-We still do not provide pre-compiled binaries, so you will have to build the server from source.
-I recommend the use of [Stack](http://docs.haskellstack.org/en/stable/README/).
+For production use I recommend not using this server, but implementing your own using the middleware exposed by the library.
+To build the project I recommend the use of [Stack](http://docs.haskellstack.org/en/stable/README/).
 You also need to have [git](https://git-scm.com) installed to download the source code.
 Having installed stack the following commands should install `postgrest-ws` into your `~/.local/bin` directory:
 
@@ -39,7 +39,6 @@ After the build you should be able to run the server using `~/.local/bin/postgre
 ```
 
 the above command will display the options that you can use.
-For more information on parameters and how to server you can take a look at the [PostgREST documentation](https://postgrest.com/en/v0.4/admin.html) on the subject since `postgrest-ws` does not change anything.
 The sample config file provided in the `sample.conf` file comes with a weak jwt secret just for testing and is used in the sample client and in the example bellow.
 
 ## Opening notification channels

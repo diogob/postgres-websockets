@@ -40,6 +40,7 @@ import           Protolude hiding            (intercalate, (<>))
 -- | Config file settings for the server
 data AppConfig = AppConfig {
     configDatabase          :: Text
+  , configPath              :: Text
   , configHost              :: Text
   , configPort              :: Int
 
@@ -68,13 +69,14 @@ readOptions = do
     cDbUri    <- C.require conf "db-uri"
     cPool     <- C.lookupDefault 10 conf "db-pool"
     -- server ------------
+    cPath     <- C.require conf "server-root"
     cHost     <- C.lookupDefault "*4" conf "server-host"
     cPort     <- C.lookupDefault 3000 conf "server-port"
     -- jwt ---------------
     cJwtSec   <- C.lookup conf "jwt-secret"
     cJwtB64   <- C.lookupDefault False conf "secret-is-base64"
 
-    return $ AppConfig cDbUri cHost cPort (encodeUtf8 <$> cJwtSec) cJwtB64 cPool
+    return $ AppConfig cDbUri cPath cHost cPort (encodeUtf8 <$> cJwtSec) cJwtB64 cPool
 
  where
   opts = info (helper <*> pathParser) $
@@ -111,6 +113,7 @@ readOptions = do
     [str|db-uri = "postgres://user:pass@localhost:5432/dbname"
         |db-pool = 10
         |
+        |server-root = "./client-example"
         |server-host = "*4"
         |server-port = 3000
         |
