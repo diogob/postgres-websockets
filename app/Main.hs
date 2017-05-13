@@ -74,14 +74,13 @@ main = do
     logStdout $ staticApp $ defaultFileServerSettings $ toS $ configPath conf
 
 loadSecretFile :: AppConfig -> IO AppConfig
-loadSecretFile conf = extractAndTransform mSecret
+loadSecretFile conf = extractAndTransform secret
   where
-    mSecret   = decodeUtf8 <$> configJwtSecret conf
+    secret   = decodeUtf8 $ configJwtSecret conf
     isB64     = configJwtSecretIsBase64 conf
 
-    extractAndTransform :: Maybe Text -> IO AppConfig
-    extractAndTransform Nothing  = return conf
-    extractAndTransform (Just s) =
+    extractAndTransform :: Text -> IO AppConfig
+    extractAndTransform s =
       fmap setSecret $ transformString isB64 =<<
         case stripPrefix "@" s of
             Nothing       -> return s
@@ -94,6 +93,6 @@ loadSecretFile conf = extractAndTransform mSecret
         Left errMsg -> panic $ pack errMsg
         Right bs    -> return bs
 
-    setSecret bs = conf { configJwtSecret = Just bs }
+    setSecret bs = conf { configJwtSecret = bs }
 
     replaceUrlChars = replace "_" "/" . replace "-" "+" . replace "." "="

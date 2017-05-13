@@ -36,7 +36,7 @@ data Message = Message
 instance A.ToJSON Message
 
 -- | Given a Maybe Secret, a function to fetch the system time, a Hasql Pool and a Multiplexer this will give you a WAI middleware.
-postgrestWsMiddleware :: Maybe ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
+postgrestWsMiddleware :: ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
 postgrestWsMiddleware =
   WS.websocketsOr WS.defaultConnectionOptions `compose` wsApp
   where
@@ -44,9 +44,9 @@ postgrestWsMiddleware =
 
 -- when the websocket is closed a ConnectionClosed Exception is triggered
 -- this kills all children and frees resources for us
-wsApp :: Maybe ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> WS.ServerApp
-wsApp mSecret getTime pqCon multi pendingConn =
-  getTime >>= forkSessionsWhenTokenIsValid . validateClaims mSecret jwtToken
+wsApp :: ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> WS.ServerApp
+wsApp secret getTime pqCon multi pendingConn =
+  getTime >>= forkSessionsWhenTokenIsValid . validateClaims secret jwtToken
   where
     forkSessionsWhenTokenIsValid = either rejectRequest forkSessions
     hasRead m = m == ("r" :: ByteString) || m == ("rw" :: ByteString)
@@ -64,7 +64,7 @@ wsApp mSecret getTime pqCon multi pendingConn =
           when (hasRead mode) $
             onMessage multi channel (\ch ->
               forever $ atomically (readTChan ch) >>= WS.sendTextData conn . B.payload)
-              
+
           notifySessionFinished <- if hasWrite mode
             then forkAndWait $ forever $ notifySession channel validClaims pqCon conn
             else newMVar ()

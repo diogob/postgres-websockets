@@ -17,7 +17,7 @@ import qualified Web.JWT                 as JWT
 type Claims = M.HashMap Text Value
 type ConnectionInfo = (ByteString, ByteString, Claims)
 
-validateClaims :: Maybe ByteString -> Text -> POSIXTime -> Either Text ConnectionInfo
+validateClaims :: ByteString -> Text -> POSIXTime -> Either Text ConnectionInfo
 validateClaims secret jwtToken time = do
   cl <- case jwtClaims jwtSecret jwtToken time of
     JWTClaims c -> Right c
@@ -28,7 +28,7 @@ validateClaims secret jwtToken time = do
   mode <- value2BS jMode
   Right (channel, mode, cl)
   where
-    jwtSecret = binarySecret <$> secret
+    jwtSecret = binarySecret secret
     value2BS val = case val of
       String s -> Right $ encodeUtf8 s
       _ -> Left "claim is not string value"
@@ -56,20 +56,17 @@ data JWTAttempt = JWTExpired
   Receives the JWT secret (from config) and a JWT and returns a map
   of JWT claims.
 -}
-jwtClaims :: Maybe JWT.Secret -> Text -> NominalDiffTime -> JWTAttempt
+jwtClaims :: JWT.Secret -> Text -> NominalDiffTime -> JWTAttempt
 jwtClaims _ "" _ = JWTClaims M.empty
 jwtClaims secret jwt time =
-  case secret of
-    Nothing -> JWTMissingSecret
-    Just s ->
-      let mClaims = toJSON . JWT.claims <$> JWT.decodeAndVerifySignature s jwt in
-      case isExpired <$> mClaims of
-        Just True -> JWTExpired
-        Nothing -> JWTInvalid
-        Just False -> JWTClaims $ value2map $ fromJust mClaims
- where
-  isExpired claims =
-    let mExp = claims ^? key "exp" . _Integer
-    in fromMaybe False $ (<= time) . fromInteger <$> mExp
-  value2map (Object o) = o
-  value2map _          = M.empty
+  case isExpired <$> mClaims of
+    Just True -> JWTExpired
+    Nothing -> JWTInvalid
+    Just False -> JWTClaims $ value2map $ fromJust mClaims
+  where
+    mClaims = toJSON . JWT.claims <$> JWT.decodeAndVerifySignature secret jwt
+    isExpired claims =
+      let mExp = claims ^? key "exp" . _Integer
+      in fromMaybe False $ (<= time) . fromInteger <$> mExp
+    value2map (Object o) = o
+    value2map _          = M.empty
