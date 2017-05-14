@@ -2,7 +2,6 @@ module Main where
 
 import           Protolude
 import           PostgRESTWS
-import           PostgRESTWS.Broadcast
 import           PostgRESTWS.HasqlBroadcast
 import           Config                               (AppConfig (..),
                                                        PgVersion (..),
@@ -17,7 +16,6 @@ import           Data.Text                            (stripPrefix, pack, replac
 import           Data.Text.Encoding                   (encodeUtf8, decodeUtf8)
 import           Data.Text.IO                         (readFile)
 import           Data.Time.Clock.POSIX                (getPOSIXTime)
-import qualified Hasql.Connection                     as H
 import qualified Hasql.Query                          as H
 import qualified Hasql.Session                        as H
 import qualified Hasql.Decoders                       as HD
@@ -59,15 +57,13 @@ main = do
   putStrLn $ ("Listening on port " :: Text) <> show (configPort conf)
 
   pool <- P.acquire (configPool conf, 10, pgSettings)
-  conOrError <- H.acquire pgSettings
-  let con = either (panic . show) id conOrError :: H.Connection
 
   -- ask for the OS time at most once per second
   getTime <- mkAutoUpdate
     defaultUpdateSettings { updateAction = getPOSIXTime }
 
-  multi <- newHasqlBroadcaster con
-  void $ relayMessagesForever multi
+  multiOrError <- newHasqlBroadcasterOrError pgSettings
+  let multi = either (panic . show) id multiOrError
 
   runSettings appSettings $
     postgrestWsMiddleware (configJwtSecret conf) getTime pool multi $

@@ -8,6 +8,7 @@ The producer issues a LISTEN command upon Open commands and UNLISTEN upon Close.
 -}
 module PostgRESTWS.HasqlBroadcast
   ( newHasqlBroadcaster
+  , newHasqlBroadcasterOrError
   -- re-export
   , acquire
   , relayMessages
@@ -17,11 +18,22 @@ module PostgRESTWS.HasqlBroadcast
 import Protolude
 
 import Hasql.Connection
+import Data.Either.Combinators (mapBoth)
 
 import PostgRESTWS.Database
 import PostgRESTWS.Broadcast
 
+{- | Returns a multiplexer from a connection URI or an error message on the left case
+   This function also spawns a thread that keeps relaying the messages from the database to the multiplexer's listeners
+-}
+   
+newHasqlBroadcasterOrError :: ByteString -> IO (Either ByteString Multiplexer)
+newHasqlBroadcasterOrError =
+  acquire >=> (sequence . mapBoth show newHasqlBroadcaster)
+
 {- | Returns a multiplexer from a connection, listen for different database notification channels using that connection.
+
+   This function also spawns a thread that keeps relaying the messages from the database to the multiplexer's listeners
 
    To listen on channels *chat*
 
@@ -42,7 +54,9 @@ import PostgRESTWS.Broadcast
 
 -}
 newHasqlBroadcaster :: Connection -> IO Multiplexer
-newHasqlBroadcaster con = newMultiplexer (\cmds msgs-> do
+newHasqlBroadcaster con = do
+  multi <-
+    newMultiplexer (\cmds msgs-> do
     waitForNotifications
       (\c m-> atomically $ writeTQueue msgs $ Message c m)
       con
@@ -52,3 +66,5 @@ newHasqlBroadcaster con = newMultiplexer (\cmds msgs-> do
         Open ch -> listen con ch
         Close ch -> unlisten con ch
     ) (\_ -> return ())
+  void $ relayMessagesForever multi
+  return multi
