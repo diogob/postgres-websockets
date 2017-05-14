@@ -1,3 +1,8 @@
+{-| This module provides the JWT claims validation. Since websockets and
+    listening connections in the database tend to be resource intensive
+    (not to mention stateful) we need claims authorizing a specific channel and
+    mode of operation.
+-}
 module PostgRESTWS.Claims
   ( validateClaims
   ) where
@@ -17,6 +22,9 @@ import qualified Web.JWT                 as JWT
 type Claims = M.HashMap Text Value
 type ConnectionInfo = (ByteString, ByteString, Claims)
 
+{-| Given a secret, a token and a timestamp it validates the claims and returns
+    either an error message or a triple containing channel, mode and claims hashmap.
+-}
 validateClaims :: ByteString -> Text -> POSIXTime -> Either Text ConnectionInfo
 validateClaims secret jwtToken time = do
   cl <- case jwtClaims jwtSecret jwtToken time of

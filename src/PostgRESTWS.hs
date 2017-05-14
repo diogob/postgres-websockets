@@ -1,13 +1,12 @@
-{-|
-Module      : PostgRESTWS
-Description : PostgRESTWS Middleware, composing this allows postgrest to create
-websockets connections that will communicate with the database through LISTEN/NOTIFY channels.
-
+{-| PostgRESTWS Middleware, composing this allows postgrest to create
+    websockets connections that will communicate with the database through LISTEN/NOTIFY channels.
 -}
 {-# LANGUAGE DeriveGeneric #-}
 
 module PostgRESTWS
   ( postgrestWsMiddleware
+  -- * Re-exports
+  , newHasqlBroadcasterOrError
   ) where
 
 import           Protolude
@@ -26,6 +25,7 @@ import qualified Data.ByteString.Lazy           as BL
 import PostgRESTWS.Claims
 import PostgRESTWS.Database
 import PostgRESTWS.Broadcast (Multiplexer, onMessage, readTChan)
+import PostgRESTWS.HasqlBroadcast (newHasqlBroadcasterOrError)
 import qualified PostgRESTWS.Broadcast as B
 
 data Message = Message
@@ -35,12 +35,14 @@ data Message = Message
 
 instance A.ToJSON Message
 
--- | Given a Maybe Secret, a function to fetch the system time, a Hasql Pool and a Multiplexer this will give you a WAI middleware.
+-- | Given a secret, a function to fetch the system time, a Hasql Pool and a Multiplexer this will give you a WAI middleware.
 postgrestWsMiddleware :: ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
 postgrestWsMiddleware =
   WS.websocketsOr WS.defaultConnectionOptions `compose` wsApp
   where
     compose = (.) . (.) . (.) . (.)
+
+-- private functions
 
 -- when the websocket is closed a ConnectionClosed Exception is triggered
 -- this kills all children and frees resources for us
@@ -69,8 +71,6 @@ wsApp secret getTime pqCon multi pendingConn =
             then forkAndWait $ forever $ notifySession channel validClaims pqCon conn
             else newMVar ()
           takeMVar notifySessionFinished
-
--- private functions
 
 -- Having both channel and claims as parameters seem redundant
 -- But it allows the function to ignore the claims structure and the source

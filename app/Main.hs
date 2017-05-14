@@ -2,7 +2,6 @@ module Main where
 
 import           Protolude
 import           PostgRESTWS
-import           PostgRESTWS.HasqlBroadcast
 import           Config                               (AppConfig (..),
                                                        PgVersion (..),
                                                        minimumPgVersion,

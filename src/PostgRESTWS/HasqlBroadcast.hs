@@ -1,10 +1,6 @@
-{-|
-Module      : PostgRESTWS.HasqlBroadcast
-Description : Uses Broadcast module adding database as a source producer.
-
-This module provides a function to produce a 'Multiplexer' from a Hasql 'Connection'.
-The producer issues a LISTEN command upon Open commands and UNLISTEN upon Close.
-
+{-| Uses Broadcast module adding database as a source producer.
+    This module provides a function to produce a 'Multiplexer' from a Hasql 'Connection'.
+    The producer issues a LISTEN command upon Open commands and UNLISTEN upon Close.
 -}
 module PostgRESTWS.HasqlBroadcast
   ( newHasqlBroadcaster
@@ -26,7 +22,7 @@ import PostgRESTWS.Broadcast
 {- | Returns a multiplexer from a connection URI or an error message on the left case
    This function also spawns a thread that keeps relaying the messages from the database to the multiplexer's listeners
 -}
-   
+
 newHasqlBroadcasterOrError :: ByteString -> IO (Either ByteString Multiplexer)
 newHasqlBroadcasterOrError =
   acquire >=> (sequence . mapBoth show newHasqlBroadcaster)

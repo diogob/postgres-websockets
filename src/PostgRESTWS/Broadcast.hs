@@ -1,12 +1,9 @@
-{-|
-Module      : PostgRESTWS.Broadcast
-Description : PostgRESTWS functions to broadcast messages to several listening clients
+{-| PostgRESTWS functions to broadcast messages to several listening clients
+    This module provides a type called Multiplexer.
+    The multiplexer contains a map of channels and a producer thread.
 
-This module provides a type called Multiplexer.
-The multiplexer contains a map of channels and a producer thread.
-
-This module avoids any database implementation details, it is used by HasqlBroadcast where
-the database logic is combined.
+    This module avoids any database implementation details, it is used by HasqlBroadcast where
+    the database logic is combined.
 -}
 module PostgRESTWS.Broadcast ( Multiplexer (src)
                              , Message (..)

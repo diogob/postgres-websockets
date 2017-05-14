@@ -1,7 +1,4 @@
-{-|
-Module      : PostgRESTWS.Database
-Description : This module encapsulates knowledge about the SQL commands and the Hasql interface.
-
+{-| This module encapsulates knowledge about the SQL commands and the Hasql interface.
 -}
 module PostgRESTWS.Database
   ( notifyPool
