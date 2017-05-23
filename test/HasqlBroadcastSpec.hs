@@ -22,10 +22,10 @@ spec = describe "newHasqlBroadcaster" $ do
         newConnection connStr =
             either (panic . show) id
             <$> acquire connStr
-            
+
     it "start listening on a database connection as we send an Open command" $ do
       con <- newConnection "postgres://localhost/postgrest_test"
-      multi <- liftIO $ newHasqlBroadcaster con
+      multi <- liftIO $ newHasqlBroadcaster "postgres://localhost/postgrest_test"
 
       atomically $ openChannelProducer multi "test"
 
@@ -36,7 +36,7 @@ spec = describe "newHasqlBroadcaster" $ do
 
     it "stops listening on a database connection as we send a Close command" $ do
       con <- newConnection "postgres://localhost/postgrest_test"
-      multi <- liftIO $ newHasqlBroadcaster con
+      multi <- liftIO $ newHasqlBroadcaster "postgres://localhost/postgrest_test"
 
       atomically $ closeChannelProducer multi "test"
 
