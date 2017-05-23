@@ -25,6 +25,8 @@ import qualified STMContainers.Map as M
 import Control.Concurrent.STM.TChan
 import Control.Concurrent.STM.TQueue
 
+import GHC.Show
+
 data SourceCommands = Open ByteString | Close ByteString deriving (Show)
 data Message = Message { channel :: ByteString
                , payload :: ByteString
@@ -35,6 +37,9 @@ data Multiplexer = Multiplexer { channels :: M.Map ByteString Channel
                                , commands :: TQueue SourceCommands
                                , messages :: TQueue Message
                                }
+
+instance Show Multiplexer where
+  show Multiplexer{} = "Multiplexer"
 
 data Channel = Channel { broadcast :: TChan Message
                        , listeners :: Integer
