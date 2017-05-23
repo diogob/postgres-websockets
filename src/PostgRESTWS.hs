@@ -6,6 +6,7 @@
 module PostgRESTWS
   ( postgrestWsMiddleware
   -- * Re-exports
+  , newHasqlBroadcaster
   , newHasqlBroadcasterOrError
   ) where
 
@@ -25,7 +26,7 @@ import qualified Data.ByteString.Lazy           as BL
 import PostgRESTWS.Claims
 import PostgRESTWS.Database
 import PostgRESTWS.Broadcast (Multiplexer, onMessage, readTChan)
-import PostgRESTWS.HasqlBroadcast (newHasqlBroadcasterOrError)
+import PostgRESTWS.HasqlBroadcast (newHasqlBroadcaster, newHasqlBroadcasterOrError)
 import qualified PostgRESTWS.Broadcast as B
 
 data Message = Message

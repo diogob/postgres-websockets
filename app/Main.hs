@@ -8,7 +8,6 @@ import           Config                               (AppConfig (..),
                                                        prettyVersion,
                                                        readOptions)
 
-import           Data.Function                        (id)
 import           Data.ByteString.Base64               (decode)
 import           Data.String                          (IsString (..))
 import           Data.Text                            (stripPrefix, pack, replace)
@@ -61,8 +60,7 @@ main = do
   getTime <- mkAutoUpdate
     defaultUpdateSettings { updateAction = getPOSIXTime }
 
-  multiOrError <- newHasqlBroadcasterOrError pgSettings
-  let multi = either (panic . show) id multiOrError
+  multi <- newHasqlBroadcaster pgSettings
 
   runSettings appSettings $
     postgrestWsMiddleware (configJwtSecret conf) getTime pool multi $
