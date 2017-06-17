@@ -17,4 +17,6 @@ test:
     - createdb postgrest_test
     - stack test
     - git ls-files | grep '\.l\?hs$' | xargs stack exec -- hlint -X QuasiQuotes "$@"
-    - stack sdist
+    - cp `find .stack-work/install -type f -name postgrest-ws` .
+    - gzip ./postgrest-ws
+    - cp ./postgrest-ws.gz $CIRCLE_ARTIFACTS
