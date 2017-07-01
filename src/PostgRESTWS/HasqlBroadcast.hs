@@ -75,17 +75,18 @@ tryUntilConnected =
 -}
 newHasqlBroadcasterForConnection :: IO Connection -> IO Multiplexer
 newHasqlBroadcasterForConnection getCon = do
-  multi <-
-    newMultiplexer (\cmds msgs-> do
-    con <- getCon
-    waitForNotifications
-      (\c m-> atomically $ writeTQueue msgs $ Message c m)
-      con
-    forever $ do
-      cmd <- atomically $ readTQueue cmds
-      case cmd of
-        Open ch -> listen con $ toPgIdentifier ch
-        Close ch -> unlisten con $ toPgIdentifier ch
-    ) (\_ -> hPutStrLn stderr "Broadcaster is dead")
+  multi <- newMultiplexer openProducer closeProducer
   void $ relayMessagesForever multi
   return multi
+  where
+    closeProducer _ = hPutStrLn stderr "Broadcaster is dead"
+    openProducer cmds msgs = do
+      con <- getCon
+      waitForNotifications
+        (\c m-> atomically $ writeTQueue msgs $ Message c m)
+        con
+      forever $ do
+        cmd <- atomically $ readTQueue cmds
+        case cmd of
+          Open ch -> listen con $ toPgIdentifier ch
+          Close ch -> unlisten con $ toPgIdentifier ch
