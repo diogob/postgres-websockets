@@ -29,7 +29,7 @@ spec = describe "newHasqlBroadcaster" $ do
 
       atomically $ openChannelProducer multi "test"
 
-      let statement = H.statement "SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE query ~* 'LISTEN \"test\"')"
+      let statement = H.statement "SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE query ~* 'LISTEN \\\"test\\\"')"
                       HE.unit (HD.singleRow $ HD.value HD.bool) False
           query = H.query () statement
       booleanQueryShouldReturn con query True

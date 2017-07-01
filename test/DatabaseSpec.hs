@@ -17,10 +17,10 @@ spec =
       notification <- liftIO newEmptyMVar
 
       waitForNotifications (curry $ putMVar notification) con
-      listen con "test"
+      listen con $ toPgIdentifier "test"
 
       conOrError2 <- H.acquire "postgres://localhost/postgrest_test"
       let con2 = either (panic . show) id conOrError2 :: H.Connection
-      void $ notify con2 "test" "hello there"
+      void $ notify con2 (toPgIdentifier "test") "hello there"
 
       readMVar notification `shouldReturn` ("test", "hello there")

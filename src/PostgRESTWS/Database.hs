@@ -6,6 +6,8 @@ module PostgRESTWS.Database
   , listen
   , unlisten
   , waitForNotifications
+  , PgIdentifier
+  , toPgIdentifier
   ) where
 
 import Protolude
@@ -15,38 +17,52 @@ import qualified Hasql.Session as S
 import Hasql.Connection (Connection, withLibPQConnection)
 import qualified Database.PostgreSQL.LibPQ      as PQ
 import Data.Either.Combinators
-
+import qualified Data.ByteString.Char8 as B
+import Data.ByteString.Search (replace)
 newtype Error = NotifyError Text
 
+newtype PgIdentifier = PgIdentifier ByteString
+
+fromPgIdentifier :: PgIdentifier -> ByteString
+fromPgIdentifier (PgIdentifier bs) = bs
+
+toPgIdentifier :: ByteString -> PgIdentifier
+toPgIdentifier x = PgIdentifier $ "\"" <> strictlyReplaceQuotes (trimNullChars x) <> "\""
+  where
+    trimNullChars :: ByteString -> ByteString
+    trimNullChars = B.takeWhile (/= '\x0')
+    strictlyReplaceQuotes :: ByteString -> ByteString
+    strictlyReplaceQuotes = toS . replace "\"" ("\"\"" :: ByteString)
+
 -- | Given a Hasql Pool, a channel and a message sends a notify command to the database
-notifyPool :: Pool -> ByteString -> ByteString -> IO (Either Error ())
+notifyPool :: Pool -> PgIdentifier -> ByteString -> IO (Either Error ())
 notifyPool pool channel mesg =
-   mapError <$> use pool (sql ("NOTIFY " <> channel <> ", '" <> mesg <> "'"))
+   mapError <$> use pool (sql ("NOTIFY " <> fromPgIdentifier channel <> ", '" <> mesg <> "'"))
    where
      mapError :: Either UsageError () -> Either Error ()
      mapError = mapLeft (NotifyError . show)
 
 -- | Given a Hasql Connection, a channel and a message sends a notify command to the database
-notify :: Connection -> ByteString -> ByteString -> IO (Either Error ())
+notify :: Connection -> PgIdentifier -> ByteString -> IO (Either Error ())
 notify con channel mesg =
-   mapError <$> run (sql ("NOTIFY " <> channel <> ", '" <> mesg <> "'")) con
+   mapError <$> run (sql ("NOTIFY " <> fromPgIdentifier channel <> ", '" <> mesg <> "'")) con
    where
      mapError :: Either S.Error () -> Either Error ()
      mapError = mapLeft (NotifyError . show)
 
 -- | Given a Hasql Connection and a channel sends a listen command to the database
-listen :: Connection -> ByteString -> IO ()
+listen :: Connection -> PgIdentifier -> IO ()
 listen con channel =
   void $ withLibPQConnection con execListen
   where
-    execListen pqCon = void $ PQ.exec pqCon $ "LISTEN " <> channel
+    execListen pqCon = void $ PQ.exec pqCon $ "LISTEN " <> fromPgIdentifier channel
 
 -- | Given a Hasql Connection and a channel sends a unlisten command to the database
-unlisten :: Connection -> ByteString -> IO ()
+unlisten :: Connection -> PgIdentifier -> IO ()
 unlisten con channel =
   void $ withLibPQConnection con execListen
   where
-    execListen pqCon = void $ PQ.exec pqCon $ "UNLISTEN " <> channel
+    execListen pqCon = void $ PQ.exec pqCon $ "UNLISTEN " <> fromPgIdentifier channel
 
 
 {- | Given a function that handles notifications and a Hasql connection forks a thread that listens on the database connection and calls the handler everytime a message arrives.

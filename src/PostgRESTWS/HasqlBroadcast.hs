@@ -84,8 +84,8 @@ newHasqlBroadcasterForConnection getCon = do
     forever $ do
       cmd <- atomically $ readTQueue cmds
       case cmd of
-        Open ch -> listen con ch
-        Close ch -> unlisten con ch
+        Open ch -> listen con $ toPgIdentifier ch
+        Close ch -> unlisten con $ toPgIdentifier ch
     ) (\_ -> hPutStrLn stderr "Broadcaster is dead")
   void $ relayMessagesForever multi
   return multi
