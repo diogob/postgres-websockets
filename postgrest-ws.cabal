@@ -45,6 +45,7 @@ library
                      , stm-containers
                      , stm
                      , retry
+                     , stringsearch
   default-language:    Haskell2010
   default-extensions: OverloadedStrings, NoImplicitPrelude
 
