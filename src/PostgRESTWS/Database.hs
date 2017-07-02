@@ -21,7 +21,7 @@ import qualified Data.ByteString.Char8 as B
 import Data.ByteString.Search (replace)
 newtype Error = NotifyError Text
 
-newtype PgIdentifier = PgIdentifier ByteString
+newtype PgIdentifier = PgIdentifier ByteString deriving (Show)
 
 fromPgIdentifier :: PgIdentifier -> ByteString
 fromPgIdentifier (PgIdentifier bs) = bs
