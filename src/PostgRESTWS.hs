@@ -68,10 +68,8 @@ wsApp secret getTime pqCon multi pendingConn =
             onMessage multi channel (\ch ->
               forever $ atomically (readTChan ch) >>= WS.sendTextData conn . B.payload)
 
-          notifySessionFinished <- if hasWrite mode
-            then forkAndWait $ forever $ notifySession channel validClaims pqCon conn
-            else newMVar ()
-          takeMVar notifySessionFinished
+          when (hasWrite mode) $
+            withAsync (forever $ notifySession channel validClaims pqCon conn) wait
 
 -- Having both channel and claims as parameters seem redundant
 -- But it allows the function to ignore the claims structure and the source
@@ -87,9 +85,3 @@ notifySession channel claimsToSend pool wsCon =
     send = notifyPool pool $ toPgIdentifier channel
     -- we need to decode the bytestring to re-encode valid JSON for the notification
     jsonMsg = BL.toStrict . A.encode . Message claimsToSend . decodeUtf8With T.lenientDecode
-
-forkAndWait :: IO () -> IO (MVar ())
-forkAndWait io = do
-  mvar <- newEmptyMVar
-  void $ forkFinally io (\_ -> putMVar mvar ())
-  return mvar
