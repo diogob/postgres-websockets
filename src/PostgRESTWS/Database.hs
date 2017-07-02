@@ -21,11 +21,14 @@ import qualified Data.ByteString.Char8 as B
 import Data.ByteString.Search (replace)
 newtype Error = NotifyError Text
 
+-- | A wrapped bytestring that represents a properly escaped and quoted PostgreSQL identifier
 newtype PgIdentifier = PgIdentifier ByteString deriving (Show)
 
+-- | Given a PgIdentifier returns the wrapped bytestring
 fromPgIdentifier :: PgIdentifier -> ByteString
 fromPgIdentifier (PgIdentifier bs) = bs
 
+-- | Given a bytestring returns a properly quoted and escaped PgIdentifier
 toPgIdentifier :: ByteString -> PgIdentifier
 toPgIdentifier x = PgIdentifier $ "\"" <> strictlyReplaceQuotes (trimNullChars x) <> "\""
   where
