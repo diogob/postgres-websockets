@@ -1,7 +1,6 @@
 module BroadcastSpec (spec) where
 
 import Protolude
-import Control.Concurrent.STM.TChan
 import Control.Concurrent.STM.TQueue
 
 import Test.Hspec
@@ -26,8 +25,7 @@ spec = do
       output <- newTQueueIO :: IO (TQueue Message)
       multi <- liftIO $ newMultiplexer (\_ msgs->
         atomically $ writeTQueue msgs (Message "test" "payload")) (\_ -> return ())
-      void $ onMessage multi "test" (\ch ->
-        atomically $ readTChan ch >>= writeTQueue output)
+      void $ onMessage multi "test" $ atomically . writeTQueue output
 
       liftIO $ relayMessages multi
 

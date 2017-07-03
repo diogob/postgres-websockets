@@ -94,10 +94,10 @@ openChannel multi chan = do
       The first listener will open the channel, when a listener dies it will check if there acquire
       any others and close the channel when that's the case.
 -}
-onMessage :: Multiplexer -> ByteString -> (TChan Message -> IO()) -> IO ()
+onMessage :: Multiplexer -> ByteString -> (Message -> IO()) -> IO ()
 onMessage multi chan action = do
   listener <- atomically $ openChannelWhenNotFound >>= addListener
-  void $ forkFinally (action listener) disposeListener
+  void $ forkFinally (forever (atomically (readTChan listener) >>= action)) disposeListener
   where
     disposeListener _ = atomically $ do
       mC <- M.lookup chan (channels multi)

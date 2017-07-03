@@ -65,8 +65,7 @@ wsApp secret getTime pqCon multi pendingConn =
           WS.forkPingThread conn 30
 
           when (hasRead mode) $
-            onMessage multi channel (\ch ->
-              forever $ atomically (readTChan ch) >>= WS.sendTextData conn . B.payload)
+            onMessage multi channel $ WS.sendTextData conn . B.payload
 
           when (hasWrite mode) $
             withAsync (forever $ notifySession channel validClaims pqCon conn) wait
