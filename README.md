@@ -1,5 +1,8 @@
 # PostgREST-WS [![CircleCI](https://circleci.com/gh/diogob/postgrest-ws.svg?style=svg)](https://circleci.com/gh/diogob/postgrest-ws)
 
+PostgREST-WS is a [WAI](https://hackage.haskell.org/package/wai) middleware designed for use with [PostgREST](https://github.com/begriffs/postgrest)
+that adds websockets capabilites to the HTTP layer on top of [PostgreSQL](https://www.postgresql.org).
+
 ## Running the server
 
 To build the project I recommend the use of [Stack](http://docs.haskellstack.org/en/stable/README/).
@@ -68,9 +71,6 @@ You will find a complete example under the folder [client-example](https://githu
 The example uses the [sample configuration file](https://github.com/diogob/postgrest-ws/tree/master/sample.conf).
 
 ## Use as Middleware
-
-PostgREST-WS is a [WAI](https://hackage.haskell.org/package/wai) middleware designed for use with [PostgREST](https://github.com/begriffs/postgrest)
-that adds websockets capabilites to the HTTP layer on top of [PostgreSQL](https://www.postgresql.org).
 
 To understand the concept of mapping a database schema directly to an HTTP API watch the video and take
 a look at the docs at the [PostgREST website](http://postgrest.com).
