@@ -25,7 +25,7 @@ import qualified Data.ByteString.Lazy           as BL
 
 import PostgRESTWS.Claims
 import PostgRESTWS.Database
-import PostgRESTWS.Broadcast (Multiplexer, onMessage, readTChan)
+import PostgRESTWS.Broadcast (Multiplexer, onMessage)
 import PostgRESTWS.HasqlBroadcast (newHasqlBroadcaster, newHasqlBroadcasterOrError)
 import qualified PostgRESTWS.Broadcast as B
 
@@ -37,18 +37,18 @@ data Message = Message
 instance A.ToJSON Message
 
 -- | Given a secret, a function to fetch the system time, a Hasql Pool and a Multiplexer this will give you a WAI middleware.
-postgrestWsMiddleware :: ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
+postgrestWsMiddleware :: Maybe PgIdentifier -> ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
 postgrestWsMiddleware =
   WS.websocketsOr WS.defaultConnectionOptions `compose` wsApp
   where
-    compose = (.) . (.) . (.) . (.)
+    compose = (.) . (.) . (.) . (.) . (.)
 
 -- private functions
 
 -- when the websocket is closed a ConnectionClosed Exception is triggered
 -- this kills all children and frees resources for us
-wsApp :: ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> WS.ServerApp
-wsApp secret getTime pqCon multi pendingConn =
+wsApp :: Maybe PgIdentifier -> ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> WS.ServerApp
+wsApp mAuditChannel secret getTime pqCon multi pendingConn =
   getTime >>= forkSessionsWhenTokenIsValid . validateClaims secret jwtToken
   where
     forkSessionsWhenTokenIsValid = either rejectRequest forkSessions

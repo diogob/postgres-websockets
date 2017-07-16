@@ -2,6 +2,7 @@ module Main where
 
 import           Protolude
 import           PostgRESTWS
+import           PostgRESTWS.Database                 (toPgIdentifier)
 import           Config                               (AppConfig (..),
                                                        PgVersion (..),
                                                        minimumPgVersion,
@@ -63,7 +64,7 @@ main = do
   multi <- newHasqlBroadcaster pgSettings
 
   runSettings appSettings $
-    postgrestWsMiddleware (configJwtSecret conf) getTime pool multi $
+    postgrestWsMiddleware (toPgIdentifier . toS <$> configAuditChannel conf) (configJwtSecret conf) getTime pool multi $
     logStdout $ staticApp $ defaultFileServerSettings $ toS $ configPath conf
 
 loadSecretFile :: AppConfig -> IO AppConfig
