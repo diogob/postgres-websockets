@@ -69,6 +69,8 @@ wsApp secret getTime pqCon multi pendingConn =
 
           when (hasWrite mode) $
             withAsync (forever $ notifySession channel validClaims pqCon conn) wait
+          waitForever <- newEmptyMVar
+          void $ takeMVar waitForever
 
 -- Having both channel and claims as parameters seem redundant
 -- But it allows the function to ignore the claims structure and the source
