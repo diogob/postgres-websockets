@@ -57,6 +57,7 @@ wsApp mAuditChannel secret getTime pqCon multi pendingConn =
     rejectRequest = WS.rejectRequest pendingConn . encodeUtf8
     -- the first char in path is '/' the rest is the token
     jwtToken = decodeUtf8 $ BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
+
     forkSessions (channel, mode, validClaims) = do
           -- role claim defaults to anon if not specified in jwt
           -- We should accept only after verifying JWT
@@ -68,7 +69,7 @@ wsApp mAuditChannel secret getTime pqCon multi pendingConn =
             onMessage multi channel $ WS.sendTextData conn . B.payload
 
           when (hasWrite mode) $
-            withAsync (forever $ notifySession channel validClaims pqCon conn) wait
+            notifySession channel validClaims pqCon conn
           waitForever <- newEmptyMVar
           void $ takeMVar waitForever
 
@@ -81,8 +82,9 @@ notifySession :: BS.ByteString
                     -> WS.Connection
                     -> IO ()
 notifySession channel claimsToSend pool wsCon =
-  WS.receiveData wsCon >>= (void . send . jsonMsg)
+  withAsync (forever relayData) wait
   where
+    relayData = WS.receiveData wsCon >>= (void . send . jsonMsg)
     send = notifyPool pool $ toPgIdentifier channel
     -- we need to decode the bytestring to re-encode valid JSON for the notification
     jsonMsg = BL.toStrict . A.encode . Message claimsToSend . decodeUtf8With T.lenientDecode
