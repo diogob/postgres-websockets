@@ -69,22 +69,22 @@ wsApp mAuditChannel secret getTime pqCon multi pendingConn =
             onMessage multi channel $ WS.sendTextData conn . B.payload
 
           when (hasWrite mode) $
-            notifySession channel validClaims pqCon conn
+            notifySession validClaims conn (error "need to implement send notification")
+            -- send = notifyPool pool channel
+            
           waitForever <- newEmptyMVar
           void $ takeMVar waitForever
 
 -- Having both channel and claims as parameters seem redundant
 -- But it allows the function to ignore the claims structure and the source
 -- of the channel, so all claims decoding can be coded in the caller
-notifySession :: BS.ByteString
-                    -> A.Object
-                    -> H.Pool
-                    -> WS.Connection
-                    -> IO ()
-notifySession channel claimsToSend pool wsCon =
+notifySession :: A.Object
+                  -> WS.Connection
+                  -> (ByteString -> IO ())
+                  -> IO ()
+notifySession claimsToSend wsCon send =
   withAsync (forever relayData) wait
   where
     relayData = WS.receiveData wsCon >>= (void . send . jsonMsg)
-    send = notifyPool pool $ toPgIdentifier channel
     -- we need to decode the bytestring to re-encode valid JSON for the notification
     jsonMsg = BL.toStrict . A.encode . Message claimsToSend . decodeUtf8With T.lenientDecode
