@@ -48,7 +48,7 @@ postgrestWsMiddleware =
 -- when the websocket is closed a ConnectionClosed Exception is triggered
 -- this kills all children and frees resources for us
 wsApp :: Maybe PgIdentifier -> ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> WS.ServerApp
-wsApp mAuditChannel secret getTime pqCon multi pendingConn =
+wsApp mAuditChannel secret getTime pool multi pendingConn =
   getTime >>= forkSessionsWhenTokenIsValid . validateClaims secret jwtToken
   where
     forkSessionsWhenTokenIsValid = either rejectRequest forkSessions
@@ -69,9 +69,14 @@ wsApp mAuditChannel secret getTime pqCon multi pendingConn =
             onMessage multi channel $ WS.sendTextData conn . B.payload
 
           when (hasWrite mode) $
-            notifySession validClaims conn (error "need to implement send notification")
-            -- send = notifyPool pool channel
-            
+            let channelName = toPgIdentifier channel
+                sendNotifications = void . case mAuditChannel of
+                                            Nothing -> notifyPool pool channelName
+                                            Just auditChannel -> \mesg ->
+                                              notifyPool pool channelName mesg >>
+                                              notifyPool pool auditChannel mesg
+            in notifySession validClaims conn sendNotifications
+
           waitForever <- newEmptyMVar
           void $ takeMVar waitForever
 
