@@ -14,7 +14,6 @@ import           Data.Aeson                    (Value (..), toJSON)
 import           Data.Time.Clock.POSIX         (POSIXTime)
 import           Control.Lens
 import           Data.Aeson.Lens
-import           Data.Maybe              (fromJust)
 import           Data.Time.Clock         (NominalDiffTime)
 import qualified Web.JWT                 as JWT
 
@@ -67,10 +66,11 @@ data JWTAttempt = JWTExpired
 jwtClaims :: JWT.Secret -> Text -> NominalDiffTime -> JWTAttempt
 jwtClaims _ "" _ = JWTClaims M.empty
 jwtClaims secret jwt time =
-  case isExpired <$> mClaims of
-    Just True -> JWTExpired
+  case mClaims of
     Nothing -> JWTInvalid
-    Just False -> JWTClaims $ value2map $ fromJust mClaims
+    Just cl -> if isExpired cl
+                then JWTExpired
+                else JWTClaims $ value2map cl
   where
     mClaims = toJSON . JWT.claims <$> JWT.decodeAndVerifySignature secret jwt
     isExpired claims =
