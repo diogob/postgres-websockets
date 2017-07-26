@@ -19,6 +19,7 @@ import qualified Hasql.Pool                     as H
 import qualified Data.Text.Encoding.Error       as T
 
 import           Data.Time.Clock.POSIX          (POSIXTime)
+import qualified Data.HashMap.Strict           as M
 import qualified Data.Aeson                     as A
 import qualified Data.ByteString                as BS
 import qualified Data.ByteString.Lazy           as BL
@@ -57,7 +58,7 @@ wsApp mAuditChannel secret getTime pool multi pendingConn =
     rejectRequest = WS.rejectRequest pendingConn . encodeUtf8
     -- the first char in path is '/' the rest is the token
     jwtToken = decodeUtf8 $ BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
-
+    notifySessionWithTime = notifySession getTime
     forkSessions (channel, mode, validClaims) = do
           -- role claim defaults to anon if not specified in jwt
           -- We should accept only after verifying JWT
@@ -75,7 +76,7 @@ wsApp mAuditChannel secret getTime pool multi pendingConn =
                                             Just auditChannel -> \mesg ->
                                               notifyPool pool channelName mesg >>
                                               notifyPool pool auditChannel mesg
-            in notifySession validClaims conn sendNotifications
+            in notifySessionWithTime validClaims conn sendNotifications
 
           waitForever <- newEmptyMVar
           void $ takeMVar waitForever
@@ -83,13 +84,24 @@ wsApp mAuditChannel secret getTime pool multi pendingConn =
 -- Having both channel and claims as parameters seem redundant
 -- But it allows the function to ignore the claims structure and the source
 -- of the channel, so all claims decoding can be coded in the caller
-notifySession :: A.Object
+notifySession :: IO POSIXTime
+                  -> A.Object
                   -> WS.Connection
                   -> (ByteString -> IO ())
                   -> IO ()
-notifySession claimsToSend wsCon send =
+notifySession getTime claimsToSend wsCon send =
   withAsync (forever relayData) wait
   where
-    relayData = WS.receiveData wsCon >>= (void . send . jsonMsg)
+    relayData = do
+      mesg <- WS.receiveData wsCon
+      cl <- claimsWithTime
+      void $ send $ jsonMsg cl mesg
+
     -- we need to decode the bytestring to re-encode valid JSON for the notification
-    jsonMsg = BL.toStrict . A.encode . Message claimsToSend . decodeUtf8With T.lenientDecode
+    jsonMsg :: M.HashMap Text A.Value -> ByteString -> ByteString
+    jsonMsg cl = BL.toStrict . A.encode . Message cl . decodeUtf8With T.lenientDecode
+
+    claimsWithTime :: IO (M.HashMap Text A.Value)
+    claimsWithTime = do
+      time <- getTime
+      return $ M.insert "message_sent_at" (A.Number $ fromRational $ toRational time) claimsToSend
