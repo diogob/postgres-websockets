@@ -92,10 +92,9 @@ notifySession :: IO POSIXTime
 notifySession getTime claimsToSend wsCon send =
   withAsync (forever relayData) wait
   where
-    relayData = do
-      mesg <- WS.receiveData wsCon
-      cl <- claimsWithTime
-      void $ send $ jsonMsg cl mesg
+    relayData = jsonMsgWithTime >>= send
+
+    jsonMsgWithTime = liftA2 jsonMsg claimsWithTime (WS.receiveData wsCon)
 
     -- we need to decode the bytestring to re-encode valid JSON for the notification
     jsonMsg :: M.HashMap Text A.Value -> ByteString -> ByteString
