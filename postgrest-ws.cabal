@@ -46,6 +46,7 @@ library
                      , stm
                      , retry
                      , stringsearch
+                     , contravariant
   default-language:    Haskell2010
   default-extensions: OverloadedStrings, NoImplicitPrelude
 
