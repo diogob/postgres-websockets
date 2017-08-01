@@ -102,4 +102,4 @@ notifySession getTime claimsToSend wsCon send =
     claimsWithTime :: IO (M.HashMap Text A.Value)
     claimsWithTime = do
       time <- getTime
-      return $ M.insert "message_sent_at" (A.Number $ fromRational $ toRational time) claimsToSend
+      return $ M.insert "message_delivered_at" (A.Number $ fromRational $ toRational time) claimsToSend
