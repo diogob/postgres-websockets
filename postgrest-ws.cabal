@@ -1,5 +1,5 @@
 name:                postgrest-ws
-version:             0.3.3.0
+version:             0.4.0.0
 synopsis:            PostgREST extension to map LISTEN/NOTIFY messages to Websockets
 description:         Please see README.md
 homepage:            https://github.com/diogob/postgrest-ws#readme
