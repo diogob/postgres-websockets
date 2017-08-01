@@ -12,13 +12,18 @@ module PostgRESTWS.Database
 
 import Protolude
 import Hasql.Pool (Pool, UsageError, use)
-import Hasql.Session (sql, run)
+import Hasql.Session (sql, run, query)
 import qualified Hasql.Session as S
+import Hasql.Query (statement)
 import Hasql.Connection (Connection, withLibPQConnection)
+import qualified Hasql.Decoders as HD
+import qualified Hasql.Encoders as HE
 import qualified Database.PostgreSQL.LibPQ      as PQ
 import Data.Either.Combinators
 import qualified Data.ByteString.Char8 as B
 import Data.ByteString.Search (replace)
+import Data.Functor.Contravariant (contramap)
+
 newtype Error = NotifyError Text
 
 -- | A wrapped bytestring that represents a properly escaped and quoted PostgreSQL identifier
@@ -38,12 +43,14 @@ toPgIdentifier x = PgIdentifier $ "\"" <> strictlyReplaceQuotes (trimNullChars x
     strictlyReplaceQuotes = toS . replace "\"" ("\"\"" :: ByteString)
 
 -- | Given a Hasql Pool, a channel and a message sends a notify command to the database
-notifyPool :: Pool -> PgIdentifier -> ByteString -> IO (Either Error ())
+notifyPool :: Pool -> ByteString -> ByteString -> IO (Either Error ())
 notifyPool pool channel mesg =
-   mapError <$> use pool (sql ("NOTIFY " <> fromPgIdentifier channel <> ", '" <> mesg <> "'"))
+   mapError <$> use pool (query (toS channel, toS mesg) callStatement)
    where
      mapError :: Either UsageError () -> Either Error ()
      mapError = mapLeft (NotifyError . show)
+     callStatement = statement ("SELECT pg_notify" <> "($1, $2)") encoder HD.unit False
+     encoder = contramap fst (HE.value HE.text) <> contramap snd (HE.value HE.text)
 
 -- | Given a Hasql Connection, a channel and a message sends a notify command to the database
 notify :: Connection -> PgIdentifier -> ByteString -> IO (Either Error ())

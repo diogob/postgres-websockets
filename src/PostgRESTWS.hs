@@ -38,7 +38,7 @@ data Message = Message
 instance A.ToJSON Message
 
 -- | Given a secret, a function to fetch the system time, a Hasql Pool and a Multiplexer this will give you a WAI middleware.
-postgrestWsMiddleware :: Maybe PgIdentifier -> ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
+postgrestWsMiddleware :: Maybe ByteString -> ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
 postgrestWsMiddleware =
   WS.websocketsOr WS.defaultConnectionOptions `compose` wsApp
   where
@@ -48,7 +48,7 @@ postgrestWsMiddleware =
 
 -- when the websocket is closed a ConnectionClosed Exception is triggered
 -- this kills all children and frees resources for us
-wsApp :: Maybe PgIdentifier -> ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> WS.ServerApp
+wsApp :: Maybe ByteString -> ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> WS.ServerApp
 wsApp mAuditChannel secret getTime pool multi pendingConn =
   getTime >>= forkSessionsWhenTokenIsValid . validateClaims secret jwtToken
   where
@@ -70,11 +70,10 @@ wsApp mAuditChannel secret getTime pool multi pendingConn =
             onMessage multi channel $ WS.sendTextData conn . B.payload
 
           when (hasWrite mode) $
-            let channelName = toPgIdentifier channel
-                sendNotifications = void . case mAuditChannel of
-                                            Nothing -> notifyPool pool channelName
+            let sendNotifications = void . case mAuditChannel of
+                                            Nothing -> notifyPool pool channel
                                             Just auditChannel -> \mesg ->
-                                              notifyPool pool channelName mesg >>
+                                              notifyPool pool channel mesg >>
                                               notifyPool pool auditChannel mesg
             in notifySessionWithTime validClaims conn sendNotifications
 
