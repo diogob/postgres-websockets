@@ -25,7 +25,6 @@ import           Network.Wai.Handler.Warp
 import           Network.Wai.Middleware.RequestLogger (logStdout)
 import           System.IO                            (BufferMode (..),
                                                        hSetBuffering)
-import           Control.AutoUpdate
 
 isServerVersionSupported :: H.Session Bool
 isServerVersionSupported = do
@@ -55,15 +54,10 @@ main = do
   putStrLn $ ("Listening on port " :: Text) <> show (configPort conf)
 
   pool <- P.acquire (configPool conf, 10, pgSettings)
-
-  -- ask for the OS time at most once per second
-  getTime <- mkAutoUpdate
-    defaultUpdateSettings { updateAction = getPOSIXTime }
-
   multi <- newHasqlBroadcaster pgSettings
 
   runSettings appSettings $
-    postgrestWsMiddleware (toS <$> configAuditChannel conf) (configJwtSecret conf) getTime pool multi $
+    postgrestWsMiddleware (toS <$> configAuditChannel conf) (configJwtSecret conf) getPOSIXTime pool multi $
     logStdout $ staticApp $ defaultFileServerSettings $ toS $ configPath conf
 
 loadSecretFile :: AppConfig -> IO AppConfig
