@@ -15,7 +15,6 @@ import Protolude
 
 import Hasql.Connection
 import Data.Either.Combinators (mapBoth)
-import System.IO               (hPutStrLn)
 import Data.Function           (id)
 import Control.Retry           (RetryStatus, retrying, capDelay, exponentialBackoff)
 
@@ -46,9 +45,9 @@ tryUntilConnected =
     shouldRetry :: RetryStatus -> Either ConnectionError Connection -> IO Bool
     shouldRetry _ con =
       case con of
-        Left err ->
-          hPutStrLn stderr ("Error connecting notification listener to database: " <> show err)
-          >> return True
+        Left err -> do
+          putErrLn $ "Error connecting notification listener to database: " <> show err
+          return True
         _ -> return False
 
 {- | Returns a multiplexer from an IO Connection, listen for different database notification channels using the connection produced.
@@ -79,7 +78,7 @@ newHasqlBroadcasterForConnection getCon = do
   void $ relayMessagesForever multi
   return multi
   where
-    closeProducer _ = hPutStrLn stderr "Broadcaster is dead"
+    closeProducer _ = putErrLn "Broadcaster is dead"
     openProducer cmds msgs = do
       con <- getCon
       waitForNotifications
@@ -90,3 +89,7 @@ newHasqlBroadcasterForConnection getCon = do
         case cmd of
           Open ch -> listen con $ toPgIdentifier ch
           Close ch -> unlisten con $ toPgIdentifier ch
+
+
+putErrLn :: Text -> IO ()
+putErrLn = hPutStrLn stderr

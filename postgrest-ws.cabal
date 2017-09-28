@@ -38,7 +38,7 @@ library
                      , unordered-containers >= 0.2
                      , postgresql-libpq >= 0.9 && < 1.0
                      , aeson >= 0.11
-                     , protolude >= 0.1.6 && < 0.2
+                     , protolude >= 0.2
                      , jwt >= 0.7.2 && < 0.8
                      , hasql >= 0.19
                      , either
@@ -64,7 +64,7 @@ executable postgrest-ws
                      , jwt >= 0.7 && < 1
                      , postgrest-ws
                      , postgresql-libpq >= 0.9 && < 1.0
-                     , protolude >= 0.1.6 && < 0.2
+                     , protolude >= 0.2
                      , base64-bytestring
                      , bytestring
                      , configurator
@@ -89,7 +89,7 @@ test-suite postgrest-ws-test
                      , DatabaseSpec
                      , HasqlBroadcastSpec
   build-depends:       base
-                     , protolude >= 0.1.6 && < 0.2
+                     , protolude >= 0.2
                      , postgrest-ws
                      , containers
                      , hspec
