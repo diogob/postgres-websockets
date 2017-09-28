@@ -10,7 +10,7 @@ module PostgRESTWS.Database
   , toPgIdentifier
   ) where
 
-import Protolude
+import Protolude hiding (replace)
 import Hasql.Pool (Pool, UsageError, use)
 import Hasql.Session (sql, run, query)
 import qualified Hasql.Session as S

@@ -1,5 +1,3 @@
-resolver: lts-8.11
-extra-deps:
-  - hasql-pool-0.4.1
+resolver: lts-9.6
 ghc-options:
   postgrest-ws: -O2 -Wall -fwarn-identities -fno-warn-redundant-constraints

@@ -28,7 +28,6 @@ import qualified Data.Configurator.Types     as C
 import           Data.Monoid
 import           Data.Text                   (intercalate, lines)
 import           Data.Text.Encoding          (encodeUtf8)
-import           Data.Text.IO                (hPutStrLn)
 import           Data.Version                (versionBranch)
 import           Options.Applicative hiding  (str)
 import           Paths_postgrest_ws             (version)
@@ -96,19 +95,15 @@ readOptions = do
   parserPrefs = prefs showHelpOnError
 
   configNotfoundHint :: IOError -> IO a
-  configNotfoundHint e = do
-    hPutStrLn stderr $
-      "Cannot open config file:\n\t" <> show e
-    exitFailure
+  configNotfoundHint e = die $ "Cannot open config file:\n\t" <> show e
 
   missingKeyHint :: C.KeyError -> IO a
-  missingKeyHint (C.KeyError n) = do
-    hPutStrLn stderr $
+  missingKeyHint (C.KeyError n) =
+    die $
       "Required config parameter \"" <> n <> "\" is missing or of wrong type.\n" <>
       "Documentation for configuration options available at\n" <>
       "\thttp://postgrest.com/en/v0.4/admin.html#configuration\n\n" <>
       "Try the --example-config option to see how to configure PostgREST."
-    exitFailure
 
   exampleCfg :: Doc
   exampleCfg = vsep . map (text . toS) . lines $

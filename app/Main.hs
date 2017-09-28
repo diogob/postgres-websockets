@@ -1,6 +1,6 @@
 module Main where
 
-import           Protolude
+import           Protolude hiding (replace)
 import           PostgRESTWS
 import           Config                               (AppConfig (..),
                                                        PgVersion (..),
