@@ -8,11 +8,11 @@ import           Config                               (AppConfig (..),
                                                        prettyVersion,
                                                        readOptions)
 
-import           Data.ByteString.Base64               (decode)
+import qualified Data.ByteString                      as BS
+import qualified Data.ByteString.Base64               as B64
 import           Data.String                          (IsString (..))
-import           Data.Text                            (stripPrefix, pack, replace)
+import           Data.Text                            (pack, replace, strip, stripPrefix)
 import           Data.Text.Encoding                   (encodeUtf8, decodeUtf8)
-import           Data.Text.IO                         (readFile)
 import           Data.Time.Clock.POSIX                (getPOSIXTime)
 import qualified Hasql.Query                          as H
 import qualified Hasql.Session                        as H
@@ -70,16 +70,21 @@ loadSecretFile conf = extractAndTransform secret
     extractAndTransform s =
       fmap setSecret $ transformString isB64 =<<
         case stripPrefix "@" s of
-            Nothing       -> return s
-            Just filename -> readFile (toS filename)
+          Nothing       -> return . encodeUtf8 $ s
+          Just filename -> chomp <$> BS.readFile (toS filename)
+      where
+        chomp bs = fromMaybe bs (BS.stripSuffix "\n" bs)
 
-    transformString :: Bool -> Text -> IO ByteString
-    transformString False t = return . encodeUtf8 $ t
-    transformString True  t =
-      case decode (encodeUtf8 $ replaceUrlChars t) of
+    -- Turns the Base64url encoded JWT into Base64
+    transformString :: Bool -> ByteString -> IO ByteString
+    transformString False t = return t
+    transformString True t =
+      case B64.decode $ encodeUtf8 $ strip $ replaceUrlChars $ decodeUtf8 t of
         Left errMsg -> panic $ pack errMsg
         Right bs    -> return bs
 
-    setSecret bs = conf { configJwtSecret = bs }
+    setSecret bs = conf {configJwtSecret = bs}
 
-    replaceUrlChars = replace "_" "/" . replace "-" "+" . replace "." "="
+    -- replace: Replace every occurrence of one substring with another
+    replaceUrlChars =
+      replace "_" "/" . replace "-" "+" . replace "." "="
