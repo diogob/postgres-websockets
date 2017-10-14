@@ -49,15 +49,14 @@ postgrestWsMiddleware =
 -- when the websocket is closed a ConnectionClosed Exception is triggered
 -- this kills all children and frees resources for us
 wsApp :: Maybe ByteString -> Maybe ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> WS.ServerApp
-wsApp mAuditChannel secret getTime pool multi pendingConn =
-  getTime >>= forkSessionsWhenTokenIsValid . validateClaims secret jwtToken
+wsApp mAuditChannel secret getTime pool multi pendingConn = do
+  validateClaims secret (toS jwtToken) >>= either rejectRequest forkSessions
   where
-    forkSessionsWhenTokenIsValid = either rejectRequest forkSessions
     hasRead m = m == ("r" :: ByteString) || m == ("rw" :: ByteString)
     hasWrite m = m == ("w" :: ByteString) || m == ("rw" :: ByteString)
     rejectRequest = WS.rejectRequest pendingConn . encodeUtf8
     -- the first char in path is '/' the rest is the token
-    jwtToken = decodeUtf8 $ BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
+    jwtToken = BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
     notifySessionWithTime = notifySession getTime
     forkSessions (channel, mode, validClaims) = do
           -- role claim defaults to anon if not specified in jwt
