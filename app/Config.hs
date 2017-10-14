@@ -22,7 +22,6 @@ module Config ( prettyVersion
 
 import           System.IO.Error             (IOError)
 import           Control.Applicative
-import qualified Data.ByteString             as B
 import qualified Data.Configurator           as C
 import qualified Data.Configurator.Types     as C
 import           Data.Monoid
