@@ -10,35 +10,35 @@ module PostgRESTWS
   , newHasqlBroadcasterOrError
   ) where
 
-import           Protolude
+import qualified Hasql.Pool                     as H
 import qualified Network.Wai                    as Wai
 import qualified Network.Wai.Handler.WebSockets as WS
 import qualified Network.WebSockets             as WS
-import qualified Hasql.Pool                     as H
+import           Protolude
 
-import qualified Data.Text.Encoding.Error       as T
-
-import           Data.Time.Clock.POSIX          (POSIXTime)
-import qualified Data.HashMap.Strict           as M
 import qualified Data.Aeson                     as A
 import qualified Data.ByteString                as BS
 import qualified Data.ByteString.Lazy           as BL
+import qualified Data.HashMap.Strict            as M
+import qualified Data.Text.Encoding.Error       as T
+import           Data.Time.Clock.POSIX          (POSIXTime)
 
-import PostgRESTWS.Claims
-import PostgRESTWS.Database
-import PostgRESTWS.Broadcast (Multiplexer, onMessage)
-import PostgRESTWS.HasqlBroadcast (newHasqlBroadcaster, newHasqlBroadcasterOrError)
-import qualified PostgRESTWS.Broadcast as B
+import           PostgRESTWS.Broadcast          (Multiplexer, onMessage)
+import qualified PostgRESTWS.Broadcast          as B
+import           PostgRESTWS.Claims
+import           PostgRESTWS.Database
+import           PostgRESTWS.HasqlBroadcast     (newHasqlBroadcaster,
+                                                 newHasqlBroadcasterOrError)
 
 data Message = Message
-  { claims :: A.Object
+  { claims  :: A.Object
   , payload :: Text
   } deriving (Show, Eq, Generic)
 
 instance A.ToJSON Message
 
 -- | Given a secret, a function to fetch the system time, a Hasql Pool and a Multiplexer this will give you a WAI middleware.
-postgrestWsMiddleware :: Maybe ByteString -> Maybe ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
+postgrestWsMiddleware :: Maybe ByteString -> ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
 postgrestWsMiddleware =
   WS.websocketsOr WS.defaultConnectionOptions `compose` wsApp
   where
@@ -48,7 +48,7 @@ postgrestWsMiddleware =
 
 -- when the websocket is closed a ConnectionClosed Exception is triggered
 -- this kills all children and frees resources for us
-wsApp :: Maybe ByteString -> Maybe ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> WS.ServerApp
+wsApp :: Maybe ByteString -> ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> WS.ServerApp
 wsApp mAuditChannel secret getTime pool multi pendingConn = do
   validateClaims secret (toS jwtToken) >>= either rejectRequest forkSessions
   where
@@ -83,10 +83,10 @@ wsApp mAuditChannel secret getTime pool multi pendingConn = do
 -- But it allows the function to ignore the claims structure and the source
 -- of the channel, so all claims decoding can be coded in the caller
 notifySession :: IO POSIXTime
-                  -> A.Object
-                  -> WS.Connection
-                  -> (ByteString -> IO ())
-                  -> IO ()
+              -> A.Object
+              -> WS.Connection
+              -> (ByteString -> IO ())
+              -> IO ()
 notifySession getTime claimsToSend wsCon send =
   withAsync (forever relayData) wait
   where
