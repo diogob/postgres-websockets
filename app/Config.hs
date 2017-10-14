@@ -42,10 +42,8 @@ data AppConfig = AppConfig {
   , configHost              :: Text
   , configPort              :: Int
   , configAuditChannel      :: Maybe Text
-
-  , configJwtSecret         :: Maybe ByteString
+  , configJwtSecret         :: ByteString
   , configJwtSecretIsBase64 :: Bool
-
   , configPool              :: Int
   }
 
@@ -73,10 +71,10 @@ readOptions = do
     cPort     <- C.lookupDefault 3000 conf "server-port"
     cAuditC   <- C.lookup conf "audit-channel"
     -- jwt ---------------
-    cJwtSec   <- C.lookup conf "jwt-secret"
+    cJwtSec   <- C.require conf "jwt-secret"
     cJwtB64   <- C.lookupDefault False conf "secret-is-base64"
 
-    return $ AppConfig cDbUri cPath cHost cPort cAuditC (encodeUtf8 <$> cJwtSec) cJwtB64 cPool
+    return $ AppConfig cDbUri cPath cHost cPort cAuditC (encodeUtf8 cJwtSec) cJwtB64 cPool
 
  where
   opts = info (helper <*> pathParser) $

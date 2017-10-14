@@ -21,10 +21,10 @@ type ConnectionInfo = (ByteString, ByteString, Claims)
 {-| Given a secret, a token and a timestamp it validates the claims and returns
     either an error message or a triple containing channel, mode and claims hashmap.
 -}
-validateClaims :: Maybe ByteString -> LByteString -> IO (Either Text ConnectionInfo)
+validateClaims :: ByteString -> LByteString -> IO (Either Text ConnectionInfo)
 validateClaims secret jwtToken =
   runExceptT $ do
-    cl <- liftIO $ jwtClaims (parseJWK <$> secret) jwtToken
+    cl <- liftIO $ jwtClaims (parseJWK secret) jwtToken
     cl' <- case cl of
       JWTClaims c -> pure c
       _ -> throwError "Error"
@@ -56,19 +56,16 @@ data JWTAttempt = JWTInvalid JWTError
   Receives the JWT secret (from config) and a JWT and returns a map
   of JWT claims.
 -}
-jwtClaims :: Maybe JWK -> LByteString -> IO JWTAttempt
+jwtClaims :: JWK -> LByteString -> IO JWTAttempt
 jwtClaims _ "" = return $ JWTClaims M.empty
-jwtClaims secret payload =
-  case secret of
-     Nothing -> pure JWTMissingSecret
-     Just s -> do
-       let validation = defaultJWTValidationSettings (const True)
-       eJwt <- runExceptT $ do
-         jwt <- decodeCompact payload
-         verifyClaims validation s jwt
-       return $ case eJwt of
-         Left e    -> JWTInvalid e
-         Right jwt -> JWTClaims . claims2map $ jwt
+jwtClaims secret payload = do
+  let validation = defaultJWTValidationSettings (const True)
+  eJwt <- runExceptT $ do
+    jwt <- decodeCompact payload
+    verifyClaims validation secret jwt
+  return $ case eJwt of
+    Left e    -> JWTInvalid e
+    Right jwt -> JWTClaims . claims2map $ jwt
 
 {-|
   Internal helper used to turn JWT ClaimSet into something

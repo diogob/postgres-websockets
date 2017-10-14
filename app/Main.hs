@@ -63,12 +63,11 @@ main = do
 loadSecretFile :: AppConfig -> IO AppConfig
 loadSecretFile conf = extractAndTransform secret
   where
-    secret   = decodeUtf8 <$> configJwtSecret conf
+    secret   = decodeUtf8 $ configJwtSecret conf
     isB64     = configJwtSecretIsBase64 conf
 
-    extractAndTransform :: Maybe Text -> IO AppConfig
-    extractAndTransform Nothing = return conf
-    extractAndTransform (Just s) =
+    extractAndTransform :: Text -> IO AppConfig
+    extractAndTransform s =
       fmap setSecret $ transformString isB64 =<<
         case stripPrefix "@" s of
           Nothing       -> return . encodeUtf8 $ s
@@ -84,7 +83,7 @@ loadSecretFile conf = extractAndTransform secret
         Left errMsg -> panic $ pack errMsg
         Right bs    -> return bs
 
-    setSecret bs = conf {configJwtSecret = Just bs}
+    setSecret bs = conf {configJwtSecret = bs}
 
     -- replace: Replace every occurrence of one substring with another
     replaceUrlChars =
