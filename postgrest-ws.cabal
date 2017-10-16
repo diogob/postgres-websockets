@@ -20,8 +20,7 @@ library
                      , PostgRESTWS.Broadcast
                      , PostgRESTWS.Database
                      , PostgRESTWS.HasqlBroadcast
-
-  other-modules:       PostgRESTWS.Claims
+                     , PostgRESTWS.Claims
   build-depends:       base >= 4.7 && < 5
                      , hasql-pool >= 0.4 && < 0.5
                      , text >= 1.2 && < 2
@@ -86,6 +85,7 @@ test-suite postgrest-ws-test
   hs-source-dirs:      test
   main-is:             Spec.hs
   other-modules:       BroadcastSpec
+                     , ClaimsSpec
                      , DatabaseSpec
                      , HasqlBroadcastSpec
   build-depends:       base
@@ -99,6 +99,7 @@ test-suite postgrest-ws-test
                      , hasql
                      , hasql-pool
                      , http-types
+                     , unordered-containers >= 0.2
                      , wai-extra
                      , stm
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
