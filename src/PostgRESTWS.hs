@@ -49,7 +49,7 @@ postgrestWsMiddleware =
 -- when the websocket is closed a ConnectionClosed Exception is triggered
 -- this kills all children and frees resources for us
 wsApp :: Maybe ByteString -> ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> WS.ServerApp
-wsApp mAuditChannel secret getTime pool multi pendingConn = do
+wsApp mAuditChannel secret getTime pool multi pendingConn =
   validateClaims secret (toS jwtToken) >>= either rejectRequest forkSessions
   where
     hasRead m = m == ("r" :: ByteString) || m == ("rw" :: ByteString)
