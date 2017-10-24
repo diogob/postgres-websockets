@@ -59,7 +59,6 @@ executable postgrest-ws
                      , hasql >= 0.19
                      , hasql-pool >= 0.4
                      , warp >= 3.2 && < 4
-                     , unix >= 2.7 && < 3
                      , jwt >= 0.7 && < 1
                      , postgrest-ws
                      , postgresql-libpq >= 0.9 && < 1.0
