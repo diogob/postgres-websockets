@@ -6,32 +6,89 @@ function createWebSocket(path) {
     return new WebSocket(uri);
 }
 
-function onMessage(event) {
-    var p = $(document.createElement('p')).text(event.data);
+function onMessage(el) {
+    return function(event) {
+        var p = $(document.createElement('p')).text(event.data);
 
-    $('#messages').append(p);
-    $('#messages').animate({scrollTop: $('#messages')[0].scrollHeight});
+        $(el).append(p);
+        $(el).animate({scrollTop: $(el)[0].scrollHeight});
+    };
+}
+
+function sign(algorithm, header, payload, key) {
+  var value = '', error = null, headerAsJSON, payloadAsJSON;
+
+  try {
+    headerAsJSON = JSON.stringify(header);
+  } catch (e) {
+    error = {result: null, error: {cause: e, who: ['header']}};
+  }
+  try {
+    payloadAsJSON = JSON.stringify(payload);
+  } catch (e) {
+    if (error) {
+      error.error.who.push('payload');
+    } else {
+      error = {result: null, error: {cause: e, who: ['payload']}};
+    }
+  }
+
+  if (error) {
+    return error;
+  }
+
+  try {
+    value = KJUR.jws.JWS.sign(algorithm, headerAsJSON, payloadAsJSON, key);
+  } catch (e) {
+    error = e;
+  }
+
+  return {result: value, error: error};
+}
+
+function updateJWT() {
+    var channel = $('#channel').val();
+    $('#jwt').val(jwtForChannel(channel));
+}
+
+function jwtForChannel(channel) {
+    var alg = 'HS256',
+        header = {
+            alg: alg,
+            typ: 'JWT'
+        },
+        payload = {
+            channel: channel,
+            mode: 'rw'
+        },
+        key = 'auwhfdnskjhewfi34uwehdlaehsfkuaeiskjnfduierhfsiweskjcnzeiluwhskdewishdnpwe';
+    return sign(alg, header, payload, key).result;
 }
 
 $(document).ready(function () {
-    $('#join-form').submit(function () {
-        $('#warnings').html('');
-        var jwt = $('#jwt').val();
-        var ws = createWebSocket('/' + jwt);
+    var ws = null;
+    var auditWs = null;
 
-        ws.onopen = function() {
-            alert("Connection ready, try sending a message in the field bellow.");
-        };
+    $('#channel').keyup(updateJWT);
+    updateJWT();
 
-        ws.onmessage = onMessage;
 
-        $('#message-form').submit(function () {
-          var text = $('#text').val();
-          ws.send(text);
-          $('#text').val('');
-          return false;
-        });
-
+    $('#message-form').submit(function () {
+        var text = $('#text').val();
+        if(ws === null){
+            var jwt = $('#jwt').val();
+            ws = createWebSocket('/' + jwt);
+            ws.onopen = function() {
+                ws.send(text);
+                auditWs = createWebSocket('/' + jwtForChannel('audit'));
+                auditWs.onmessage = onMessage('#audit-messages');
+            };
+            ws.onmessage = onMessage('#messages');
+        }
+        else{
+            ws.send(text);
+        }
+        $('#text').val('');
         return false;
     });
 });

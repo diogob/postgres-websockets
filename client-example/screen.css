@@ -54,12 +54,17 @@ ul#users {
 }
 
 div#chat-section {
-    width: 390px;
     float: left;
     margin: 10px;
 }
 
 div#messages {
+    margin: 0px;
+    height: 300px;
+    overflow: auto;
+}
+
+div#audit-messages {
     margin: 0px;
     height: 300px;
     overflow: auto;
