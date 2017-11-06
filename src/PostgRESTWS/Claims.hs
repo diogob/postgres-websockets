@@ -21,23 +21,27 @@ type ConnectionInfo = (ByteString, ByteString, Claims)
 {-| Given a secret, a token and a timestamp it validates the claims and returns
     either an error message or a triple containing channel, mode and claims hashmap.
 -}
-validateClaims :: ByteString -> LByteString -> IO (Either Text ConnectionInfo)
-validateClaims secret jwtToken =
+validateClaims :: Maybe ByteString -> ByteString -> LByteString -> IO (Either Text ConnectionInfo)
+validateClaims requestChannel secret jwtToken =
   runExceptT $ do
     cl <- liftIO $ jwtClaims (parseJWK secret) jwtToken
     cl' <- case cl of
       JWTClaims c -> pure c
       _ -> throwError "Error"
-    channel <- claimAsJSON "channel" cl'
-    mode <- claimAsJSON "mode" cl'
+    channel <- claimAsJSON requestChannel "channel" cl'
+    mode <- claimAsJSON Nothing "mode" cl'
     pure (channel, mode, cl')
 
   where
-    claimAsJSON :: Text -> Claims -> ExceptT Text IO ByteString
-    claimAsJSON name cl = case M.lookup name cl of
+    claimAsJSON :: Maybe ByteString -> Text -> Claims -> ExceptT Text IO ByteString
+    claimAsJSON defaultVal name cl = case M.lookup name cl of
       Just (String s) -> pure $ encodeUtf8 s
       Just _ -> throwError "claim is not string value"
-      Nothing -> throwError (name <> " not in claims")
+      Nothing -> nonExistingClaim defaultVal name
+
+    nonExistingClaim :: Maybe ByteString -> Text -> ExceptT Text IO ByteString
+    nonExistingClaim Nothing name = throwError (name <> " not in claims")
+    nonExistingClaim (Just defaultVal) _ = pure defaultVal
 
 {- Private functions and types copied from postgrest
 
