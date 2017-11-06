@@ -47,18 +47,16 @@ function sign(algorithm, header, payload, key) {
 }
 
 function updateJWT() {
-    var channel = $('#channel').val();
-    $('#jwt').val(jwtForChannel(channel));
+    $('#jwt').val(jwt());
 }
 
-function jwtForChannel(channel) {
+function jwt() {
     var alg = 'HS256',
         header = {
             alg: alg,
             typ: 'JWT'
         },
         payload = {
-            channel: channel,
             mode: 'rw'
         },
         key = 'auwhfdnskjhewfi34uwehdlaehsfkuaeiskjnfduierhfsiweskjcnzeiluwhskdewishdnpwe';
@@ -72,14 +70,15 @@ $(document).ready(function () {
     $('#channel').keyup(updateJWT);
     updateJWT();
 
-    auditWs = createWebSocket('/' + jwtForChannel('audit'));
+    auditWs = createWebSocket('/audit/' + jwt());
     auditWs.onmessage = onMessage('#audit-messages');
 
     $('#message-form').submit(function () {
         var text = $('#text').val();
         if(ws === null){
             var jwt = $('#jwt').val();
-            ws = createWebSocket('/' + jwt);
+            var channel = $('#channel').val();
+            ws = createWebSocket('/' + channel + '/' + jwt);
             ws.onopen = function() {
                 ws.send(text);
             };
