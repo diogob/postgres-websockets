@@ -47,7 +47,7 @@ library
                      , time
                      , contravariant
   default-language:    Haskell2010
-  default-extensions: OverloadedStrings, NoImplicitPrelude
+  default-extensions: OverloadedStrings, NoImplicitPrelude, LambdaCase
 
 executable postgrest-ws
   hs-source-dirs:      app
