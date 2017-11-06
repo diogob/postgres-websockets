@@ -21,8 +21,7 @@ import qualified Data.ByteString                as BS
 import qualified Data.ByteString.Lazy           as BL
 import qualified Data.HashMap.Strict            as M
 import qualified Data.Text.Encoding.Error       as T
-import           Data.Time.Clock.POSIX          (POSIXTime)
-
+import           Data.Time.Clock.POSIX          (getPOSIXTime)
 import           PostgRESTWS.Broadcast          (Multiplexer, onMessage)
 import qualified PostgRESTWS.Broadcast          as B
 import           PostgRESTWS.Claims
@@ -38,18 +37,18 @@ data Message = Message
 instance A.ToJSON Message
 
 -- | Given a secret, a function to fetch the system time, a Hasql Pool and a Multiplexer this will give you a WAI middleware.
-postgrestWsMiddleware :: Maybe ByteString -> ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
+postgrestWsMiddleware :: Maybe ByteString -> ByteString -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
 postgrestWsMiddleware =
   WS.websocketsOr WS.defaultConnectionOptions `compose` wsApp
   where
-    compose = (.) . (.) . (.) . (.) . (.)
+    compose = (.) . (.) . (.) . (.)
 
 -- private functions
 
 -- when the websocket is closed a ConnectionClosed Exception is triggered
 -- this kills all children and frees resources for us
-wsApp :: Maybe ByteString -> ByteString -> IO POSIXTime -> H.Pool -> Multiplexer -> WS.ServerApp
-wsApp mAuditChannel secret getTime pool multi pendingConn =
+wsApp :: Maybe ByteString -> ByteString -> H.Pool -> Multiplexer -> WS.ServerApp
+wsApp mAuditChannel secret pool multi pendingConn =
   validateClaims secret (toS jwtToken) >>= either rejectRequest forkSessions
   where
     hasRead m = m == ("r" :: ByteString) || m == ("rw" :: ByteString)
@@ -57,7 +56,7 @@ wsApp mAuditChannel secret getTime pool multi pendingConn =
     rejectRequest = WS.rejectRequest pendingConn . encodeUtf8
     -- the first char in path is '/' the rest is the token
     jwtToken = BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
-    notifySessionWithTime = notifySession getTime
+    notifySessionWithTime = notifySession
     forkSessions (channel, mode, validClaims) = do
           -- role claim defaults to anon if not specified in jwt
           -- We should accept only after verifying JWT
@@ -82,12 +81,11 @@ wsApp mAuditChannel secret getTime pool multi pendingConn =
 -- Having both channel and claims as parameters seem redundant
 -- But it allows the function to ignore the claims structure and the source
 -- of the channel, so all claims decoding can be coded in the caller
-notifySession :: IO POSIXTime
-              -> A.Object
+notifySession :: A.Object
               -> WS.Connection
               -> (ByteString -> IO ())
               -> IO ()
-notifySession getTime claimsToSend wsCon send =
+notifySession claimsToSend wsCon send =
   withAsync (forever relayData) wait
   where
     relayData = jsonMsgWithTime >>= send
@@ -100,5 +98,5 @@ notifySession getTime claimsToSend wsCon send =
 
     claimsWithTime :: IO (M.HashMap Text A.Value)
     claimsWithTime = do
-      time <- getTime
+      time <- getPOSIXTime
       return $ M.insert "message_delivered_at" (A.Number $ fromRational $ toRational time) claimsToSend

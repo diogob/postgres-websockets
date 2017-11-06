@@ -13,7 +13,6 @@ import qualified Data.ByteString.Base64               as B64
 import           Data.String                          (IsString (..))
 import           Data.Text                            (pack, replace, strip, stripPrefix)
 import           Data.Text.Encoding                   (encodeUtf8, decodeUtf8)
-import           Data.Time.Clock.POSIX                (getPOSIXTime)
 import qualified Hasql.Query                          as H
 import qualified Hasql.Session                        as H
 import qualified Hasql.Decoders                       as HD
@@ -57,7 +56,7 @@ main = do
   multi <- newHasqlBroadcaster pgSettings
 
   runSettings appSettings $
-    postgrestWsMiddleware (toS <$> configAuditChannel conf) (configJwtSecret conf) getPOSIXTime pool multi $
+    postgrestWsMiddleware (toS <$> configAuditChannel conf) (configJwtSecret conf) pool multi $
     logStdout $ staticApp $ defaultFileServerSettings $ toS $ configPath conf
 
 loadSecretFile :: AppConfig -> IO AppConfig
