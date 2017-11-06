@@ -37,6 +37,28 @@ After running the above command, open your browser on http://localhost:3000 to s
 The sample config file provided in the [sample.conf](https://github.com/diogob/postgrest-ws/tree/master/sample.conf) file comes with a jwt secret just for testing and is used in the sample client.
 You will find the complete sources for the example under the folder [client-example](https://github.com/diogob/postgrest-ws/tree/master/client-example).
 
+## Opening connections
+
+To open a websocket connection to the server there are two possible request formats.
+
+1. Requesting a channel and giving a token
+
+When you request access to a channel called `chat` the address of the websockets will look like:
+```
+ws://chat/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2RlIjoicncifQ.QKGnMJe41OFZcjz_qQSplmWAmVd_hmVjijKUNoJYpis
+```
+When the token contains a "channel" claim, the value of that claim has precedence over the requested channel.
+
+
+2. Giving only the token
+
+When you inform only the token on the websocket address, the channel must be present in the claims of your token. The address will look like:
+```
+ws://eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2RlIjoicnciLCJjaGFubmVsIjoiY2hhdCJ9.fEm6P7GHeJWZG8OtZhv3H0JdqPljE5dainvsoupM9pA
+```
+
+To use a secure socket (`wss://`) you will need a proxy server like nginx to handle the TLS layer. Some services (e.g. Heroku) will handle this automatially.
+
 ## Monitoring messages
 
 There is a way to receive a copy of every message sent from websocket clients to the server. This is useful in cases where one needs to audit the messages or persist then using an independent asynchronous process. To do so, one should enable a configuration called `audit-channel`. This option should be the name of a channel where all the messages sent from a websocket client will be replicated as an aditional NOTIFY command.
