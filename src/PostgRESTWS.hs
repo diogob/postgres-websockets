@@ -17,7 +17,7 @@ import qualified Network.WebSockets             as WS
 import           Protolude
 
 import qualified Data.Aeson                     as A
-import qualified Data.ByteString                as BS
+import qualified Data.ByteString.Char8          as BS
 import qualified Data.ByteString.Lazy           as BL
 import qualified Data.HashMap.Strict            as M
 import qualified Data.Text.Encoding.Error       as T
@@ -49,13 +49,19 @@ postgrestWsMiddleware =
 -- this kills all children and frees resources for us
 wsApp :: Maybe ByteString -> ByteString -> H.Pool -> Multiplexer -> WS.ServerApp
 wsApp mAuditChannel secret pool multi pendingConn =
-  validateClaims secret (toS jwtToken) >>= either rejectRequest forkSessions
+  validateClaims requestChannel secret (toS jwtToken) >>= either rejectRequest forkSessions
   where
     hasRead m = m == ("r" :: ByteString) || m == ("rw" :: ByteString)
     hasWrite m = m == ("w" :: ByteString) || m == ("rw" :: ByteString)
     rejectRequest = WS.rejectRequest pendingConn . encodeUtf8
-    -- the first char in path is '/' the rest is the token
-    jwtToken = BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
+    -- the URI has one of the two formats - /:jwt or /:channel/:jwt 
+    pathElements = BS.split '/' $ BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
+    jwtToken 
+      | length pathElements > 1 = headDef "" $ tailSafe pathElements
+      | length pathElements <= 1 = headDef "" pathElements
+    requestChannel
+      | length pathElements > 1 = Just $ headDef "" pathElements
+      | length pathElements <= 1 = Nothing
     notifySessionWithTime = notifySession
     forkSessions (channel, mode, validClaims) = do
           -- role claim defaults to anon if not specified in jwt
