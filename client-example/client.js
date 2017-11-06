@@ -72,6 +72,8 @@ $(document).ready(function () {
     $('#channel').keyup(updateJWT);
     updateJWT();
 
+    auditWs = createWebSocket('/' + jwtForChannel('audit'));
+    auditWs.onmessage = onMessage('#audit-messages');
 
     $('#message-form').submit(function () {
         var text = $('#text').val();
@@ -80,8 +82,6 @@ $(document).ready(function () {
             ws = createWebSocket('/' + jwt);
             ws.onopen = function() {
                 ws.send(text);
-                auditWs = createWebSocket('/' + jwtForChannel('audit'));
-                auditWs.onmessage = onMessage('#audit-messages');
             };
             ws.onmessage = onMessage('#messages');
         }
