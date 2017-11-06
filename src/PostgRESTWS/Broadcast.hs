@@ -107,10 +107,9 @@ onMessage multi chan action = do
         then M.insert Channel{ broadcast = broadcast c, listeners = listeners c - 1, close = close c} chan (channels multi)
         else closeChannelProducer multi chan
     openChannelWhenNotFound =
-      M.lookup chan (channels multi) >>= \mC ->
-      case mC of
-            Nothing -> openChannel multi chan
-            Just ch -> return ch
+      M.lookup chan (channels multi) >>= \case
+                                            Nothing -> openChannel multi chan
+                                            Just ch -> return ch
     addListener ch = do
       M.delete chan (channels multi)
       let newChannel = Channel{ broadcast = broadcast ch, listeners = listeners ch + 1, close = close ch}

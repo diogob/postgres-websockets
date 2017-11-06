@@ -31,7 +31,7 @@ import           Data.Version                (versionBranch)
 import           Options.Applicative hiding  (str)
 import           Paths_postgrest_ws             (version)
 import           Text.Heredoc
-import           Text.PrettyPrint.ANSI.Leijen hiding ((<>), (<$>))
+import           Text.PrettyPrint.ANSI.Leijen hiding ((<>))
 import qualified Text.PrettyPrint.ANSI.Leijen as L
 import           Protolude hiding            (intercalate, (<>))
 
