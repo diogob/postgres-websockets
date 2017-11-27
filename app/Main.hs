@@ -46,7 +46,7 @@ main = do
       pgSettings = toS (configDatabase conf)
       appSettings = setHost ((fromString . toS) host)
                   . setPort port
-                  . setServerName (toS $ "postgrest/" <> prettyVersion)
+                  . setServerName (toS $ "postgres-websockets/" <> prettyVersion)
                   . setTimeout 3600
                   $ defaultSettings
 
@@ -56,7 +56,7 @@ main = do
   multi <- newHasqlBroadcaster pgSettings
 
   runSettings appSettings $
-    postgrestWsMiddleware (toS <$> configAuditChannel conf) (configJwtSecret conf) pool multi $
+    postgresWsMiddleware (toS <$> configAuditChannel conf) (configJwtSecret conf) pool multi $
     logStdout $ staticApp $ defaultFileServerSettings $ toS $ configPath conf
 
 loadSecretFile :: AppConfig -> IO AppConfig

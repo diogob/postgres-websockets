@@ -1,6 +1,6 @@
 name:                postgres-websockets
 version:             0.4.2.0
-synopsis:            PostgREST extension to map LISTEN/NOTIFY messages to Websockets
+synopsis:            Middleware to map LISTEN/NOTIFY messages to Websockets
 description:         Please see README.md
 homepage:            https://github.com/diogob/postgres-websockets#readme
 license:             BSD3

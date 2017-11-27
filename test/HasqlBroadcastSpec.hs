@@ -24,8 +24,8 @@ spec = describe "newHasqlBroadcaster" $ do
             <$> acquire connStr
 
     it "start listening on a database connection as we send an Open command" $ do
-      con <- newConnection "postgres://localhost/postgrest_test"
-      multi <- liftIO $ newHasqlBroadcaster "postgres://localhost/postgrest_test"
+      con <- newConnection "postgres://localhost/postgres_ws_test"
+      multi <- liftIO $ newHasqlBroadcaster "postgres://localhost/postgres_ws_test"
 
       atomically $ openChannelProducer multi "test channel"
       threadDelay 1000000
@@ -36,8 +36,8 @@ spec = describe "newHasqlBroadcaster" $ do
       booleanQueryShouldReturn con query True
 
     it "stops listening on a database connection as we send a Close command" $ do
-      con <- newConnection "postgres://localhost/postgrest_test"
-      multi <- liftIO $ newHasqlBroadcaster "postgres://localhost/postgrest_test"
+      con <- newConnection "postgres://localhost/postgres_ws_test"
+      multi <- liftIO $ newHasqlBroadcaster "postgres://localhost/postgres_ws_test"
 
       atomically $ closeChannelProducer multi "test channel"
       threadDelay 1000000

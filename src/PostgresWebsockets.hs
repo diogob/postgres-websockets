@@ -4,7 +4,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 
 module PostgresWebsockets
-  ( postgrestWsMiddleware
+  ( postgresWsMiddleware
   -- * Re-exports
   , newHasqlBroadcaster
   , newHasqlBroadcasterOrError
@@ -37,8 +37,8 @@ data Message = Message
 instance A.ToJSON Message
 
 -- | Given a secret, a function to fetch the system time, a Hasql Pool and a Multiplexer this will give you a WAI middleware.
-postgrestWsMiddleware :: Maybe ByteString -> ByteString -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
-postgrestWsMiddleware =
+postgresWsMiddleware :: Maybe ByteString -> ByteString -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
+postgresWsMiddleware =
   WS.websocketsOr WS.defaultConnectionOptions `compose` wsApp
   where
     compose = (.) . (.) . (.) . (.)

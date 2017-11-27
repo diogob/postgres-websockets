@@ -14,7 +14,7 @@ dependencies:
 
 test:
   override:
-    - createdb postgrest_test
+    - createdb postgres_ws_test
     - stack test
     - git ls-files | grep '\.l\?hs$' | xargs stack exec -- hlint -X QuasiQuotes "$@"
     - cp -f `find .stack-work/install -type f -name postgres-websockets | tail -n1` .

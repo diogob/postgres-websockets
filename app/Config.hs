@@ -29,7 +29,7 @@ import           Data.Text                   (intercalate, lines)
 import           Data.Text.Encoding          (encodeUtf8)
 import           Data.Version                (versionBranch)
 import           Options.Applicative hiding  (str)
-import           Paths_postgrest_ws             (version)
+import           Paths_postgres_websockets   (version)
 import           Text.Heredoc
 import           Text.PrettyPrint.ANSI.Leijen hiding ((<>))
 import qualified Text.PrettyPrint.ANSI.Leijen as L
@@ -80,7 +80,7 @@ readOptions = do
   opts = info (helper <*> pathParser) $
            fullDesc
            <> progDesc (
-               "PostgREST "
+               "postgres-websockets "
                <> toS prettyVersion
                <> " / create a REST API to an existing Postgres database"
              )
@@ -97,10 +97,7 @@ readOptions = do
   missingKeyHint :: C.KeyError -> IO a
   missingKeyHint (C.KeyError n) =
     die $
-      "Required config parameter \"" <> n <> "\" is missing or of wrong type.\n" <>
-      "Documentation for configuration options available at\n" <>
-      "\thttp://postgrest.com/en/v0.4/admin.html#configuration\n\n" <>
-      "Try the --example-config option to see how to configure PostgREST."
+      "Required config parameter \"" <> n <> "\" is missing or of wrong type.\n"
 
   exampleCfg :: Doc
   exampleCfg = vsep . map (text . toS) . lines $
