@@ -3,13 +3,12 @@
 postgres-websockets is a [middleware](https://hackage.haskell.org/package/wai) that adds websockets capabilites on top of [PostgreSQL](https://www.postgresql.org)'s asynchronous notifications using LISTEN and NOTIFY commands.
 The project was largely inspired and originaly designed for use with [PostgREST](https://github.com/begriffs/postgrest).
 
-
-
 postgres-websockets allows you to:
- * Open websockets with multiple channels and relay messages to the database.
+ * Open websockets with multiple channels and exchange messages with the database asynchronously.
  * Send messages to that websocket so they become a [NOTIFY](https://www.postgresql.org/docs/current/static/sql-notify.html) command in a PostgreSQL database.
- * Receive messages sent to the database to that channel in that websocket.
+ * Receive messages sent to any database channel though a websocket.
  * Authorize the use of channels using a [JWT](https://jwt.io) issued by another service or by another PostgREST endpoint.
+ * Authorize read-only, write-only, or read and write websockets.
 
 ## Running the server
 
