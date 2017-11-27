@@ -82,7 +82,7 @@ readOptions = do
            <> progDesc (
                "postgres-websockets "
                <> toS prettyVersion
-               <> " / create a REST API to an existing Postgres database"
+               <> " / Connects websockets to PostgreSQL asynchronous notifications."
              )
            <> footerDoc (Just $
                text "Example Config File:"
