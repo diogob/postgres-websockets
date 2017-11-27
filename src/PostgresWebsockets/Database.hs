@@ -1,6 +1,6 @@
 {-| This module encapsulates knowledge about the SQL commands and the Hasql interface.
 -}
-module PostgRESTWS.Database
+module PostgresWebsockets.Database
   ( notifyPool
   , notify
   , listen

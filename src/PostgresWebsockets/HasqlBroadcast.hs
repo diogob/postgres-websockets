@@ -2,7 +2,7 @@
     This module provides a function to produce a 'Multiplexer' from a Hasql 'Connection'.
     The producer issues a LISTEN command upon Open commands and UNLISTEN upon Close.
 -}
-module PostgRESTWS.HasqlBroadcast
+module PostgresWebsockets.HasqlBroadcast
   ( newHasqlBroadcaster
   , newHasqlBroadcasterOrError
   -- re-export
@@ -18,8 +18,8 @@ import Data.Either.Combinators (mapBoth)
 import Data.Function           (id)
 import Control.Retry           (RetryStatus, retrying, capDelay, exponentialBackoff)
 
-import PostgRESTWS.Database
-import PostgRESTWS.Broadcast
+import PostgresWebsockets.Database
+import PostgresWebsockets.Broadcast
 
 {- | Returns a multiplexer from a connection URI, keeps trying to connect in case there is any error.
    This function also spawns a thread that keeps relaying the messages from the database to the multiplexer's listeners
@@ -58,8 +58,8 @@ tryUntilConnected =
 
    @
    import Protolude
-   import PostgRESTWS.HasqlBroadcast
-   import PostgRESTWS.Broadcast
+   import PostgresWebsockets.HasqlBroadcast
+   import PostgresWebsockets.Broadcast
    import Hasql.Connection
 
    main = do

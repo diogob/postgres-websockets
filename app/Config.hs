@@ -1,6 +1,6 @@
 {-|
 Module      : Config
-Description : Manages PostgRESTWS configuration options.
+Description : Manages PostgresWebsockets configuration options.
 
 This module provides a helper function to read the command line
 arguments using the optparse-applicative and the AppConfig type to store
@@ -129,6 +129,6 @@ data PgVersion = PgVersion {
 , pgvName :: Text
 }
 
--- | Tells the minimum PostgreSQL version required by this version of PostgRESTWS
+-- | Tells the minimum PostgreSQL version required by this version of PostgresWebsockets
 minimumPgVersion :: PgVersion
 minimumPgVersion = PgVersion 90300 "9.3"

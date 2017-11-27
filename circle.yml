@@ -17,6 +17,6 @@ test:
     - createdb postgrest_test
     - stack test
     - git ls-files | grep '\.l\?hs$' | xargs stack exec -- hlint -X QuasiQuotes "$@"
-    - cp -f `find .stack-work/install -type f -name postgrest-ws | tail -n1` .
-    - gzip ./postgrest-ws
-    - cp -f ./postgrest-ws.gz $CIRCLE_ARTIFACTS
+    - cp -f `find .stack-work/install -type f -name postgres-websockets | tail -n1` .
+    - gzip ./postgres-websockets
+    - cp -f ./postgres-websockets.gz $CIRCLE_ARTIFACTS

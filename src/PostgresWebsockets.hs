@@ -1,9 +1,9 @@
-{-| PostgRESTWS Middleware, composing this allows postgrest to create
+{-| PostgresWebsockets Middleware, composing this allows postgrest to create
     websockets connections that will communicate with the database through LISTEN/NOTIFY channels.
 -}
 {-# LANGUAGE DeriveGeneric #-}
 
-module PostgRESTWS
+module PostgresWebsockets
   ( postgrestWsMiddleware
   -- * Re-exports
   , newHasqlBroadcaster
@@ -22,11 +22,11 @@ import qualified Data.ByteString.Lazy           as BL
 import qualified Data.HashMap.Strict            as M
 import qualified Data.Text.Encoding.Error       as T
 import           Data.Time.Clock.POSIX          (getPOSIXTime)
-import           PostgRESTWS.Broadcast          (Multiplexer, onMessage)
-import qualified PostgRESTWS.Broadcast          as B
-import           PostgRESTWS.Claims
-import           PostgRESTWS.Database
-import           PostgRESTWS.HasqlBroadcast     (newHasqlBroadcaster,
+import           PostgresWebsockets.Broadcast          (Multiplexer, onMessage)
+import qualified PostgresWebsockets.Broadcast          as B
+import           PostgresWebsockets.Claims
+import           PostgresWebsockets.Database
+import           PostgresWebsockets.HasqlBroadcast     (newHasqlBroadcaster,
                                                  newHasqlBroadcasterOrError)
 
 data Message = Message

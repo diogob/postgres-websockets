@@ -1,11 +1,11 @@
-{-| PostgRESTWS functions to broadcast messages to several listening clients
+{-| PostgresWebsockets functions to broadcast messages to several listening clients
     This module provides a type called Multiplexer.
     The multiplexer contains a map of channels and a producer thread.
 
     This module avoids any database implementation details, it is used by HasqlBroadcast where
     the database logic is combined.
 -}
-module PostgRESTWS.Broadcast ( Multiplexer (src)
+module PostgresWebsockets.Broadcast ( Multiplexer (src)
                              , Message (..)
                              , SourceCommands (..)
                              , newMultiplexer

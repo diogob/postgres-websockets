@@ -3,7 +3,7 @@
     (not to mention stateful) we need claims authorizing a specific channel and
     mode of operation.
 -}
-module PostgRESTWS.Claims
+module PostgresWebsockets.Claims
   ( validateClaims
   ) where
 

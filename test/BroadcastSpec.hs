@@ -5,7 +5,7 @@ import Control.Concurrent.STM.TQueue
 
 import Test.Hspec
 
-import PostgRESTWS.Broadcast
+import PostgresWebsockets.Broadcast
 
 spec :: Spec
 spec = do

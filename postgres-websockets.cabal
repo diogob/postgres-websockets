@@ -1,8 +1,8 @@
-name:                postgrest-ws
+name:                postgres-websockets
 version:             0.4.2.0
 synopsis:            PostgREST extension to map LISTEN/NOTIFY messages to Websockets
 description:         Please see README.md
-homepage:            https://github.com/diogob/postgrest-ws#readme
+homepage:            https://github.com/diogob/postgres-websockets#readme
 license:             BSD3
 license-file:        LICENSE
 author:              Diogo Biazus
@@ -16,11 +16,11 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   ghc-options:         -Wall
-  exposed-modules:     PostgRESTWS
-                     , PostgRESTWS.Broadcast
-                     , PostgRESTWS.Database
-                     , PostgRESTWS.HasqlBroadcast
-                     , PostgRESTWS.Claims
+  exposed-modules:     PostgresWebsockets
+                     , PostgresWebsockets.Broadcast
+                     , PostgresWebsockets.Database
+                     , PostgresWebsockets.HasqlBroadcast
+                     , PostgresWebsockets.Claims
   build-depends:       base >= 4.7 && < 5
                      , hasql-pool >= 0.4 && < 0.5
                      , text >= 1.2 && < 2
@@ -49,7 +49,7 @@ library
   default-language:    Haskell2010
   default-extensions: OverloadedStrings, NoImplicitPrelude, LambdaCase
 
-executable postgrest-ws
+executable postgres-websockets
   hs-source-dirs:      app
   main-is:             Main.hs
   other-modules:       Config
@@ -59,7 +59,7 @@ executable postgrest-ws
                      , hasql >= 0.19
                      , hasql-pool >= 0.4
                      , warp >= 3.2 && < 4
-                     , postgrest-ws
+                     , postgres-websockets
                      , protolude >= 0.2
                      , base64-bytestring
                      , bytestring
@@ -75,7 +75,7 @@ executable postgrest-ws
   default-language:    Haskell2010
   default-extensions: OverloadedStrings, NoImplicitPrelude, QuasiQuotes
 
-test-suite postgrest-ws-test
+test-suite postgres-websockets-test
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs
@@ -85,7 +85,7 @@ test-suite postgrest-ws-test
                      , HasqlBroadcastSpec
   build-depends:       base
                      , protolude >= 0.2
-                     , postgrest-ws
+                     , postgres-websockets
                      , containers
                      , hspec
                      , hspec-wai
@@ -103,4 +103,4 @@ test-suite postgrest-ws-test
 
 source-repository head
   type:     git
-  location: https://github.com/diogob/postgrest-ws
+  location: https://github.com/diogob/postgres-websockets

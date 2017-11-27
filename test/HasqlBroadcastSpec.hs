@@ -10,8 +10,8 @@ import qualified Hasql.Encoders as HE
 
 import Test.Hspec
 
-import PostgRESTWS.Broadcast
-import PostgRESTWS.HasqlBroadcast
+import PostgresWebsockets.Broadcast
+import PostgresWebsockets.HasqlBroadcast
 
 spec :: Spec
 spec = describe "newHasqlBroadcaster" $ do

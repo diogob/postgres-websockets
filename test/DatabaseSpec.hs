@@ -6,7 +6,7 @@ import           Data.Function                        (id)
 import qualified Hasql.Connection                     as H
 import Test.Hspec
 
-import PostgRESTWS.Database
+import PostgresWebsockets.Database
 
 spec :: Spec
 spec =

@@ -1,9 +1,11 @@
-# PostgREST-WS [![CircleCI](https://circleci.com/gh/diogob/postgrest-ws.svg?style=svg)](https://circleci.com/gh/diogob/postgrest-ws)
+# postgres-websockets [![CircleCI](https://circleci.com/gh/diogob/postgres-websockets.svg?style=svg)](https://circleci.com/gh/diogob/postgres-websockets)
 
-PostgREST-WS is a [WAI](https://hackage.haskell.org/package/wai) middleware designed for use with [PostgREST](https://github.com/begriffs/postgrest)
-that adds websockets capabilites to the HTTP layer on top of [PostgreSQL](https://www.postgresql.org).
+postgres-websockets is a [middleware](https://hackage.haskell.org/package/wai) that adds websockets capabilites on top of [PostgreSQL](https://www.postgresql.org)'s asynchronous notifications using LISTEN and NOTIFY commands.
+The project was largely inspired and originaly designed for use with [PostgREST](https://github.com/begriffs/postgrest).
 
-PostgREST-WS allows you to:
+
+
+postgres-websockets allows you to:
  * Open websockets with multiple channels and relay messages to the database.
  * Send messages to that websocket so they become a [NOTIFY](https://www.postgresql.org/docs/current/static/sql-notify.html) command in a PostgreSQL database.
  * Receive messages sent to the database to that channel in that websocket.
@@ -13,29 +15,29 @@ PostgREST-WS allows you to:
 
 To build the project I recommend the use of [Stack](http://docs.haskellstack.org/en/stable/README/).
 You also need to have [git](https://git-scm.com) installed to download the source code.
-Having installed stack the following commands should install `postgrest-ws` into your `~/.local/bin` directory:
+Having installed stack the following commands should install `postgres-websockets` into your `~/.local/bin` directory:
 
 ```bash
-git clone https://github.com/diogob/postgrest-ws.git
-cd postgrest-ws
+git clone https://github.com/diogob/postgres-websockets.git
+cd postgres-websockets
 stack setup
 stack build
 ```
 
 If you have any problems processing any Postgres related library on a Mac, try installing [Postgres.app](http://postgresapp.com/).
 
-After the build you should be able to run the server using `~/.local/bin/postgrest-ws` (you can add `~/.local/bin` to your PATH variable):
+After the build you should be able to run the server using `~/.local/bin/postgres-websockets` (you can add `~/.local/bin` to your PATH variable):
 
 To run the example bellow you will need a PostgreSQL server running on port 5432 of your localhost. You can also change the database connection string editting the `sample.conf` file.
 ```bash
-~/.local/bin/postgrest-ws sample.conf
+~/.local/bin/postgres-websockets sample.conf
 Listening on port 3000
 ```
 
 After running the above command, open your browser on http://localhost:3000 to see an example of usage.
 
-The sample config file provided in the [sample.conf](https://github.com/diogob/postgrest-ws/tree/master/sample.conf) file comes with a jwt secret just for testing and is used in the sample client.
-You will find the complete sources for the example under the folder [client-example](https://github.com/diogob/postgrest-ws/tree/master/client-example).
+The sample config file provided in the [sample.conf](https://github.com/diogob/postgres-websockets/tree/master/sample.conf) file comes with a jwt secret just for testing and is used in the sample client.
+You will find the complete sources for the example under the folder [client-example](https://github.com/diogob/postgres-websockets/tree/master/client-example).
 
 ## Opening connections
 

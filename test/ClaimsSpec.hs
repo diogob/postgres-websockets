@@ -6,7 +6,7 @@ import qualified Data.HashMap.Strict as M
 import           Test.Hspec
 import           Data.Aeson          (Value (..) )
 
-import           PostgRESTWS.Claims
+import           PostgresWebsockets.Claims
 
 spec :: Spec
 spec =

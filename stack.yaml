@@ -2,4 +2,4 @@ resolver: lts-9.12
 extra-deps:
     - protolude-0.2
 ghc-options:
-  postgrest-ws: -O2 -Wall -fwarn-identities -fno-warn-redundant-constraints
+  postgres-websockets: -O2 -Wall -fwarn-identities -fno-warn-redundant-constraints
