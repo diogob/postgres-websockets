@@ -23,26 +23,5 @@ spec = describe "newHasqlBroadcaster" $ do
             either (panic . show) id
             <$> acquire connStr
 
-    it "start listening on a database connection as we send an Open command" $ do
-      con <- newConnection "postgres://localhost/postgres_ws_test"
-      multi <- liftIO $ newHasqlBroadcaster "postgres://localhost/postgres_ws_test"
-
-      atomically $ openChannelProducer multi "test channel"
-      threadDelay 1000000
-
-      let statement = H.statement "SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE query ~* 'LISTEN \\\"test channel\\\"')"
-                      HE.unit (HD.singleRow $ HD.value HD.bool) False
-          query = H.query () statement
-      booleanQueryShouldReturn con query True
-
-    it "stops listening on a database connection as we send a Close command" $ do
-      con <- newConnection "postgres://localhost/postgres_ws_test"
-      multi <- liftIO $ newHasqlBroadcaster "postgres://localhost/postgres_ws_test"
-
-      atomically $ closeChannelProducer multi "test channel"
-      threadDelay 1000000
-
-      let statement = H.statement "SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE query ~* 'UNLISTEN \\\"test channel\\\"')"
-                      HE.unit (HD.singleRow $ HD.value HD.bool) False
-          query = H.query () statement
-      booleanQueryShouldReturn con query True
+    it "relay messages sent to the appropriate database channel" $ do
+      pending

@@ -11,16 +11,17 @@ import PostgresWebsockets.Database
 spec :: Spec
 spec =
   describe "waitForNotifications" $
-    it "does not block the connection ann trigger action upon notification" $ do
+    it "does trigger action upon notification" $ do
       conOrError <- H.acquire "postgres://localhost/postgres_ws_test"
       let con = either (panic . show) id conOrError :: H.Connection
       notification <- liftIO newEmptyMVar
 
-      waitForNotifications (curry $ putMVar notification) con
-      listen con $ toPgIdentifier "test"
+      race_
+        (waitForNotifications (curry $ putMVar notification) con)
+        (do listen con $ toPgIdentifier "test"
 
-      conOrError2 <- H.acquire "postgres://localhost/postgres_ws_test"
-      let con2 = either (panic . show) id conOrError2 :: H.Connection
-      void $ notify con2 (toPgIdentifier "test") "hello there"
+            conOrError2 <- H.acquire "postgres://localhost/postgres_ws_test"
+            let con2 = either (panic . show) id conOrError2 :: H.Connection
+            void $ notify con2 (toPgIdentifier "test") "hello there"
 
-      readMVar notification `shouldReturn` ("test", "hello there")
+            readMVar notification `shouldReturn` ("test", "hello there"))

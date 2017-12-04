@@ -82,7 +82,7 @@ unlisten con channel =
 
 waitForNotifications :: (ByteString -> ByteString -> IO()) -> Connection -> IO ()
 waitForNotifications sendNotification con =
-  withLibPQConnection con $ void . forkIO . forever . pqFetch
+  withLibPQConnection con $ void . forever . pqFetch
   where
     pqFetch pqCon = do
       mNotification <- PQ.notifies pqCon

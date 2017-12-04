@@ -73,23 +73,21 @@ tryUntilConnected =
 
 -}
 newHasqlBroadcasterForConnection :: IO Connection -> IO Multiplexer
-newHasqlBroadcasterForConnection getCon = do
+newHasqlBroadcasterForConnection = newHasqlBroadcasterForChannel "postgres-websockets"
+
+newHasqlBroadcasterForChannel :: ByteString -> IO Connection -> IO Multiplexer
+newHasqlBroadcasterForChannel ch getCon = do
   multi <- newMultiplexer openProducer closeProducer
   void $ relayMessagesForever multi
   return multi
   where
     closeProducer _ = putErrLn "Broadcaster is dead"
-    openProducer cmds msgs = do
+    openProducer msgs = do
       con <- getCon
+      listen con $ toPgIdentifier ch
       waitForNotifications
         (\c m-> atomically $ writeTQueue msgs $ Message c m)
         con
-      forever $ do
-        cmd <- atomically $ readTQueue cmds
-        case cmd of
-          Open ch -> listen con $ toPgIdentifier ch
-          Close ch -> unlisten con $ toPgIdentifier ch
-
 
 putErrLn :: Text -> IO ()
 putErrLn = hPutStrLn stderr
