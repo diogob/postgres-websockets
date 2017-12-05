@@ -26,15 +26,19 @@ import PostgresWebsockets.Broadcast
 {- | Returns a multiplexer from a connection URI, keeps trying to connect in case there is any error.
    This function also spawns a thread that keeps relaying the messages from the database to the multiplexer's listeners
 -}
-newHasqlBroadcaster :: ByteString -> IO Multiplexer
-newHasqlBroadcaster = newHasqlBroadcasterForConnection . tryUntilConnected
+newHasqlBroadcaster :: ByteString -> ByteString -> IO Multiplexer
+newHasqlBroadcaster ch = newHasqlBroadcasterForConnection . tryUntilConnected
+  where
+    newHasqlBroadcasterForConnection = newHasqlBroadcasterForChannel ch
 
 {- | Returns a multiplexer from a connection URI or an error message on the left case
    This function also spawns a thread that keeps relaying the messages from the database to the multiplexer's listeners
 -}
-newHasqlBroadcasterOrError :: ByteString -> IO (Either ByteString Multiplexer)
-newHasqlBroadcasterOrError =
+newHasqlBroadcasterOrError :: ByteString -> ByteString -> IO (Either ByteString Multiplexer)
+newHasqlBroadcasterOrError ch =
   acquire >=> (sequence . mapBoth show (newHasqlBroadcasterForConnection . return))
+  where
+    newHasqlBroadcasterForConnection = newHasqlBroadcasterForChannel ch
 
 tryUntilConnected :: ByteString -> IO Connection
 tryUntilConnected =
@@ -52,7 +56,7 @@ tryUntilConnected =
           return True
         _ -> return False
 
-{- | Returns a multiplexer from an IO Connection, listen for different database notification channels using the connection produced.
+{- | Returns a multiplexer from a channel and an IO Connection, listen for different database notifications on the provided channel using the connection produced.
 
    This function also spawns a thread that keeps relaying the messages from the database to the multiplexer's listeners
 
@@ -74,9 +78,6 @@ tryUntilConnected =
    @
 
 -}
-newHasqlBroadcasterForConnection :: IO Connection -> IO Multiplexer
-newHasqlBroadcasterForConnection = newHasqlBroadcasterForChannel "postgres-websockets"
-
 newHasqlBroadcasterForChannel :: ByteString -> IO Connection -> IO Multiplexer
 newHasqlBroadcasterForChannel ch getCon = do
   multi <- newMultiplexer openProducer closeProducer

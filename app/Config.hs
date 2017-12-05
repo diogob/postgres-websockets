@@ -41,7 +41,7 @@ data AppConfig = AppConfig {
   , configPath              :: Text
   , configHost              :: Text
   , configPort              :: Int
-  , configAuditChannel      :: Maybe Text
+  , configListenChannel     :: Text
   , configJwtSecret         :: ByteString
   , configJwtSecretIsBase64 :: Bool
   , configPool              :: Int
@@ -70,11 +70,14 @@ readOptions = do
     cHost     <- C.lookupDefault "*4" conf "server-host"
     cPort     <- C.lookupDefault 3000 conf "server-port"
     cAuditC   <- C.lookup conf "audit-channel"
+    cChannel  <- case cAuditC of
+      Just c -> C.lookupDefault c conf "listen-channel"
+      Nothing -> C.require conf "listen-channel"
     -- jwt ---------------
     cJwtSec   <- C.require conf "jwt-secret"
     cJwtB64   <- C.lookupDefault False conf "secret-is-base64"
 
-    return $ AppConfig cDbUri cPath cHost cPort cAuditC (encodeUtf8 cJwtSec) cJwtB64 cPool
+    return $ AppConfig cDbUri cPath cHost cPort cChannel (encodeUtf8 cJwtSec) cJwtB64 cPool
 
  where
   opts = info (helper <*> pathParser) $
@@ -107,6 +110,7 @@ readOptions = do
         |server-root = "./client-example"
         |server-host = "*4"
         |server-port = 3000
+        |listen-channel = 3000
         |
         |## choose a secret to enable JWT auth
         |## (use "@filename" to load from separate file)
