@@ -57,7 +57,7 @@ main = do
   multi <- newHasqlBroadcaster listenChannel pgSettings
 
   runSettings appSettings $
-    postgresWsMiddleware (configJwtSecret conf) pool multi $
+    postgresWsMiddleware listenChannel (configJwtSecret conf) pool multi $
     logStdout $ staticApp $ defaultFileServerSettings $ toS $ configPath conf
 
 loadSecretFile :: AppConfig -> IO AppConfig

@@ -24,4 +24,4 @@ spec = describe "newHasqlBroadcaster" $ do
       con <- newConnection "postgres://localhost/postgres_ws_test"
       void $ notify con (toPgIdentifier "postgres-websockets") "{\"channel\": \"test\", \"payload\": \"hello there\"}"
 
-      readMVar msg `shouldReturn` (Message "test" "hello there")
+      readMVar msg `shouldReturn` (Message "test" "{\"channel\": \"test\", \"payload\": \"hello there\"}")

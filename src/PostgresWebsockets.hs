@@ -38,18 +38,18 @@ data Message = Message
 instance A.ToJSON Message
 
 -- | Given a secret, a function to fetch the system time, a Hasql Pool and a Multiplexer this will give you a WAI middleware.
-postgresWsMiddleware :: ByteString -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
+postgresWsMiddleware :: ByteString -> ByteString -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
 postgresWsMiddleware =
   WS.websocketsOr WS.defaultConnectionOptions `compose` wsApp
   where
-    compose = (.) . (.) . (.)
+    compose = (.) . (.) . (.) . (.)
 
 -- private functions
 
 -- when the websocket is closed a ConnectionClosed Exception is triggered
 -- this kills all children and frees resources for us
-wsApp :: ByteString -> H.Pool -> Multiplexer -> WS.ServerApp
-wsApp secret pool multi pendingConn =
+wsApp :: ByteString -> ByteString -> H.Pool -> Multiplexer -> WS.ServerApp
+wsApp dbChannel secret pool multi pendingConn =
   validateClaims requestChannel secret (toS jwtToken) >>= either rejectRequest forkSessions
   where
     hasRead m = m == ("r" :: ByteString) || m == ("rw" :: ByteString)
@@ -74,7 +74,7 @@ wsApp secret pool multi pendingConn =
             onMessage multi ch $ WS.sendTextData conn . B.payload
 
           when (hasWrite mode) $
-            let sendNotifications = void . notifyPool pool ch
+            let sendNotifications = void . notifyPool pool dbChannel
             in notifySession validClaims (toS ch) conn sendNotifications
 
           waitForever <- newEmptyMVar

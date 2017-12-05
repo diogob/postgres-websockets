@@ -87,7 +87,7 @@ newHasqlBroadcasterForChannel ch getCon = do
     closeProducer _ = putErrLn "Broadcaster is dead"
     toMsg :: ByteString -> ByteString -> Message
     toMsg c m = case decode (toS m) of
-                   Just v -> Message (channelDef c v) (payloadDef m v)
+                   Just v -> Message (channelDef c v) m
                    Nothing -> Message c m
 
     lookupStringDef :: Text -> ByteString -> Value -> ByteString
@@ -97,7 +97,6 @@ newHasqlBroadcasterForChannel ch getCon = do
         _ -> d
     lookupStringDef _ d _ = d
     channelDef = lookupStringDef "channel"
-    payloadDef = lookupStringDef "payload"
     openProducer msgs = do
       con <- getCon
       listen con $ toPgIdentifier ch
