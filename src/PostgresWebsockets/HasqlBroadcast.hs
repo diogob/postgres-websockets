@@ -92,7 +92,7 @@ newHasqlBroadcasterForChannel ch getCon = do
 
     lookupStringDef :: Text -> ByteString -> Value -> ByteString
     lookupStringDef key d (Object obj) =
-      case (lookupDefault (String $ toS d) key obj) of
+      case lookupDefault (String $ toS d) key obj of
         String s -> toS s
         _ -> d
     lookupStringDef _ d _ = d
