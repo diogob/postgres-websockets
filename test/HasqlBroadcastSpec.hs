@@ -3,25 +3,25 @@ module HasqlBroadcastSpec (spec) where
 import Protolude
 
 import           Data.Function                        (id)
-import qualified Hasql.Query as H
-import qualified Hasql.Session as H
-import qualified Hasql.Decoders as HD
-import qualified Hasql.Encoders as HE
 
 import Test.Hspec
 
 import PostgresWebsockets.Broadcast
 import PostgresWebsockets.HasqlBroadcast
+import PostgresWebsockets.Database
 
 spec :: Spec
 spec = describe "newHasqlBroadcaster" $ do
-    let booleanQueryShouldReturn con query expected =
-          either (panic . show) id
-          <$> H.run query con
-          `shouldReturn` expected
-        newConnection connStr =
+    let newConnection connStr =
             either (panic . show) id
             <$> acquire connStr
 
     it "relay messages sent to the appropriate database channel" $ do
-      pending
+      multi <- either (panic .show) id <$> newHasqlBroadcasterOrError "postgres://localhost/postgres_ws_test"
+      msg <- liftIO newEmptyMVar
+      onMessage multi "test" $ putMVar msg
+
+      con <- newConnection "postgres://localhost/postgres_ws_test"
+      void $ notify con (toPgIdentifier "postgres-websockets") "{\"channel\": \"test\", \"payload\": \"hello there\"}"
+
+      readMVar msg `shouldReturn` (Message "test" "hello there")

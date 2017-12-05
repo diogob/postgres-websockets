@@ -7,7 +7,6 @@
 -}
 module PostgresWebsockets.Broadcast ( Multiplexer (src)
                              , Message (..)
-                             , SourceCommands (..)
                              , newMultiplexer
                              , onMessage
                              , relayMessages
@@ -25,10 +24,9 @@ import Control.Concurrent.STM.TQueue
 
 import GHC.Show
 
-data SourceCommands = Open ByteString | Close ByteString deriving (Show)
 data Message = Message { channel :: ByteString
-               , payload :: ByteString
-               } deriving (Eq, Show)
+                       , payload :: ByteString
+                       } deriving (Eq, Show)
 
 data Multiplexer = Multiplexer { channels :: M.Map ByteString Channel
                                , src :: ThreadId

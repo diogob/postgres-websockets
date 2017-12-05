@@ -14,6 +14,8 @@ module PostgresWebsockets.HasqlBroadcast
 import Protolude
 
 import Hasql.Connection
+import Data.Aeson              (decode, Value(..))
+import Data.HashMap.Lazy       (lookupDefault)
 import Data.Either.Combinators (mapBoth)
 import Data.Function           (id)
 import Control.Retry           (RetryStatus, retrying, capDelay, exponentialBackoff)
@@ -82,11 +84,24 @@ newHasqlBroadcasterForChannel ch getCon = do
   return multi
   where
     closeProducer _ = putErrLn "Broadcaster is dead"
+    toMsg :: ByteString -> ByteString -> Message
+    toMsg c m = case decode (toS m) of
+                   Just v -> Message (channelDef c v) (payloadDef m v)
+                   Nothing -> Message c m
+
+    lookupStringDef :: Text -> ByteString -> Value -> ByteString
+    lookupStringDef key d (Object obj) =
+      case (lookupDefault (String $ toS d) key obj) of
+        String s -> toS s
+        _ -> d
+    lookupStringDef _ d _ = d
+    channelDef = lookupStringDef "channel"
+    payloadDef = lookupStringDef "payload"
     openProducer msgs = do
       con <- getCon
       listen con $ toPgIdentifier ch
       waitForNotifications
-        (\c m-> atomically $ writeTQueue msgs $ Message c m)
+        (\c m-> atomically $ writeTQueue msgs $ toMsg c m)
         con
 
 putErrLn :: Text -> IO ()
