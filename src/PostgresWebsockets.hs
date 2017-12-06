@@ -99,7 +99,8 @@ notifySession claimsToSend ch wsCon send =
     jsonMsg :: M.HashMap Text A.Value -> ByteString -> ByteString
     jsonMsg cl = BL.toStrict . A.encode . Message cl ch . decodeUtf8With T.lenientDecode
 
+    claimsWithChannel = M.insert "channel" (A.String ch) claimsToSend
     claimsWithTime :: IO (M.HashMap Text A.Value)
     claimsWithTime = do
       time <- getPOSIXTime
-      return $ M.insert "message_delivered_at" (A.Number $ fromRational $ toRational time) claimsToSend
+      return $ M.insert "message_delivered_at" (A.Number $ fromRational $ toRational time) claimsWithChannel
