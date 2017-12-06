@@ -65,13 +65,9 @@ function jwt() {
 
 $(document).ready(function () {
     var ws = null;
-    var auditWs = null;
 
     $('#channel').keyup(updateJWT);
     updateJWT();
-
-    auditWs = createWebSocket('/audit/' + jwt());
-    auditWs.onmessage = onMessage('#audit-messages');
 
     $('#message-form').submit(function () {
         var text = $('#text').val();

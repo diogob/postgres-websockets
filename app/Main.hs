@@ -43,6 +43,7 @@ main = do
   conf <- loadSecretFile =<< readOptions
   let host = configHost conf
       port = configPort conf
+      listenChannel = toS $ configListenChannel conf
       pgSettings = toS (configDatabase conf)
       appSettings = setHost ((fromString . toS) host)
                   . setPort port
@@ -53,10 +54,10 @@ main = do
   putStrLn $ ("Listening on port " :: Text) <> show (configPort conf)
 
   pool <- P.acquire (configPool conf, 10, pgSettings)
-  multi <- newHasqlBroadcaster pgSettings
+  multi <- newHasqlBroadcaster listenChannel pgSettings
 
   runSettings appSettings $
-    postgresWsMiddleware (toS <$> configAuditChannel conf) (configJwtSecret conf) pool multi $
+    postgresWsMiddleware listenChannel (configJwtSecret conf) pool multi $
     logStdout $ staticApp $ defaultFileServerSettings $ toS $ configPath conf
 
 loadSecretFile :: AppConfig -> IO AppConfig

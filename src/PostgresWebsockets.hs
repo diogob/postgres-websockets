@@ -31,13 +31,14 @@ import           PostgresWebsockets.HasqlBroadcast     (newHasqlBroadcaster,
 
 data Message = Message
   { claims  :: A.Object
+  , channel :: Text
   , payload :: Text
   } deriving (Show, Eq, Generic)
 
 instance A.ToJSON Message
 
 -- | Given a secret, a function to fetch the system time, a Hasql Pool and a Multiplexer this will give you a WAI middleware.
-postgresWsMiddleware :: Maybe ByteString -> ByteString -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
+postgresWsMiddleware :: ByteString -> ByteString -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
 postgresWsMiddleware =
   WS.websocketsOr WS.defaultConnectionOptions `compose` wsApp
   where
@@ -47,8 +48,8 @@ postgresWsMiddleware =
 
 -- when the websocket is closed a ConnectionClosed Exception is triggered
 -- this kills all children and frees resources for us
-wsApp :: Maybe ByteString -> ByteString -> H.Pool -> Multiplexer -> WS.ServerApp
-wsApp mAuditChannel secret pool multi pendingConn =
+wsApp :: ByteString -> ByteString -> H.Pool -> Multiplexer -> WS.ServerApp
+wsApp dbChannel secret pool multi pendingConn =
   validateClaims requestChannel secret (toS jwtToken) >>= either rejectRequest forkSessions
   where
     hasRead m = m == ("r" :: ByteString) || m == ("rw" :: ByteString)
@@ -56,14 +57,13 @@ wsApp mAuditChannel secret pool multi pendingConn =
     rejectRequest = WS.rejectRequest pendingConn . encodeUtf8
     -- the URI has one of the two formats - /:jwt or /:channel/:jwt 
     pathElements = BS.split '/' $ BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
-    jwtToken 
+    jwtToken
       | length pathElements > 1 = headDef "" $ tailSafe pathElements
       | length pathElements <= 1 = headDef "" pathElements
     requestChannel
       | length pathElements > 1 = Just $ headDef "" pathElements
       | length pathElements <= 1 = Nothing
-    notifySessionWithTime = notifySession
-    forkSessions (channel, mode, validClaims) = do
+    forkSessions (ch, mode, validClaims) = do
           -- role claim defaults to anon if not specified in jwt
           -- We should accept only after verifying JWT
           conn <- WS.acceptRequest pendingConn
@@ -71,15 +71,11 @@ wsApp mAuditChannel secret pool multi pendingConn =
           WS.forkPingThread conn 30
 
           when (hasRead mode) $
-            onMessage multi channel $ WS.sendTextData conn . B.payload
+            onMessage multi ch $ WS.sendTextData conn . B.payload
 
           when (hasWrite mode) $
-            let sendNotifications = void . case mAuditChannel of
-                                            Nothing -> notifyPool pool channel
-                                            Just auditChannel -> \mesg ->
-                                              notifyPool pool channel mesg >>
-                                              notifyPool pool auditChannel mesg
-            in notifySessionWithTime validClaims conn sendNotifications
+            let sendNotifications = void . notifyPool pool dbChannel
+            in notifySession validClaims (toS ch) conn sendNotifications
 
           waitForever <- newEmptyMVar
           void $ takeMVar waitForever
@@ -88,10 +84,11 @@ wsApp mAuditChannel secret pool multi pendingConn =
 -- But it allows the function to ignore the claims structure and the source
 -- of the channel, so all claims decoding can be coded in the caller
 notifySession :: A.Object
+              -> Text
               -> WS.Connection
               -> (ByteString -> IO ())
               -> IO ()
-notifySession claimsToSend wsCon send =
+notifySession claimsToSend ch wsCon send =
   withAsync (forever relayData) wait
   where
     relayData = jsonMsgWithTime >>= send
@@ -100,9 +97,10 @@ notifySession claimsToSend wsCon send =
 
     -- we need to decode the bytestring to re-encode valid JSON for the notification
     jsonMsg :: M.HashMap Text A.Value -> ByteString -> ByteString
-    jsonMsg cl = BL.toStrict . A.encode . Message cl . decodeUtf8With T.lenientDecode
+    jsonMsg cl = BL.toStrict . A.encode . Message cl ch . decodeUtf8With T.lenientDecode
 
+    claimsWithChannel = M.insert "channel" (A.String ch) claimsToSend
     claimsWithTime :: IO (M.HashMap Text A.Value)
     claimsWithTime = do
       time <- getPOSIXTime
-      return $ M.insert "message_delivered_at" (A.Number $ fromRational $ toRational time) claimsToSend
+      return $ M.insert "message_delivered_at" (A.Number $ fromRational $ toRational time) claimsWithChannel

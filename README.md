@@ -60,8 +60,32 @@ ws://eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2RlIjoicnciLCJjaGFubmVsIjoiY2hhdC
 
 To use a secure socket (`wss://`) you will need a proxy server like nginx to handle the TLS layer. Some services (e.g. Heroku) will handle this automatially.
 
-## Monitoring messages
+## Receiving messages from the browser
 
-There is a way to receive a copy of every message sent from websocket clients to the server. This is useful in cases where one needs to audit the messages or persist then using an independent asynchronous process. To do so, one should enable a configuration called `audit-channel`. This option should be the name of a channel where all the messages sent from a websocket client will be replicated as an aditional NOTIFY command.
+Every message received from the browser will be in JSON format as:
+```javascript
+{
+  "claims": { "message_delivered_at": 0.0, "a_custom_claim_from_the_jwt": "your_custom_value" },
+  "channel": "destination_channel",
+  "payload": "message content"
+}
+```
 
-When running the example page, all messages received by the audit channel are visible in the last section of the page.
+Where `claims` contain any custom claims added to the JWT with the added `message_delivered_at` which marks the timestamp in unix format of when the message was processed by postgres-websockets just before being sent to the database.
+Also `channel` contains the channel requested in the JWT, and this should be used to send any messages back to that particular client.
+Finally `payload` contain a string with the message contents.
+
+A easy way to process messages received asynchronously is to use [pg-recorder](https://github.com/diogob/pg-recorder) with some custom stored procedures.
+For more options on notification processing check the [PostgREST documentation on the topic](https://postgrest.com/en/v4.3/intro.html#external-notification).
+
+## Sending messages to the browser
+
+To send a message to a particular channel on the browser one should notify the postgres-websockets listener channel and pass a JSON object containing the channel and payload such as:
+```sql
+SELECT pg_notify(
+  'postgres-websockets-listener',
+  json_build_object('channel', 'chat', 'payload', 'test')::text
+);
+```
+
+Where `postgres-websockets-listener` is the database channel used by your instance of postgres-websockets and `chat` is the channel where the browser is connected (the same issued in the JWT used to connect).

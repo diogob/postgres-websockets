@@ -11,3 +11,4 @@ tags
 site
 rails.conf
 cabal-helper*
+.dir-locals.el
