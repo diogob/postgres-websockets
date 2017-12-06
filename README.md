@@ -12,6 +12,17 @@ postgres-websockets allows you to:
 
 ## Running the server
 
+### Quickstart using docker-compose
+The `docker-compose.yml` present in the repository will start a PostgreSQL database alongside a postgres-websockets and a pg-recorder.
+To try it out you will need [Docker](https://www.docker.com/) installed and [git](https://git-scm.com) to clone this repository.
+
+```bash
+git clone https://github.com/diogob/postgres-websockets.git
+cd postgres-websockets
+docker-compose up
+```
+
+### Building from source
 To build the project I recommend the use of [Stack](http://docs.haskellstack.org/en/stable/README/).
 You also need to have [git](https://git-scm.com) installed to download the source code.
 Having installed stack the following commands should install `postgres-websockets` into your `~/.local/bin` directory:
