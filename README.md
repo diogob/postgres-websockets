@@ -89,9 +89,3 @@ SELECT pg_notify(
 ```
 
 Where `postgres-websockets-listener` is the database channel used by your instance of postgres-websockets and `chat` is the channel where the browser is connected (the same issued in the JWT used to connect).
-
-## Monitoring messages
-
-There is a way to receive a copy of every message sent from websocket clients to the server. This is useful in cases where one needs to audit the messages or persist then using an independent asynchronous process. To do so, one should enable a configuration called `audit-channel`. This option should be the name of a channel where all the messages sent from a websocket client will be replicated as an aditional NOTIFY command.
-
-When running the example page, all messages received by the audit channel are visible in the last section of the page.
