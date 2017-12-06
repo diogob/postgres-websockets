@@ -11,7 +11,7 @@ services:
     image: diogob/postgres-websockets
     environment:
       PGWS_DB_URI: postgres://pgws:example@db/pgws
-      PGWS_JWT_SECRET: "238t74dbn3sot478emdr3498hrxmefuy3478yfnxhelu"
+      PGWS_JWT_SECRET: "auwhfdnskjhewfi34uwehdlaehsfkuaeiskjnfduierhfsiweskjcnzeiluwhskdewishdnpwe"
     ports:
         - "3000:3000"
     depends_on:
