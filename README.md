@@ -82,7 +82,10 @@ For more options on notification processing check the [PostgREST documentation o
 
 To send a message to a particular channel on the browser one should notify the postgres-websockets listener channel and pass a JSON object containing the channel and payload such as:
 ```sql
-SELECT pg_notify('postgres-websockets-listener', json_build_object('channel', 'chat', 'payload', 'test')::text);
+SELECT pg_notify(
+  'postgres-websockets-listener',
+  json_build_object('channel', 'chat', 'payload', 'test')::text
+);
 ```
 
 Where `postgres-websockets-listener` is the database channel used by your instance of postgres-websockets and `chat` is the channel where the browser is connected (the same issued in the JWT used to connect).
