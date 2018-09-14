@@ -110,7 +110,7 @@ readOptions = do
         |server-root = "./client-example"
         |server-host = "*4"
         |server-port = 3000
-        |listen-channel = 3000
+        |listen-channel = "postgres-websockets-listener"
         |
         |## choose a secret to enable JWT auth
         |## (use "@filename" to load from separate file)
