@@ -23,15 +23,18 @@ module Config ( prettyVersion
 import           System.IO.Error             (IOError)
 import           Control.Applicative
 import qualified Data.Configurator           as C
+import qualified Data.Configurator.Parser    as C
 import qualified Data.Configurator.Types     as C
 import           Data.Monoid
+import           Data.Scientific             (floatingOrInteger)
 import           Data.Text                   (intercalate, lines)
 import           Data.Text.Encoding          (encodeUtf8)
 import           Data.Version                (versionBranch)
 import           Options.Applicative hiding  (str)
 import           Paths_postgres_websockets   (version)
+import           System.IO                   (hPrint)
 import           Text.Heredoc
-import           Text.PrettyPrint.ANSI.Leijen hiding ((<>))
+import           Text.PrettyPrint.ANSI.Leijen hiding ((<>), (<$>))
 import qualified Text.PrettyPrint.ANSI.Leijen as L
 import           Protolude hiding            (intercalate, (<>))
 
@@ -58,28 +61,40 @@ readOptions = do
   cfgPath <- customExecParser parserPrefs opts
   -- Now read the actual config file
   conf <- catch
-    (C.load [C.Required cfgPath])
+    (C.readConfig =<< C.load [C.Required cfgPath])
     configNotfoundHint
 
-  handle missingKeyHint $ do
-    -- db ----------------
-    cDbUri    <- C.require conf "db-uri"
-    cPool     <- C.lookupDefault 10 conf "db-pool"
-    -- server ------------
-    cPath     <- C.require conf "server-root"
-    cHost     <- C.lookupDefault "*4" conf "server-host"
-    cPort     <- C.lookupDefault 3000 conf "server-port"
-    cAuditC   <- C.lookup conf "audit-channel"
-    cChannel  <- case cAuditC of
-      Just c -> C.lookupDefault c conf "listen-channel"
-      Nothing -> C.require conf "listen-channel"
-    -- jwt ---------------
-    cJwtSec   <- C.require conf "jwt-secret"
-    cJwtB64   <- C.lookupDefault False conf "secret-is-base64"
+  let (mAppConf, errs) = flip C.runParserM conf $ do
+        -- db ----------------
+        cDbUri    <- C.key "db-uri"
+        cPool     <- fromMaybe 10 . join . fmap coerceInt <$> C.key "db-pool"
+        -- server ------------
+        cPath     <- C.key "server-root"
+        cHost     <- fromMaybe "*4" . mfilter (/= "") <$> C.key "server-host"
+        cPort     <- fromMaybe 3000 . join . fmap coerceInt <$> C.key "server-port"
+        cAuditC   <- C.key "audit-channel"
+        cChannel  <- case cAuditC of
+          Just c -> fromMaybe c . mfilter (/= "") <$> C.key "listen-channel"
+          Nothing -> C.key "listen-channel"
+        -- jwt ---------------
+        cJwtSec   <- C.key "jwt-secret"
+        cJwtB64   <- fromMaybe False <$> C.key "secret-is-base64"
 
-    return $ AppConfig cDbUri cPath cHost cPort cChannel (encodeUtf8 cJwtSec) cJwtB64 cPool
+        return $ AppConfig cDbUri cPath cHost cPort cChannel (encodeUtf8 cJwtSec) cJwtB64 cPool
+
+  case mAppConf of
+    Nothing -> do
+      forM_ errs $ hPrint stderr
+      exitFailure
+    Just appConf ->
+      return appConf
 
  where
+  coerceInt :: (Read i, Integral i) => C.Value -> Maybe i
+  coerceInt (C.Number x) = rightToMaybe $ floatingOrInteger x
+  coerceInt (C.String x) = readMaybe $ toS x
+  coerceInt _            = Nothing
+
   opts = info (helper <*> pathParser) $
            fullDesc
            <> progDesc (

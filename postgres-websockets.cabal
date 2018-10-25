@@ -63,8 +63,9 @@ executable postgres-websockets
                      , protolude >= 0.2
                      , base64-bytestring
                      , bytestring
-                     , configurator
+                     , configurator-ng >= 0.0.0.1
                      , optparse-applicative
+                     , scientific >= 0.3.5.0
                      , text
                      , time
                      , wai
