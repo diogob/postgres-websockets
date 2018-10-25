@@ -12,9 +12,9 @@ module PostgresWebsockets.Database
 
 import Protolude hiding (replace)
 import Hasql.Pool (Pool, UsageError, use)
-import Hasql.Session (sql, run, query)
+import Hasql.Session (sql, run, statement)
 import qualified Hasql.Session as S
-import Hasql.Query (statement)
+import qualified Hasql.Statement as HST
 import Hasql.Connection (Connection, withLibPQConnection)
 import qualified Hasql.Decoders as HD
 import qualified Hasql.Encoders as HE
@@ -45,19 +45,19 @@ toPgIdentifier x = PgIdentifier $ "\"" <> strictlyReplaceQuotes (trimNullChars x
 -- | Given a Hasql Pool, a channel and a message sends a notify command to the database
 notifyPool :: Pool -> ByteString -> ByteString -> IO (Either Error ())
 notifyPool pool channel mesg =
-   mapError <$> use pool (query (toS channel, toS mesg) callStatement)
+   mapError <$> use pool (statement (toS channel, toS mesg) callStatement)
    where
      mapError :: Either UsageError () -> Either Error ()
      mapError = mapLeft (NotifyError . show)
-     callStatement = statement ("SELECT pg_notify" <> "($1, $2)") encoder HD.unit False
-     encoder = contramap fst (HE.value HE.text) <> contramap snd (HE.value HE.text)
+     callStatement = HST.Statement ("SELECT pg_notify" <> "($1, $2)") encoder HD.unit False
+     encoder = contramap fst (HE.param HE.text) <> contramap snd (HE.param HE.text)
 
 -- | Given a Hasql Connection, a channel and a message sends a notify command to the database
 notify :: Connection -> PgIdentifier -> ByteString -> IO (Either Error ())
 notify con channel mesg =
    mapError <$> run (sql ("NOTIFY " <> fromPgIdentifier channel <> ", '" <> mesg <> "'")) con
    where
-     mapError :: Either S.Error () -> Either Error ()
+     mapError :: Either S.QueryError () -> Either Error ()
      mapError = mapLeft (NotifyError . show)
 
 -- | Given a Hasql Connection and a channel sends a listen command to the database

@@ -13,7 +13,7 @@ import qualified Data.ByteString.Base64               as B64
 import           Data.String                          (IsString (..))
 import           Data.Text                            (pack, replace, strip, stripPrefix)
 import           Data.Text.Encoding                   (encodeUtf8, decodeUtf8)
-import qualified Hasql.Query                          as H
+import qualified Hasql.Statement                      as H
 import qualified Hasql.Session                        as H
 import qualified Hasql.Decoders                       as HD
 import qualified Hasql.Encoders                       as HE
@@ -27,12 +27,12 @@ import           System.IO                            (BufferMode (..),
 
 isServerVersionSupported :: H.Session Bool
 isServerVersionSupported = do
-  ver <- H.query () pgVersion
+  ver <- H.statement () pgVersion
   return $ ver >= pgvNum minimumPgVersion
  where
   pgVersion =
-    H.statement "SELECT current_setting('server_version_num')::integer"
-      HE.unit (HD.singleRow $ HD.value HD.int4) False
+    H.Statement "SELECT current_setting('server_version_num')::integer"
+      HE.unit (HD.singleRow $ HD.column HD.int4) False
 
 main :: IO ()
 main = do
