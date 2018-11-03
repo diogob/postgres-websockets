@@ -73,6 +73,7 @@ executable postgres-websockets
                      , wai-app-static
                      , heredoc
                      , ansi-wl-pprint
+                     , envparse
   default-language:    Haskell2010
   default-extensions: OverloadedStrings, NoImplicitPrelude, QuasiQuotes
 

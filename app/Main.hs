@@ -40,6 +40,10 @@ main = do
   hSetBuffering stdin  LineBuffering
   hSetBuffering stderr NoBuffering
 
+  putStrLn $ ("postgres-websockets " :: Text)
+               <> prettyVersion
+               <> " / Connects websockets to PostgreSQL asynchronous notifications."
+
   conf <- loadSecretFile =<< readOptions
   let host = configHost conf
       port = configPort conf
