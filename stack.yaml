@@ -1,4 +1,4 @@
-resolver: lts-12.14
+resolver: lts-12.16
 extra-deps: []
 ghc-options:
   postgres-websockets: -O2 -Wall -fwarn-identities -fno-warn-redundant-constraints
