@@ -1,4 +1,4 @@
-resolver: lts-12.16
+resolver: lts-12.14
 extra-deps:
 - envparse-0.4.1@sha256:989902e6368532548f61de1fa245ad2b39176cddd8743b20071af519a709ce30 
 
