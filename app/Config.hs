@@ -20,22 +20,10 @@ module Config ( prettyVersion
                         )
        where
 
-import           System.IO.Error             (IOError)
-import           Control.Applicative
-import qualified Data.Configurator           as C
-import qualified Data.Configurator.Parser    as C
-import qualified Data.Configurator.Types     as C
-import           Data.Monoid
-import           Data.Scientific             (floatingOrInteger)
-import           Data.Text                   (intercalate, lines)
-import           Data.Text.Encoding          (encodeUtf8)
+import Env
+import           Data.Text                   (intercalate)
 import           Data.Version                (versionBranch)
-import           Options.Applicative hiding  (str)
 import           Paths_postgres_websockets   (version)
-import           System.IO                   (hPrint)
-import           Text.Heredoc
-import           Text.PrettyPrint.ANSI.Leijen hiding ((<>), (<$>))
-import qualified Text.PrettyPrint.ANSI.Leijen as L
 import           Protolude hiding            (intercalate, (<>))
 
 -- | Config file settings for the server
@@ -54,91 +42,18 @@ data AppConfig = AppConfig {
 prettyVersion :: Text
 prettyVersion = intercalate "." $ map show $ versionBranch version
 
--- | Function to read and parse options from the command line
+-- | Function to read and parse options from the environment
 readOptions :: IO AppConfig
-readOptions = do
-  -- First read the config file path from command line
-  cfgPath <- customExecParser parserPrefs opts
-  -- Now read the actual config file
-  conf <- catch
-    (C.readConfig =<< C.load [C.Required cfgPath])
-    configNotfoundHint
-
-  let (mAppConf, errs) = flip C.runParserM conf $ do
-        -- db ----------------
-        cDbUri    <- C.key "db-uri"
-        cPool     <- fromMaybe 10 . join . fmap coerceInt <$> C.key "db-pool"
-        -- server ------------
-        cPath     <- C.key "server-root"
-        cHost     <- fromMaybe "*4" . mfilter (/= "") <$> C.key "server-host"
-        cPort     <- fromMaybe 3000 . join . fmap coerceInt <$> C.key "server-port"
-        cAuditC   <- C.key "audit-channel"
-        cChannel  <- case cAuditC of
-          Just c -> fromMaybe c . mfilter (/= "") <$> C.key "listen-channel"
-          Nothing -> C.key "listen-channel"
-        -- jwt ---------------
-        cJwtSec   <- C.key "jwt-secret"
-        cJwtB64   <- fromMaybe False <$> C.key "secret-is-base64"
-
-        return $ AppConfig cDbUri cPath cHost cPort cChannel (encodeUtf8 cJwtSec) cJwtB64 cPool
-
-  case mAppConf of
-    Nothing -> do
-      forM_ errs $ hPrint stderr
-      exitFailure
-    Just appConf ->
-      return appConf
-
- where
-  coerceInt :: (Read i, Integral i) => C.Value -> Maybe i
-  coerceInt (C.Number x) = rightToMaybe $ floatingOrInteger x
-  coerceInt (C.String x) = readMaybe $ toS x
-  coerceInt _            = Nothing
-
-  opts = info (helper <*> pathParser) $
-           fullDesc
-           <> progDesc (
-               "postgres-websockets "
-               <> toS prettyVersion
-               <> " / Connects websockets to PostgreSQL asynchronous notifications."
-             )
-           <> footerDoc (Just $
-               text "Example Config File:"
-               L.<> nest 2 (hardline L.<> exampleCfg)
-             )
-
-  parserPrefs = prefs showHelpOnError
-
-  configNotfoundHint :: IOError -> IO a
-  configNotfoundHint e = die $ "Cannot open config file:\n\t" <> show e
-
-  missingKeyHint :: C.KeyError -> IO a
-  missingKeyHint (C.KeyError n) =
-    die $
-      "Required config parameter \"" <> n <> "\" is missing or of wrong type.\n"
-
-  exampleCfg :: Doc
-  exampleCfg = vsep . map (text . toS) . lines $
-    [str|db-uri = "postgres://user:pass@localhost:5432/dbname"
-        |db-pool = 10
-        |
-        |server-root = "./client-example"
-        |server-host = "*4"
-        |server-port = 3000
-        |listen-channel = "postgres-websockets-listener"
-        |
-        |## choose a secret to enable JWT auth
-        |## (use "@filename" to load from separate file)
-        |# jwt-secret = "foo"
-        |# secret-is-base64 = false
-        |]
-
-
-pathParser :: Parser FilePath
-pathParser =
-  strArgument $
-    metavar "FILENAME" <>
-    help "Path to configuration file"
+readOptions =
+    Env.parse (header "You need to configure some environment variables to start the service.") $
+      AppConfig <$> var (str <=< nonempty) "PGWS_DB_URI"  (help "String to connect to PostgreSQL")
+                <*> var str "PGWS_ROOT_PATH" (def "./" <> helpDef show <> help "Root path to serve static files")
+                <*> var str "PGWS_HOST" (def "*4" <> helpDef show <> help "Address the server will listen for websocket connections")
+                <*> var auto "PGWS_PORT" (def 3000 <> helpDef show <> help "Port the server will listen for websocket connections")
+                <*> var str "PGWS_LISTEN_CHANNEL" (def "postgres-websockets-listener" <> helpDef show <> help "Master channel used in the database to send or read messages in any notification channel")
+                <*> var str "PGWS_JWT_SECRET" (help "Secret used to sign JWT tokens used to open communications channels")
+                <*> var auto "PGWS_JWT_SECRET_BASE64" (def False <> helpDef show <> help "Indicate whether the JWT secret should be decoded from a base64 encoded string")
+                <*> var auto "PGWS_POOL_SIZE" (def 10 <> helpDef show <> help "How many connection to the database should be used by the connection pool")
 
 data PgVersion = PgVersion {
   pgvNum  :: Int32

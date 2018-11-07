@@ -38,12 +38,17 @@ If you have any problems processing any Postgres related library on a Mac, try i
 
 After the build you should be able to run the server using `~/.local/bin/postgres-websockets` (you can add `~/.local/bin` to your PATH variable):
 
-To run the example bellow you will need a PostgreSQL server running on port 5432 of your localhost. You can also change the database connection string editting the `sample.conf` file.
+To run the example bellow you will need a PostgreSQL server running on port 5432 of your localhost.
 ```bash
-~/.local/bin/postgres-websockets sample.conf
+PGWS_DB_URI="postgres://localhost:5432/postgres" PGWS_JWT_SECRET="auwhfdnskjhewfi34uwehdlaehsfkuaeiskjnfduierhfsiweskjcnzeiluwhskdewishdnpwe" ~/.local/bin/postgres-websockets
+postgres-websockets <version> / Connects websockets to PostgreSQL asynchronous notifications.
 Listening on port 3000
 ```
 
+ You can also use the provided [sample-env](./sample-env) file to export the needed variables:
+```bash
+source sample-env && ~/.local/bin/postgres-websockets
+```
 After running the above command, open your browser on http://localhost:3000 to see an example of usage.
 
 The sample config file provided in the [sample.conf](https://github.com/diogob/postgres-websockets/tree/master/sample.conf) file comes with a jwt secret just for testing and is used in the sample client.

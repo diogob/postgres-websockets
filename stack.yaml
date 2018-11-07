@@ -1,7 +1,6 @@
-resolver: lts-9.12
+resolver: lts-12.14
 extra-deps:
-  - protolude-0.2
-  - configurator-ng-0.0.0.1
-  - critbit-0.2.0.0
+- envparse-0.4.1@sha256:989902e6368532548f61de1fa245ad2b39176cddd8743b20071af519a709ce30 
+
 ghc-options:
   postgres-websockets: -O2 -Wall -fwarn-identities -fno-warn-redundant-constraints

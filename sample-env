@@ -1,20 +1,20 @@
 ## PostgreSQL URI where the server will connect to issue NOTIFY and LISTEN commands
-db-uri = "postgres://localhost:5432/postgres"
+export PGWS_DB_URI="postgres://localhost:5432/postgres"
 
 ## Size of connection pool used to issue notify commands (LISTEN commands are always issued on the same connection that is not part of the pool).
-db-pool = 10
+export PGWS_POOL_SIZE=10
 
-## server-root can be used to serve some static files for convenience when testing.
-server-root = "./client-example"
+## Root path can be used to serve some static files for convenience when testing.
+export PGWS_ROOT_PATH="./client-example"
 
 ## Sends a copy of every message received from websocket clients to the channel specified bellow as an aditional NOTIFY command.
-listen-channel = "postgres-websockets-listener"
+export PGWS_LISTEN_CHANNEL="postgres-websockets-listener"
 
 ## Host and port on which the websockets server (and the static files server) will be listening.
-server-host = "*4"
-server-port = 3000
+export PGWS_HOST="*4"
+export PGWS_PORT=3000
 
 ## choose a secret to enable JWT auth
 ## (use "@filename" to load from separate file)
-jwt-secret = "auwhfdnskjhewfi34uwehdlaehsfkuaeiskjnfduierhfsiweskjcnzeiluwhskdewishdnpwe"
-secret-is-base64 = false
+export PGWS_JWT_SECRET="auwhfdnskjhewfi34uwehdlaehsfkuaeiskjnfduierhfsiweskjcnzeiluwhskdewishdnpwe"
+export PGWS_JWT_SECRET_BASE64=False

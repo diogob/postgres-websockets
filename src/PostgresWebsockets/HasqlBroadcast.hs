@@ -11,7 +11,7 @@ module PostgresWebsockets.HasqlBroadcast
   , relayMessagesForever
   ) where
 
-import Protolude
+import Protolude hiding (putErrLn)
 
 import Hasql.Connection
 import Data.Aeson              (decode, Value(..))
