@@ -58,7 +58,7 @@ executePool :: Pool -> ByteString -> IO Text
 executePool pool sqlCmd =
    either show identity <$> use pool (statement () callStatement)
    where
-     callStatement = HST.Statement sqlCmd HE.unit decoder False
+     callStatement = HST.Statement ("SELECT json_agg(a.*) FROM (" <> sqlCmd <> ") a") HE.unit decoder False
      decoder = HD.singleRow $ HD.column HD.text
 
 -- | Given a Hasql Connection, a channel and a message sends a notify command to the database
