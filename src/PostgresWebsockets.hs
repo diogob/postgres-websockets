@@ -70,15 +70,31 @@ wsApp dbChannel secret pool multi pendingConn =
           -- Fork a pinging thread to ensure browser connections stay alive
           WS.forkPingThread conn 30
 
-          when (hasRead mode) $
-            onMessage multi ch $ WS.sendTextData conn . B.payload
+          when (ch == "sql") $
+            let executeSQL = executePool pool
+             in executeSession validClaims conn executeSQL
 
-          when (hasWrite mode) $
-            let sendNotifications = void . notifyPool pool dbChannel
-            in notifySession validClaims (toS ch) conn sendNotifications
+          unless (ch == "sql") $ do
+            when (hasRead mode) $
+              onMessage multi ch $ WS.sendTextData conn . B.payload
+
+            when (hasWrite mode) $
+              let sendNotifications = void . notifyPool pool dbChannel
+               in notifySession validClaims (toS ch) conn sendNotifications
 
           waitForever <- newEmptyMVar
           void $ takeMVar waitForever
+
+executeSession :: A.Object
+               -> WS.Connection
+               -> (ByteString -> IO Text)
+               -> IO ()
+executeSession claimsToSend wsCon execute =
+  withAsync (forever repl) wait
+    where
+      repl = jsonResult >>= WS.sendTextData wsCon
+      jsonResult :: IO Text
+      jsonResult = WS.receiveData wsCon >>= execute
 
 -- Having both channel and claims as parameters seem redundant
 -- But it allows the function to ignore the claims structure and the source

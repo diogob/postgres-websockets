@@ -2,6 +2,7 @@
 -}
 module PostgresWebsockets.Database
   ( notifyPool
+  , executePool
   , notify
   , listen
   , unlisten
@@ -51,6 +52,14 @@ notifyPool pool channel mesg =
      mapError = mapLeft (NotifyError . show)
      callStatement = HST.Statement ("SELECT pg_notify" <> "($1, $2)") encoder HD.unit False
      encoder = contramap fst (HE.param HE.text) <> contramap snd (HE.param HE.text)
+
+-- | Given a Hasql Pool, a SQL string sends a query and return JSON
+executePool :: Pool -> ByteString -> IO Text
+executePool pool sqlCmd =
+   either show identity <$> use pool (statement () callStatement)
+   where
+     callStatement = HST.Statement sqlCmd HE.unit decoder False
+     decoder = HD.singleRow $ HD.column HD.text
 
 -- | Given a Hasql Connection, a channel and a message sends a notify command to the database
 notify :: Connection -> PgIdentifier -> ByteString -> IO (Either Error ())
