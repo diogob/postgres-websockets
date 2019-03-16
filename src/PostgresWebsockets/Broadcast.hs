@@ -18,7 +18,7 @@ module PostgresWebsockets.Broadcast ( Multiplexer (src)
                              ) where
 
 import Protolude
-import qualified STMContainers.Map as M
+import qualified StmContainers.Map as M
 import Control.Concurrent.STM.TChan
 import Control.Concurrent.STM.TQueue
 
