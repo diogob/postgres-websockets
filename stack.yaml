@@ -1,6 +1,9 @@
-resolver: lts-12.14
+resolver: lts-13.12
 extra-deps:
-- envparse-0.4.1@sha256:989902e6368532548f61de1fa245ad2b39176cddd8743b20071af519a709ce30 
+- envparse-0.4.1@sha256:989902e6368532548f61de1fa245ad2b39176cddd8743b20071af519a709ce30
+- stm-containers-1.1.0.2@sha256:8976df591e61f378ef29dc0443dbe2d5d34818c898093af3ca138ea1d013b5eb
+- stm-hamt-1.2.0.2@sha256:18126db7bf2d9c967a6020c677b3005dd957a4c39d69aeaea3c29c90de8f6124
+- primitive-extras-0.7.1@sha256:23905c57089418b1a2d324cfee3e81bbd5a344a0fa56a827867b2dce275fdb5e
 
 ghc-options:
   postgres-websockets: -O2 -Wall -fwarn-identities -fno-warn-redundant-constraints
