@@ -1,0 +1,71 @@
+# This file is heavily inspired by these pages:
+# - https://circleci.com/docs/2.0/language-haskell/
+# - https://circleci.com/blog/publishing-to-github-releases-via-circleci/
+#
+version: 2
+jobs:
+  build-test-and-publish:
+    docker:
+      - image: fpco/stack-build-small:lts
+      - image: postgres:11-alpine
+        environment:
+          POSTGRES_DB: postgres_ws_test
+          POSTGRES_USER: root
+    steps:
+      - checkout
+      - restore_cache:
+          name: Restore Cached Dependencies
+          keys:
+            - postgres-websockets-v1-{{ checksum "postgres-websockets.cabal" }}
+      - run:
+          name: Install curl
+          command: apt-get update && apt-get -qq -y install curl libpq-dev
+      - run:
+          name: Download and run hlint
+          command: curl -sSL https://raw.github.com/ndmitchell/hlint/master/misc/run.sh | sh -s .
+      - run:
+          name: Download ghr
+          command: |
+            curl -sSLO https://github.com/tcnksm/ghr/releases/download/v0.12.0/ghr_v0.12.0_linux_386.tar.gz
+            curl -sSLO https://github.com/tcnksm/ghr/releases/download/v0.12.0/v0.12.0_SHASUMS
+            sha256sum --check --ignore-missing v0.12.0_SHASUMS
+            tar --strip-components=1 -zxvf ghr_v0.12.0_linux_386.tar.gz ghr_v0.12.0_linux_386/ghr
+      - run:
+          name: Resolve and update dependencies
+          command: stack setup
+      - run:
+          name: Build the dependencies and the library
+          command: stack --silent build
+      - run:
+          name: Run tests
+          command: stack test
+      - run:
+          name: Install executable
+          command: stack --silent install
+      - run:
+          name: Calculate and save checksum
+          command: sha256sum ~/.local/bin/postgres-websockets > /root/postgres-websockets.sha256
+      - save_cache:
+          name: Cache Dependencies
+          key: postgres-websockets-v1-{{ checksum "postgres-websockets.cabal" }}
+          paths:
+            - ".stack"
+            - ".stack-work"
+      - run:
+          name: Publish Release on GitHub
+          command: |
+            mkdir /root/result/
+            cp /root/postgres-websockets.sha256 /root/.local/bin/postgres-websockets /root/result/
+            VERSION=$(awk '/^version: / { print $2 };' < postgres-websockets.cabal)
+            ./ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} /root/result/
+
+workflows:
+  version: 2
+  main:
+    jobs:
+      - build-test-and-publish:
+          filters:
+            branches:
+              only: master
+            tags:
+              only: /^[\d.]+$/

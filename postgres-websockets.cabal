@@ -31,7 +31,6 @@ library
                      , bytestring >= 0.10
                      , postgresql-libpq
                      , lens
-                     , lens-aeson
                      , jose >= 0.6
                      , unordered-containers >= 0.2
                      , postgresql-libpq >= 0.9 && < 1.0
@@ -40,7 +39,7 @@ library
                      , jwt >= 0.7.2 && < 0.8
                      , hasql >= 0.19
                      , either
-                     , stm-containers
+                     , stm-containers == 0.2.16
                      , stm
                      , retry
                      , stringsearch
