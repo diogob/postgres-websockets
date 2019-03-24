@@ -36,10 +36,9 @@ library
                      , postgresql-libpq >= 0.9 && < 1.0
                      , aeson >= 0.11
                      , protolude >= 0.2
-                     , jwt >= 0.7.2 && < 0.8
                      , hasql >= 0.19
                      , either
-                     , stm-containers == 0.2.16
+                     , stm-containers
                      , stm
                      , retry
                      , stringsearch
