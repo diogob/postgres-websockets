@@ -46,8 +46,8 @@ jobs:
           name: Resolve and update dependencies
           command: stack setup
       - run:
-          name: Install Cabal and hlint
-          command: stack install --system-ghc --resolver=lts-14.27 Cabal hlint
+          name: Install hlint
+          command: apt-get update && apt-get -qq -y install hlint
       - save_cache:
           name: Cache Dependencies
           key: postgres-websockets-v2-{{ checksum "stack.yaml" }}
