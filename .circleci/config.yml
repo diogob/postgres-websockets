@@ -6,7 +6,7 @@ version: 2
 jobs:
   publish:
     docker:
-      - image: fpco/stack-build-small:lts
+      - image: fpco/stack-build-small:lts-14
     steps:
       - attach_workspace:
           at: ws
@@ -30,7 +30,7 @@ jobs:
 
   build-test:
     docker:
-      - image: fpco/stack-build:lts-13.14
+      - image: fpco/stack-build:lts-14.27
       - image: postgres:11-alpine
         environment:
           POSTGRES_DB: postgres_ws_test
@@ -47,7 +47,7 @@ jobs:
           command: stack setup
       - run:
           name: Install Cabal and hlint
-          command: stack install --system-ghc --resolver=lts-13.14 Cabal hlint
+          command: stack install --system-ghc --resolver=lts-14.27 Cabal hlint
       - save_cache:
           name: Cache Dependencies
           key: postgres-websockets-v2-{{ checksum "stack.yaml" }}
