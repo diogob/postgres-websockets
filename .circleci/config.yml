@@ -35,6 +35,7 @@ jobs:
         environment:
           POSTGRES_DB: postgres_ws_test
           POSTGRES_USER: root
+          POSTGRES_HOST_AUTH_METHOD: trust
     steps:
       - checkout
       - restore_cache:
