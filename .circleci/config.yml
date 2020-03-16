@@ -6,7 +6,7 @@ version: 2
 jobs:
   publish:
     docker:
-      - image: fpco/stack-build-small:lts
+      - image: fpco/stack-build-small:lts-14
     steps:
       - attach_workspace:
           at: ws
@@ -30,11 +30,12 @@ jobs:
 
   build-test:
     docker:
-      - image: fpco/stack-build:lts-13.14
+      - image: fpco/stack-build:lts-14.27
       - image: postgres:11-alpine
         environment:
           POSTGRES_DB: postgres_ws_test
           POSTGRES_USER: root
+          POSTGRES_HOST_AUTH_METHOD: trust
     steps:
       - checkout
       - restore_cache:
@@ -45,8 +46,8 @@ jobs:
           name: Resolve and update dependencies
           command: stack setup
       - run:
-          name: Install Cabal and hlint
-          command: stack install --system-ghc --resolver=lts-13.14 Cabal hlint
+          name: Install hlint
+          command: apt-get update && apt-get -qq -y install hlint
       - save_cache:
           name: Cache Dependencies
           key: postgres-websockets-v2-{{ checksum "stack.yaml" }}

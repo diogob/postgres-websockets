@@ -49,8 +49,8 @@ notifyPool pool channel mesg =
    where
      mapError :: Either UsageError () -> Either Error ()
      mapError = mapLeft (NotifyError . show)
-     callStatement = HST.Statement ("SELECT pg_notify" <> "($1, $2)") encoder HD.unit False
-     encoder = contramap fst (HE.param HE.text) <> contramap snd (HE.param HE.text)
+     callStatement = HST.Statement ("SELECT pg_notify" <> "($1, $2)") encoder HD.noResult False
+     encoder = contramap fst (HE.param $ HE.nonNullable $ HE.text) <> contramap snd (HE.param $ HE.nonNullable $ HE.text)
 
 -- | Given a Hasql Connection, a channel and a message sends a notify command to the database
 notify :: Connection -> PgIdentifier -> ByteString -> IO (Either Error ())
