@@ -2,13 +2,11 @@ module HasqlBroadcastSpec (spec) where
 
 import Protolude
 
-import           Data.Function                        (id)
-
+import Data.Function (id)
 import Test.Hspec
-
 import PostgresWebsockets.Broadcast
 import PostgresWebsockets.HasqlBroadcast
-import PostgresWebsockets.Database
+import Hasql.Notifications
 
 spec :: Spec
 spec = describe "newHasqlBroadcaster" $ do

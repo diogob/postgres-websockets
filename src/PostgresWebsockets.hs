@@ -11,6 +11,7 @@ module PostgresWebsockets
   ) where
 
 import qualified Hasql.Pool                     as H
+import qualified Hasql.Notifications            as H
 import qualified Network.Wai                    as Wai
 import qualified Network.Wai.Handler.WebSockets as WS
 import qualified Network.WebSockets             as WS
@@ -25,7 +26,6 @@ import           Data.Time.Clock.POSIX          (getPOSIXTime)
 import           PostgresWebsockets.Broadcast          (Multiplexer, onMessage)
 import qualified PostgresWebsockets.Broadcast          as B
 import           PostgresWebsockets.Claims
-import           PostgresWebsockets.Database
 import           PostgresWebsockets.HasqlBroadcast     (newHasqlBroadcaster,
                                                  newHasqlBroadcasterOrError)
 
@@ -38,7 +38,7 @@ data Message = Message
 instance A.ToJSON Message
 
 -- | Given a secret, a function to fetch the system time, a Hasql Pool and a Multiplexer this will give you a WAI middleware.
-postgresWsMiddleware :: ByteString -> ByteString -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
+postgresWsMiddleware :: Text -> ByteString -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
 postgresWsMiddleware =
   WS.websocketsOr WS.defaultConnectionOptions `compose` wsApp
   where
@@ -48,7 +48,7 @@ postgresWsMiddleware =
 
 -- when the websocket is closed a ConnectionClosed Exception is triggered
 -- this kills all children and frees resources for us
-wsApp :: ByteString -> ByteString -> H.Pool -> Multiplexer -> WS.ServerApp
+wsApp :: Text -> ByteString -> H.Pool -> Multiplexer -> WS.ServerApp
 wsApp dbChannel secret pool multi pendingConn =
   validateClaims requestChannel secret (toS jwtToken) >>= either rejectRequest forkSessions
   where
@@ -74,7 +74,7 @@ wsApp dbChannel secret pool multi pendingConn =
             onMessage multi ch $ WS.sendTextData conn . B.payload
 
           when (hasWrite mode) $
-            let sendNotifications = void . notifyPool pool dbChannel
+            let sendNotifications = void . (H.notifyPool pool dbChannel) . toS
             in notifySession validClaims (toS ch) conn sendNotifications
 
           waitForever <- newEmptyMVar
