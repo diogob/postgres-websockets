@@ -32,6 +32,20 @@ packages:
       sha256: f788dae21ca4f0d0377d97a5ba7fd008d4b0af8991a745f94c29f2caa11dc6bd
   original:
     hackage: primitive-extras-0.7.1@sha256:23905c57089418b1a2d324cfee3e81bbd5a344a0fa56a827867b2dce275fdb5e
+- completed:
+    cabal-file:
+      size: 2093
+      sha256: 7455f3ba46dc2c73dc0cd70ef5388614784741769f66b0f74dc6cdb89c8da255
+    name: hasql-notifications
+    version: 0.1.0.0
+    git: https://github.com/diogob/hasql-notifications.git
+    pantry-tree:
+      size: 896
+      sha256: 52dffbb0104007bf3c76fb36997d036678644b9a0aeb37d80ec055ab6e0262da
+    commit: 7a2924501a5eeacd8a897d87d3b87c596e4560b4
+  original:
+    git: https://github.com/diogob/hasql-notifications.git
+    commit: 7a2924501a5eeacd8a897d87d3b87c596e4560b4
 snapshots:
 - completed:
     size: 524996

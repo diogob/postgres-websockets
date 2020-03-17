@@ -14,19 +14,19 @@ module PostgresWebsockets.HasqlBroadcast
 import Protolude hiding (putErrLn)
 
 import Hasql.Connection
+import Hasql.Notifications
 import Data.Aeson              (decode, Value(..))
 import Data.HashMap.Lazy       (lookupDefault)
 import Data.Either.Combinators (mapBoth)
 import Data.Function           (id)
 import Control.Retry           (RetryStatus, retrying, capDelay, exponentialBackoff)
 
-import PostgresWebsockets.Database
 import PostgresWebsockets.Broadcast
 
 {- | Returns a multiplexer from a connection URI, keeps trying to connect in case there is any error.
    This function also spawns a thread that keeps relaying the messages from the database to the multiplexer's listeners
 -}
-newHasqlBroadcaster :: ByteString -> ByteString -> IO Multiplexer
+newHasqlBroadcaster :: Text -> ByteString -> IO Multiplexer
 newHasqlBroadcaster ch = newHasqlBroadcasterForConnection . tryUntilConnected
   where
     newHasqlBroadcasterForConnection = newHasqlBroadcasterForChannel ch
@@ -34,7 +34,7 @@ newHasqlBroadcaster ch = newHasqlBroadcasterForConnection . tryUntilConnected
 {- | Returns a multiplexer from a connection URI or an error message on the left case
    This function also spawns a thread that keeps relaying the messages from the database to the multiplexer's listeners
 -}
-newHasqlBroadcasterOrError :: ByteString -> ByteString -> IO (Either ByteString Multiplexer)
+newHasqlBroadcasterOrError :: Text -> ByteString -> IO (Either ByteString Multiplexer)
 newHasqlBroadcasterOrError ch =
   acquire >=> (sequence . mapBoth show (newHasqlBroadcasterForConnection . return))
   where
@@ -78,7 +78,7 @@ tryUntilConnected =
    @
 
 -}
-newHasqlBroadcasterForChannel :: ByteString -> IO Connection -> IO Multiplexer
+newHasqlBroadcasterForChannel :: Text -> IO Connection -> IO Multiplexer
 newHasqlBroadcasterForChannel ch getCon = do
   multi <- newMultiplexer openProducer closeProducer
   void $ relayMessagesForever multi
