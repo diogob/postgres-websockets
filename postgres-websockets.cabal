@@ -8,7 +8,7 @@ license-file:        LICENSE
 author:              Diogo Biazus
 maintainer:          diogo@biazus.ca
 copyright:           2016 Diogo Biazus
-category:            Web
+category:            Web, Database, PostgreSQL
 build-type:          Simple
 -- extra-source-files:
 cabal-version:       >=1.10

@@ -4,8 +4,8 @@ extra-deps:
 - stm-containers-1.1.0.2@sha256:8976df591e61f378ef29dc0443dbe2d5d34818c898093af3ca138ea1d013b5eb
 - stm-hamt-1.2.0.2@sha256:18126db7bf2d9c967a6020c677b3005dd957a4c39d69aeaea3c29c90de8f6124
 - primitive-extras-0.7.1@sha256:23905c57089418b1a2d324cfee3e81bbd5a344a0fa56a827867b2dce275fdb5e
-- git: https://github.com/diogob/hasql-notifications.git
-  commit: 7a2924501a5eeacd8a897d87d3b87c596e4560b4
+- hasql-notifications-0.1.0.0@sha256:9ab112d2bb5da0d55abd65f0d27a7bb1dc4aeb792518d9a2ea8a16e243e19985,2156
+
 
 ghc-options:
   postgres-websockets: -Wall -fwarn-identities -fno-warn-redundant-constraints
