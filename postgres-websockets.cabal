@@ -67,6 +67,7 @@ executable postgres-websockets
                      , wai
                      , wai-extra
                      , wai-app-static
+                     , http-types
                      , envparse
   default-language:    Haskell2010
   default-extensions: OverloadedStrings, NoImplicitPrelude, QuasiQuotes
