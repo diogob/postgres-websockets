@@ -34,7 +34,7 @@ isServerVersionSupported = do
  where
   pgVersion =
     H.Statement "SELECT current_setting('server_version_num')::integer"
-      HE.noParams (HD.singleRow $ HD.column $ HD.nonNullable $ HD.int4) False
+      HE.noParams (HD.singleRow $ HD.column $ HD.nonNullable HD.int4) False
 
 main :: IO ()
 main = do
