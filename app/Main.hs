@@ -18,8 +18,10 @@ import qualified Hasql.Session                        as H
 import qualified Hasql.Decoders                       as HD
 import qualified Hasql.Encoders                       as HE
 import qualified Hasql.Pool                           as P
-import Network.Wai.Application.Static
+import           Network.Wai.Application.Static
 
+import           Network.Wai (Application, responseLBS)
+import           Network.HTTP.Types (status200)
 import           Network.Wai.Handler.Warp
 import           Network.Wai.Middleware.RequestLogger (logStdout)
 import           System.IO                            (BufferMode (..),
@@ -32,7 +34,7 @@ isServerVersionSupported = do
  where
   pgVersion =
     H.Statement "SELECT current_setting('server_version_num')::integer"
-      HE.noParams (HD.singleRow $ HD.column $ HD.nonNullable $ HD.int4) False
+      HE.noParams (HD.singleRow $ HD.column $ HD.nonNullable HD.int4) False
 
 main :: IO ()
 main = do
@@ -62,7 +64,13 @@ main = do
 
   runSettings appSettings $
     postgresWsMiddleware listenChannel (configJwtSecret conf) pool multi $
-    logStdout $ staticApp $ defaultFileServerSettings $ toS $ configPath conf
+    logStdout $ maybe dummyApp staticApp' (configPath conf)
+  where
+    staticApp' :: Text -> Application
+    staticApp' = staticApp . defaultFileServerSettings . toS
+    dummyApp :: Application
+    dummyApp _ respond =
+        respond $ responseLBS status200 [("Content-Type", "text/plain")] "Hello, Web!"
 
 loadSecretFile :: AppConfig -> IO AppConfig
 loadSecretFile conf = extractAndTransform secret

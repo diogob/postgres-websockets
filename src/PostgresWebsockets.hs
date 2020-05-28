@@ -55,7 +55,7 @@ wsApp dbChannel secret pool multi pendingConn =
     hasRead m = m == ("r" :: ByteString) || m == ("rw" :: ByteString)
     hasWrite m = m == ("w" :: ByteString) || m == ("rw" :: ByteString)
     rejectRequest = WS.rejectRequest pendingConn . encodeUtf8
-    -- the URI has one of the two formats - /:jwt or /:channel/:jwt 
+    -- the URI has one of the two formats - /:jwt or /:channel/:jwt
     pathElements = BS.split '/' $ BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
     jwtToken
       | length pathElements > 1 = headDef "" $ tailSafe pathElements
@@ -74,7 +74,7 @@ wsApp dbChannel secret pool multi pendingConn =
             onMessage multi ch $ WS.sendTextData conn . B.payload
 
           when (hasWrite mode) $
-            let sendNotifications = void . (H.notifyPool pool dbChannel) . toS
+            let sendNotifications = void . H.notifyPool pool dbChannel . toS
             in notifySession validClaims (toS ch) conn sendNotifications
 
           waitForever <- newEmptyMVar

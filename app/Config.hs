@@ -24,12 +24,12 @@ import Env
 import           Data.Text                   (intercalate)
 import           Data.Version                (versionBranch)
 import           Paths_postgres_websockets   (version)
-import           Protolude hiding            (intercalate, (<>))
+import           Protolude hiding            (intercalate, (<>), optional)
 
 -- | Config file settings for the server
 data AppConfig = AppConfig {
     configDatabase          :: Text
-  , configPath              :: Text
+  , configPath              :: Maybe Text
   , configHost              :: Text
   , configPort              :: Int
   , configListenChannel     :: Text
@@ -47,7 +47,7 @@ readOptions :: IO AppConfig
 readOptions =
     Env.parse (header "You need to configure some environment variables to start the service.") $
       AppConfig <$> var (str <=< nonempty) "PGWS_DB_URI"  (help "String to connect to PostgreSQL")
-                <*> var str "PGWS_ROOT_PATH" (def "./" <> helpDef show <> help "Root path to serve static files")
+                <*> optional (var str "PGWS_ROOT_PATH" (help "Root path to serve static files, unset to disable."))
                 <*> var str "PGWS_HOST" (def "*4" <> helpDef show <> help "Address the server will listen for websocket connections")
                 <*> var auto "PGWS_PORT" (def 3000 <> helpDef show <> help "Port the server will listen for websocket connections")
                 <*> var str "PGWS_LISTEN_CHANNEL" (def "postgres-websockets-listener" <> helpDef show <> help "Master channel used in the database to send or read messages in any notification channel")
