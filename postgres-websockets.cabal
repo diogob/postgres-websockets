@@ -1,5 +1,5 @@
 name:                postgres-websockets
-version:             0.6.0.0
+version:             0.6.1.0
 synopsis:            Middleware to map LISTEN/NOTIFY messages to Websockets
 description:         Please see README.md
 homepage:            https://github.com/diogob/postgres-websockets#readme

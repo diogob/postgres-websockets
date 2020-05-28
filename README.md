@@ -54,6 +54,7 @@ After running the above command, open your browser on http://localhost:3000 to s
 
 The sample config file provided in the [sample.conf](https://github.com/diogob/postgres-websockets/tree/master/sample.conf) file comes with a jwt secret just for testing and is used in the sample client.
 You will find the complete sources for the example under the folder [client-example](https://github.com/diogob/postgres-websockets/tree/master/client-example).
+To run the server without giving access to any static files one can unser the variable `PGWS_ROOT_PATH`.
 
 ## Opening connections
 
