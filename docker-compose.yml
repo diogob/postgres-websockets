@@ -1,7 +1,7 @@
 version: '3'
 services:
   db:
-    image: postgres:10-alpine
+    image: postgres:12-alpine
     ports:
         - "5433:5432"
     environment:
@@ -12,6 +12,7 @@ services:
     environment:
       PGWS_DB_URI: postgres://pgws:example@db/pgws
       PGWS_JWT_SECRET: "auwhfdnskjhewfi34uwehdlaehsfkuaeiskjnfduierhfsiweskjcnzeiluwhskdewishdnpwe"
+      PGWS_ROOT_PATH: /home/postgres-websockets/client-example
     ports:
         - "3000:3000"
     depends_on:

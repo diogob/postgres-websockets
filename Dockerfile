@@ -1,5 +1,5 @@
 # Use Alpine Linux as base image
-FROM alpine:3.8
+FROM alpine:3.11.6
 
 # Install libpq and gmp dependencies (dynamic libraries required by the project)
 RUN apk update && apk add libpq gmp libffi
@@ -18,6 +18,6 @@ ENV PGWS_DB_URI= \
 
 # Run the binary on container start
 # (substitute your project name for 'example')
-CMD ["postgres-websockets", "/etc/postgres-websockets.conf"]
+CMD postgres-websockets
 
 EXPOSE 3000

@@ -1,4 +1,4 @@
-FROM alpine:3.8
+FROM alpine:3.11.6
 
 RUN echo "@testing http://nl.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
 RUN apk -U add shadow@testing
