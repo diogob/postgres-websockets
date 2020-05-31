@@ -22,7 +22,7 @@ import qualified Data.ByteString.Char8          as BS
 import qualified Data.ByteString.Lazy           as BL
 import qualified Data.HashMap.Strict            as M
 import qualified Data.Text.Encoding.Error       as T
-import           Data.Time.Clock.POSIX          (getPOSIXTime)
+import           Data.Time.Clock.POSIX          (getPOSIXTime, getCurrentTime)
 import           PostgresWebsockets.Broadcast          (Multiplexer, onMessage)
 import qualified PostgresWebsockets.Broadcast          as B
 import           PostgresWebsockets.Claims
@@ -50,7 +50,7 @@ postgresWsMiddleware =
 -- this kills all children and frees resources for us
 wsApp :: Text -> ByteString -> H.Pool -> Multiplexer -> WS.ServerApp
 wsApp dbChannel secret pool multi pendingConn =
-  validateClaims requestChannel secret (toS jwtToken) >>= either rejectRequest forkSessions
+  getCurrentTime >>= validateClaims requestChannel secret (toS jwtToken) >>= either rejectRequest forkSessions
   where
     hasRead m = m == ("r" :: ByteString) || m == ("rw" :: ByteString)
     hasWrite m = m == ("w" :: ByteString) || m == ("rw" :: ByteString)
