@@ -23,7 +23,7 @@ import qualified Data.ByteString.Lazy           as BL
 import qualified Data.HashMap.Strict            as M
 import qualified Data.Text.Encoding.Error       as T
 import           Data.Time.Clock (UTCTime)
-import           Data.Time.Clock.POSIX          (getPOSIXTime, getCurrentTime)
+import           Data.Time.Clock.POSIX          (utcTimeToPOSIXSeconds, getCurrentTime)
 import           PostgresWebsockets.Broadcast          (Multiplexer, onMessage)
 import qualified PostgresWebsockets.Broadcast          as B
 import           PostgresWebsockets.Claims
@@ -76,7 +76,7 @@ wsApp getTime dbChannel secret pool multi pendingConn =
 
           when (hasWrite mode) $
             let sendNotifications = void . H.notifyPool pool dbChannel . toS
-            in notifySession validClaims (toS ch) conn sendNotifications
+            in notifySession validClaims (toS ch) conn getTime sendNotifications
 
           waitForever <- newEmptyMVar
           void $ takeMVar waitForever
@@ -87,9 +87,10 @@ wsApp getTime dbChannel secret pool multi pendingConn =
 notifySession :: A.Object
               -> Text
               -> WS.Connection
+              -> IO UTCTime
               -> (ByteString -> IO ())
               -> IO ()
-notifySession claimsToSend ch wsCon send =
+notifySession claimsToSend ch wsCon getTime send =
   withAsync (forever relayData) wait
   where
     relayData = jsonMsgWithTime >>= send
@@ -103,5 +104,5 @@ notifySession claimsToSend ch wsCon send =
     claimsWithChannel = M.insert "channel" (A.String ch) claimsToSend
     claimsWithTime :: IO (M.HashMap Text A.Value)
     claimsWithTime = do
-      time <- getPOSIXTime
-      return $ M.insert "message_delivered_at" (A.Number $ fromRational $ toRational time) claimsWithChannel
+      time <- utcTimeToPOSIXSeconds <$> getTime
+      return $ M.insert "message_delivered_at" (A.Number $ realToFrac time) claimsWithChannel
