@@ -44,6 +44,7 @@ library
                      , stringsearch >= 0.3.6.6 && < 0.4
                      , time >= 1.8.0.2 && < 1.9
                      , contravariant >= 1.5.2 && < 1.6
+                     , alarmclock >= 0.7.0.2 && < 0.8
   default-language:    Haskell2010
   default-extensions: OverloadedStrings, NoImplicitPrelude, LambdaCase
 

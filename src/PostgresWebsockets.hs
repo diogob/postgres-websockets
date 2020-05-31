@@ -23,7 +23,8 @@ import qualified Data.ByteString.Lazy           as BL
 import qualified Data.HashMap.Strict            as M
 import qualified Data.Text.Encoding.Error       as T
 import           Data.Time.Clock (UTCTime)
-import           Data.Time.Clock.POSIX          (utcTimeToPOSIXSeconds, getCurrentTime)
+import           Data.Time.Clock.POSIX          (utcTimeToPOSIXSeconds, getCurrentTime, posixSecondsToUTCTime)
+import           Control.Concurrent.AlarmClock (newAlarmClock, setAlarm)
 import           PostgresWebsockets.Broadcast          (Multiplexer, onMessage)
 import qualified PostgresWebsockets.Broadcast          as B
 import           PostgresWebsockets.Claims
@@ -70,6 +71,13 @@ wsApp getTime dbChannel secret pool multi pendingConn =
           conn <- WS.acceptRequest pendingConn
           -- Fork a pinging thread to ensure browser connections stay alive
           WS.withPingThread conn 30 (pure ()) $ do
+            case M.lookup "exp" validClaims of
+              Just (A.Number exp) -> do
+                connectionExpirer <- newAlarmClock $ const (WS.sendClose conn ("JWT expired" :: ByteString))
+                setAlarm connectionExpirer (posixSecondsToUTCTime $ realToFrac exp)
+              Just _ -> pure ()
+              Nothing -> pure ()
+
             when (hasRead mode) $
               onMessage multi ch $ WS.sendTextData conn . B.payload
 
