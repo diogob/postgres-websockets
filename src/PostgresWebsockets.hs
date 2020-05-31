@@ -47,6 +47,8 @@ postgresWsMiddleware =
     compose = (.) . (.) . (.) . (.) . (.)
 
 -- private functions
+jwtExpirationStatusCode :: Word16
+jwtExpirationStatusCode = 3001
 
 -- when the websocket is closed a ConnectionClosed Exception is triggered
 -- this kills all children and frees resources for us
@@ -73,7 +75,7 @@ wsApp getTime dbChannel secret pool multi pendingConn =
           WS.withPingThread conn 30 (pure ()) $ do
             case M.lookup "exp" validClaims of
               Just (A.Number expClaim) -> do
-                connectionExpirer <- newAlarmClock $ const (WS.sendClose conn ("JWT expired" :: ByteString))
+                connectionExpirer <- newAlarmClock $ const (WS.sendCloseCode conn jwtExpirationStatusCode ("JWT expired" :: ByteString))
                 setAlarm connectionExpirer (posixSecondsToUTCTime $ realToFrac expClaim)
               Just _ -> pure ()
               Nothing -> pure ()
