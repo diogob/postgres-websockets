@@ -22,6 +22,7 @@ import qualified Data.ByteString.Char8          as BS
 import qualified Data.ByteString.Lazy           as BL
 import qualified Data.HashMap.Strict            as M
 import qualified Data.Text.Encoding.Error       as T
+import           Data.Time.Clock (UTCTime)
 import           Data.Time.Clock.POSIX          (getPOSIXTime, getCurrentTime)
 import           PostgresWebsockets.Broadcast          (Multiplexer, onMessage)
 import qualified PostgresWebsockets.Broadcast          as B
@@ -38,19 +39,19 @@ data Message = Message
 instance A.ToJSON Message
 
 -- | Given a secret, a function to fetch the system time, a Hasql Pool and a Multiplexer this will give you a WAI middleware.
-postgresWsMiddleware :: Text -> ByteString -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
+postgresWsMiddleware :: IO UTCTime -> Text -> ByteString -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
 postgresWsMiddleware =
   WS.websocketsOr WS.defaultConnectionOptions `compose` wsApp
   where
-    compose = (.) . (.) . (.) . (.)
+    compose = (.) . (.) . (.) . (.) . (.)
 
 -- private functions
 
 -- when the websocket is closed a ConnectionClosed Exception is triggered
 -- this kills all children and frees resources for us
-wsApp :: Text -> ByteString -> H.Pool -> Multiplexer -> WS.ServerApp
-wsApp dbChannel secret pool multi pendingConn =
-  getCurrentTime >>= validateClaims requestChannel secret (toS jwtToken) >>= either rejectRequest forkSessions
+wsApp :: IO UTCTime -> Text -> ByteString -> H.Pool -> Multiplexer -> WS.ServerApp
+wsApp getTime dbChannel secret pool multi pendingConn =
+  getTime >>= validateClaims requestChannel secret (toS jwtToken) >>= either rejectRequest forkSessions
   where
     hasRead m = m == ("r" :: ByteString) || m == ("rw" :: ByteString)
     hasWrite m = m == ("w" :: ByteString) || m == ("rw" :: ByteString)

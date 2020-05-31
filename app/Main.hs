@@ -19,6 +19,11 @@ import qualified Hasql.Decoders                       as HD
 import qualified Hasql.Encoders                       as HE
 import qualified Hasql.Pool                           as P
 import           Network.Wai.Application.Static
+import Data.Time.Clock (UTCTime, getCurrentTime)
+import Control.AutoUpdate       ( defaultUpdateSettings
+                                , mkAutoUpdate
+                                , updateAction
+                                )
 
 import           Network.Wai (Application, responseLBS)
 import           Network.HTTP.Types (status200)
@@ -61,11 +66,14 @@ main = do
 
   pool <- P.acquire (configPool conf, 10, pgSettings)
   multi <- newHasqlBroadcaster listenChannel pgSettings
+  getTime <- mkGetTime
 
   runSettings appSettings $
-    postgresWsMiddleware listenChannel (configJwtSecret conf) pool multi $
+    postgresWsMiddleware getTime listenChannel (configJwtSecret conf) pool multi $
     logStdout $ maybe dummyApp staticApp' (configPath conf)
   where
+    mkGetTime :: IO (IO UTCTime)
+    mkGetTime = mkAutoUpdate defaultUpdateSettings {updateAction = getCurrentTime}
     staticApp' :: Text -> Application
     staticApp' = staticApp . defaultFileServerSettings . toS
     dummyApp :: Application
