@@ -10,23 +10,27 @@ module PostgresWebsockets.Claims
 import           Control.Lens
 import qualified Crypto.JOSE.Types   as JOSE.Types
 import           Crypto.JWT
-import           Data.Aeson          (Value (..), decode, toJSON)
 import qualified Data.HashMap.Strict as M
 import           Protolude
+import Data.Time.Clock (UTCTime)
+import Data.String (String, fromString)
+import qualified Data.Aeson as JSON
+import qualified Data.Aeson.Types as JSON
 
 
-type Claims = M.HashMap Text Value
+type Claims = M.HashMap Text JSON.Value
 type ConnectionInfo = (ByteString, ByteString, Claims)
 
 {-| Given a secret, a token and a timestamp it validates the claims and returns
     either an error message or a triple containing channel, mode and claims hashmap.
 -}
-validateClaims :: Maybe ByteString -> ByteString -> LByteString -> IO (Either Text ConnectionInfo)
-validateClaims requestChannel secret jwtToken =
+validateClaims :: Maybe ByteString -> ByteString -> LByteString -> UTCTime -> IO (Either Text ConnectionInfo)
+validateClaims requestChannel secret jwtToken time =
   runExceptT $ do
-    cl <- liftIO $ jwtClaims (parseJWK secret) jwtToken
+    cl <- liftIO $ jwtClaims time (parseJWK secret) jwtToken
     cl' <- case cl of
       JWTClaims c -> pure c
+      JWTInvalid JWTExpired -> throwError "Token expired"
       _ -> throwError "Error"
     channel <- claimAsJSON requestChannel "channel" cl'
     mode <- claimAsJSON Nothing "mode" cl'
@@ -35,7 +39,7 @@ validateClaims requestChannel secret jwtToken =
   where
     claimAsJSON :: Maybe ByteString -> Text -> Claims -> ExceptT Text IO ByteString
     claimAsJSON defaultVal name cl = case M.lookup name cl of
-      Just (String s) -> pure $ encodeUtf8 s
+      Just (JSON.String s) -> pure $ encodeUtf8 s
       Just _ -> throwError "claim is not string value"
       Nothing -> nonExistingClaim defaultVal name
 
@@ -53,20 +57,20 @@ validateClaims requestChannel secret jwtToken =
 -}
 data JWTAttempt = JWTInvalid JWTError
                 | JWTMissingSecret
-                | JWTClaims (M.HashMap Text Value)
+                | JWTClaims (M.HashMap Text JSON.Value)
                 deriving Eq
 
 {-|
   Receives the JWT secret (from config) and a JWT and returns a map
   of JWT claims.
 -}
-jwtClaims :: JWK -> LByteString -> IO JWTAttempt
-jwtClaims _ "" = return $ JWTClaims M.empty
-jwtClaims secret payload = do
-  let validation = defaultJWTValidationSettings (const True)
+jwtClaims :: UTCTime -> JWK -> LByteString -> IO JWTAttempt
+jwtClaims _ _ "" = return $ JWTClaims M.empty
+jwtClaims time jwk payload = do
+  let config = defaultJWTValidationSettings (const True)
   eJwt <- runExceptT $ do
     jwt <- decodeCompact payload
-    verifyClaims validation secret jwt
+    verifyClaimsAt config jwk time jwt
   return $ case eJwt of
     Left e    -> JWTInvalid e
     Right jwt -> JWTClaims . claims2map $ jwt
@@ -75,10 +79,10 @@ jwtClaims secret payload = do
   Internal helper used to turn JWT ClaimSet into something
   easier to work with
 -}
-claims2map :: ClaimsSet -> M.HashMap Text Value
-claims2map = val2map . toJSON
+claims2map :: ClaimsSet -> M.HashMap Text JSON.Value
+claims2map = val2map . JSON.toJSON
  where
-  val2map (Object o) = o
+  val2map (JSON.Object o) = o
   val2map _          = M.empty
 
 {-|
@@ -96,4 +100,4 @@ hs256jwk key =
 
 parseJWK :: ByteString -> JWK
 parseJWK str =
-  fromMaybe (hs256jwk str) (decode (toS str) :: Maybe JWK)
+  fromMaybe (hs256jwk str) (JSON.decode (toS str) :: Maybe JWK)

@@ -22,7 +22,9 @@ import qualified Data.ByteString.Char8          as BS
 import qualified Data.ByteString.Lazy           as BL
 import qualified Data.HashMap.Strict            as M
 import qualified Data.Text.Encoding.Error       as T
-import           Data.Time.Clock.POSIX          (getPOSIXTime)
+import           Data.Time.Clock (UTCTime)
+import           Data.Time.Clock.POSIX          (utcTimeToPOSIXSeconds, posixSecondsToUTCTime)
+import           Control.Concurrent.AlarmClock (newAlarmClock, setAlarm)
 import           PostgresWebsockets.Broadcast          (Multiplexer, onMessage)
 import qualified PostgresWebsockets.Broadcast          as B
 import           PostgresWebsockets.Claims
@@ -38,19 +40,21 @@ data Message = Message
 instance A.ToJSON Message
 
 -- | Given a secret, a function to fetch the system time, a Hasql Pool and a Multiplexer this will give you a WAI middleware.
-postgresWsMiddleware :: Text -> ByteString -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
+postgresWsMiddleware :: IO UTCTime -> Text -> ByteString -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
 postgresWsMiddleware =
   WS.websocketsOr WS.defaultConnectionOptions `compose` wsApp
   where
-    compose = (.) . (.) . (.) . (.)
+    compose = (.) . (.) . (.) . (.) . (.)
 
 -- private functions
+jwtExpirationStatusCode :: Word16
+jwtExpirationStatusCode = 3001
 
 -- when the websocket is closed a ConnectionClosed Exception is triggered
 -- this kills all children and frees resources for us
-wsApp :: Text -> ByteString -> H.Pool -> Multiplexer -> WS.ServerApp
-wsApp dbChannel secret pool multi pendingConn =
-  validateClaims requestChannel secret (toS jwtToken) >>= either rejectRequest forkSessions
+wsApp :: IO UTCTime -> Text -> ByteString -> H.Pool -> Multiplexer -> WS.ServerApp
+wsApp getTime dbChannel secret pool multi pendingConn =
+  getTime >>= validateClaims requestChannel secret (toS jwtToken) >>= either rejectRequest forkSessions
   where
     hasRead m = m == ("r" :: ByteString) || m == ("rw" :: ByteString)
     hasWrite m = m == ("w" :: ByteString) || m == ("rw" :: ByteString)
@@ -68,17 +72,23 @@ wsApp dbChannel secret pool multi pendingConn =
           -- We should accept only after verifying JWT
           conn <- WS.acceptRequest pendingConn
           -- Fork a pinging thread to ensure browser connections stay alive
-          WS.forkPingThread conn 30
+          WS.withPingThread conn 30 (pure ()) $ do
+            case M.lookup "exp" validClaims of
+              Just (A.Number expClaim) -> do
+                connectionExpirer <- newAlarmClock $ const (WS.sendCloseCode conn jwtExpirationStatusCode ("JWT expired" :: ByteString))
+                setAlarm connectionExpirer (posixSecondsToUTCTime $ realToFrac expClaim)
+              Just _ -> pure ()
+              Nothing -> pure ()
 
-          when (hasRead mode) $
-            onMessage multi ch $ WS.sendTextData conn . B.payload
+            when (hasRead mode) $
+              onMessage multi ch $ WS.sendTextData conn . B.payload
 
-          when (hasWrite mode) $
-            let sendNotifications = void . H.notifyPool pool dbChannel . toS
-            in notifySession validClaims (toS ch) conn sendNotifications
+            when (hasWrite mode) $
+              let sendNotifications = void . H.notifyPool pool dbChannel . toS
+              in notifySession validClaims (toS ch) conn getTime sendNotifications
 
-          waitForever <- newEmptyMVar
-          void $ takeMVar waitForever
+            waitForever <- newEmptyMVar
+            void $ takeMVar waitForever
 
 -- Having both channel and claims as parameters seem redundant
 -- But it allows the function to ignore the claims structure and the source
@@ -86,9 +96,10 @@ wsApp dbChannel secret pool multi pendingConn =
 notifySession :: A.Object
               -> Text
               -> WS.Connection
+              -> IO UTCTime
               -> (ByteString -> IO ())
               -> IO ()
-notifySession claimsToSend ch wsCon send =
+notifySession claimsToSend ch wsCon getTime send =
   withAsync (forever relayData) wait
   where
     relayData = jsonMsgWithTime >>= send
@@ -102,5 +113,5 @@ notifySession claimsToSend ch wsCon send =
     claimsWithChannel = M.insert "channel" (A.String ch) claimsToSend
     claimsWithTime :: IO (M.HashMap Text A.Value)
     claimsWithTime = do
-      time <- getPOSIXTime
-      return $ M.insert "message_delivered_at" (A.Number $ fromRational $ toRational time) claimsWithChannel
+      time <- utcTimeToPOSIXSeconds <$> getTime
+      return $ M.insert "message_delivered_at" (A.Number $ realToFrac time) claimsWithChannel
