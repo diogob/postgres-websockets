@@ -69,17 +69,16 @@ wsApp getTime dbChannel secret pool multi pendingConn =
           -- We should accept only after verifying JWT
           conn <- WS.acceptRequest pendingConn
           -- Fork a pinging thread to ensure browser connections stay alive
-          WS.forkPingThread conn 30
+          WS.withPingThread conn 30 (pure ()) $ do
+            when (hasRead mode) $
+              onMessage multi ch $ WS.sendTextData conn . B.payload
 
-          when (hasRead mode) $
-            onMessage multi ch $ WS.sendTextData conn . B.payload
+            when (hasWrite mode) $
+              let sendNotifications = void . H.notifyPool pool dbChannel . toS
+              in notifySession validClaims (toS ch) conn getTime sendNotifications
 
-          when (hasWrite mode) $
-            let sendNotifications = void . H.notifyPool pool dbChannel . toS
-            in notifySession validClaims (toS ch) conn getTime sendNotifications
-
-          waitForever <- newEmptyMVar
-          void $ takeMVar waitForever
+            waitForever <- newEmptyMVar
+            void $ takeMVar waitForever
 
 -- Having both channel and claims as parameters seem redundant
 -- But it allows the function to ignore the claims structure and the source
