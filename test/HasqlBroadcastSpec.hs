@@ -15,7 +15,7 @@ spec = describe "newHasqlBroadcaster" $ do
             <$> acquire connStr
 
     it "relay messages sent to the appropriate database channel" $ do
-      multi <- either (panic .show) id <$> newHasqlBroadcasterOrError "postgres-websockets" "postgres://localhost/postgres_ws_test"
+      multi <- either (panic .show) id <$> newHasqlBroadcasterOrError (pure ()) "postgres-websockets" "postgres://localhost/postgres_ws_test"
       msg <- liftIO newEmptyMVar
       onMessage multi "test" $ putMVar msg
 

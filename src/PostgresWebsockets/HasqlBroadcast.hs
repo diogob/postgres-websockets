@@ -26,19 +26,19 @@ import PostgresWebsockets.Broadcast
 {- | Returns a multiplexer from a connection URI, keeps trying to connect in case there is any error.
    This function also spawns a thread that keeps relaying the messages from the database to the multiplexer's listeners
 -}
-newHasqlBroadcaster :: Text -> ByteString -> IO Multiplexer
-newHasqlBroadcaster ch = newHasqlBroadcasterForConnection . tryUntilConnected
+newHasqlBroadcaster :: IO () -> Text -> ByteString -> IO Multiplexer
+newHasqlBroadcaster onConnectionFailure ch = newHasqlBroadcasterForConnection . tryUntilConnected
   where
-    newHasqlBroadcasterForConnection = newHasqlBroadcasterForChannel ch
+    newHasqlBroadcasterForConnection = newHasqlBroadcasterForChannel onConnectionFailure ch
 
 {- | Returns a multiplexer from a connection URI or an error message on the left case
    This function also spawns a thread that keeps relaying the messages from the database to the multiplexer's listeners
 -}
-newHasqlBroadcasterOrError :: Text -> ByteString -> IO (Either ByteString Multiplexer)
-newHasqlBroadcasterOrError ch =
+newHasqlBroadcasterOrError :: IO () -> Text -> ByteString -> IO (Either ByteString Multiplexer)
+newHasqlBroadcasterOrError onConnectionFailure ch =
   acquire >=> (sequence . mapBoth show (newHasqlBroadcasterForConnection . return))
   where
-    newHasqlBroadcasterForConnection = newHasqlBroadcasterForChannel ch
+    newHasqlBroadcasterForConnection = newHasqlBroadcasterForChannel onConnectionFailure ch
 
 tryUntilConnected :: ByteString -> IO Connection
 tryUntilConnected =
@@ -78,13 +78,12 @@ tryUntilConnected =
    @
 
 -}
-newHasqlBroadcasterForChannel :: Text -> IO Connection -> IO Multiplexer
-newHasqlBroadcasterForChannel ch getCon = do
-  multi <- newMultiplexer openProducer closeProducer
+newHasqlBroadcasterForChannel :: IO () -> Text -> IO Connection -> IO Multiplexer
+newHasqlBroadcasterForChannel onConnectionFailure ch getCon = do
+  multi <- newMultiplexer openProducer $ const onConnectionFailure
   void $ relayMessagesForever multi
   return multi
   where
-    closeProducer _ = putErrLn "Broadcaster is dead"
     toMsg :: ByteString -> ByteString -> Message
     toMsg c m = case decode (toS m) of
                    Just v -> Message (channelDef c v) m
