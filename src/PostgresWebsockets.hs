@@ -67,7 +67,7 @@ wsApp getTime dbChannel secret pool multi pendingConn =
     requestChannel
       | length pathElements > 1 = Just $ headDef "" pathElements
       | length pathElements <= 1 = Nothing
-    forkSessions (ch, mode, validClaims) = do
+    forkSessions (chs, mode, validClaims) = do
           -- role claim defaults to anon if not specified in jwt
           -- We should accept only after verifying JWT
           conn <- WS.acceptRequest pendingConn
@@ -81,11 +81,12 @@ wsApp getTime dbChannel secret pool multi pendingConn =
               Nothing -> pure ()
 
             when (hasRead mode) $
-              onMessage multi ch $ WS.sendTextData conn . B.payload
+                flip (onMessage multi) (WS.sendTextData conn . B.payload) <$> chs
+--              onMessage multi ch $ WS.sendTextData conn . B.payload
 
             when (hasWrite mode) $
               let sendNotifications = void . H.notifyPool pool dbChannel . toS
-              in notifySession validClaims (toS ch) conn getTime sendNotifications
+              in notifySession validClaims (toS chs) conn getTime sendNotifications
 
             waitForever <- newEmptyMVar
             void $ takeMVar waitForever

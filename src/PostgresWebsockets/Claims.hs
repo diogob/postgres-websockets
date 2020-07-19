@@ -12,6 +12,7 @@ import qualified Crypto.JOSE.Types   as JOSE.Types
 import           Crypto.JWT
 import qualified Data.HashMap.Strict as M
 import           Protolude
+import Data.List
 import Data.Time.Clock (UTCTime)
 import Data.String (String, fromString)
 import qualified Data.Aeson as JSON
@@ -19,7 +20,7 @@ import qualified Data.Aeson.Types as JSON
 
 
 type Claims = M.HashMap Text JSON.Value
-type ConnectionInfo = (ByteString, ByteString, Claims)
+type ConnectionInfo = ([ByteString], ByteString, Claims)
 
 {-| Given a secret, a token and a timestamp it validates the claims and returns
     either an error message or a triple containing channel, mode and claims hashmap.
@@ -33,8 +34,9 @@ validateClaims requestChannel secret jwtToken time =
       JWTInvalid JWTExpired -> throwError "Token expired"
       _ -> throwError "Error"
     channel <- claimAsJSON requestChannel "channel" cl'
+    channels <- claimAsJSONList requestChannel "channels" cl'
     mode <- claimAsJSON Nothing "mode" cl'
-    pure (channel, mode, cl')
+    pure (  channel : channels , mode, cl')
 
   where
     claimAsJSON :: Maybe ByteString -> Text -> Claims -> ExceptT Text IO ByteString
@@ -42,6 +44,16 @@ validateClaims requestChannel secret jwtToken time =
       Just (JSON.String s) -> pure $ encodeUtf8 s
       Just _ -> throwError "claim is not string value"
       Nothing -> nonExistingClaim defaultVal name
+
+    claimAsJSONList :: Maybe ByteString -> Text -> Claims -> ExceptT Text IO [ByteString]
+    claimAsJSONList defaultVal name cl = case M.lookup name cl of
+      Just (JSON.String s) -> pure [encodeUtf8 s]
+      Just _ -> throwError "claim is not string value"
+      Nothing -> nonExistingClaimList defaultVal name
+
+    nonExistingClaimList :: Maybe ByteString -> Text -> ExceptT Text IO [ByteString]
+    nonExistingClaimList Nothing name = throwError (name <> " not in claims")
+    nonExistingClaimList (Just defaultVal) _ = pure [defaultVal]
 
     nonExistingClaim :: Maybe ByteString -> Text -> ExceptT Text IO ByteString
     nonExistingClaim Nothing name = throwError (name <> " not in claims")
