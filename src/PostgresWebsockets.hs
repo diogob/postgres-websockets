@@ -81,7 +81,7 @@ wsApp getTime dbChannel secret pool multi pendingConn =
               Nothing -> pure ()
 
             when (hasRead mode) $
-                flip (onMessage multi) (WS.sendTextData conn . B.payload) <$> chs
+                forM_ chs (flip (onMessage multi) (WS.sendTextData conn . B.payload))
 --              onMessage multi ch $ WS.sendTextData conn . B.payload
 
             when (hasWrite mode) $
