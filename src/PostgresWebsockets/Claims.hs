@@ -36,7 +36,10 @@ validateClaims requestChannel secret jwtToken time =
     channel <- claimAsJSON requestChannel "channel" cl'
     channels <- claimAsJSONList requestChannel "channels" cl'
     mode <- claimAsJSON Nothing "mode" cl'
-    pure (  channel : channels , mode, cl')
+    requestedAllowedChannels <- let chs = nub ( channel:channels )in case requestChannel of
+      Just requestChannel -> pure $ filter (requestChannel ==)  chs
+      Nothing  -> pure chs
+    pure ( requestedAllowedChannels, mode, cl')
 
   where
     claimAsJSON :: Maybe ByteString -> Text -> Claims -> ExceptT Text IO ByteString
@@ -45,10 +48,12 @@ validateClaims requestChannel secret jwtToken time =
       Just _ -> throwError "claim is not string value"
       Nothing -> nonExistingClaim defaultVal name
 
+
     claimAsJSONList :: Maybe ByteString -> Text -> Claims -> ExceptT Text IO [ByteString]
     claimAsJSONList defaultVal name cl = case M.lookup name cl of
-      Just (JSON.String s) -> pure [encodeUtf8 s]
-      Just _ -> throwError "claim is not string value"
+      Just channelsJson -> case JSON.fromJSON channelsJson :: JSON.Result [Text] of
+            JSON.Success channelsList -> pure $ encodeUtf8 <$> channelsList
+            _ -> throwError "claim is not a valid String array"
       Nothing -> nonExistingClaimList defaultVal name
 
     nonExistingClaimList :: Maybe ByteString -> Text -> ExceptT Text IO [ByteString]
