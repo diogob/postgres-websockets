@@ -86,7 +86,7 @@ wsApp getTime dbChannel secret pool multi pendingConn =
 
             when (hasWrite mode) $
               let sendNotifications = void . H.notifyPool pool dbChannel . toS
-              in notifySession validClaims (toS chs) conn getTime sendNotifications
+              in notifySession validClaims conn getTime sendNotifications $ toS first chs --temp just use first here, not sure how we will handle this in the case we only have a token with mutliple channels
 
             waitForever <- newEmptyMVar
             void $ takeMVar waitForever
@@ -95,12 +95,12 @@ wsApp getTime dbChannel secret pool multi pendingConn =
 -- But it allows the function to ignore the claims structure and the source
 -- of the channel, so all claims decoding can be coded in the caller
 notifySession :: A.Object
-              -> Text
               -> WS.Connection
               -> IO UTCTime
               -> (ByteString -> IO ())
+              -> Text
               -> IO ()
-notifySession claimsToSend ch wsCon getTime send =
+notifySession claimsToSend wsCon getTime send ch =
   withAsync (forever relayData) wait
   where
     relayData = jsonMsgWithTime >>= send
