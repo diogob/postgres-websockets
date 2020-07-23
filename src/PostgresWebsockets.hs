@@ -81,8 +81,7 @@ wsApp getTime dbChannel secret pool multi pendingConn =
               Nothing -> pure ()
 
             when (hasRead mode) $
-                forM_ chs (flip (onMessage multi) (WS.sendTextData conn . B.payload))
---              onMessage multi ch $ WS.sendTextData conn . B.payload
+              forM_ chs $ flip (onMessage multi) $ WS.sendTextData conn . B.payload
 
             when (hasWrite mode) $
               let sendNotifications = void . H.notifyPool pool dbChannel . toS
