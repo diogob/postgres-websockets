@@ -67,6 +67,7 @@ wsApp getTime dbChannel secret pool multi pendingConn =
     requestChannel
       | length pathElements > 1 = Just $ headDef "" pathElements
       | length pathElements <= 1 = Nothing
+    forkSessions :: ConnectionInfo -> IO ()
     forkSessions (chs, mode, validClaims) = do
           -- role claim defaults to anon if not specified in jwt
           -- We should accept only after verifying JWT
