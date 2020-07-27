@@ -86,7 +86,7 @@ wsApp getTime dbChannel secret pool multi pendingConn =
 
             when (hasWrite mode) $
               let sendNotifications = void . H.notifyPool pool dbChannel . toS
-              in notifySession validClaims conn getTime sendNotifications $ toS first chs --temp just use first here, not sure how we will handle this in the case we only have a token with mutliple channels
+              in notifySession validClaims conn getTime sendNotifications undefined--temp just use undefined here, not sure how we will handle this in the case we only have a token with multiple channels
 
             waitForever <- newEmptyMVar
             void $ takeMVar waitForever

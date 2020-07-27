@@ -4,7 +4,7 @@
     mode of operation.
 -}
 module PostgresWebsockets.Claims
-  ( validateClaims
+  ( ConnectionInfo,validateClaims
   ) where
 
 import           Control.Lens
@@ -33,36 +33,35 @@ validateClaims requestChannel secret jwtToken time =
       JWTClaims c -> pure c
       JWTInvalid JWTExpired -> throwError "Token expired"
       _ -> throwError "Error"
-    channel <- claimAsJSON requestChannel "channel" cl'
-    channels <- claimAsJSONList requestChannel "channels" cl'
-    mode <- claimAsJSON Nothing "mode" cl'
-    requestedAllowedChannels <- let chs = nub ( channel:channels )in case requestChannel of
-      Just requestChannel -> pure $ filter (requestChannel ==)  chs
-      Nothing  -> pure chs
-    pure ( requestedAllowedChannels, mode, cl')
-
+    channel <-  pure $ claimAsJSON "channel" cl' ::Maybe ByteString
+    channels <- claimAsJSONList "channels" cl' ::Maybe [ByteString]
+    chs <- case channel  of
+       Just c -> case channels  of
+           Just cs -> nub( c: cs )
+           Nothing -> [c]
+       Nothing -> case channels  of
+           Just cs -> cs  ::[ByteString]
+           Nothing -> [] ::[ByteString]
+    mode <-  let m = claimAsJSON "mode" cl' in case m of 
+          Just m -> pure m
+          Nothing -> throwError "Missing mode"  
+    requestedAllowedChannels <- case requestChannel of
+                                  Just rc -> filter (rc ==)  chs ::[ByteString]
+                                  Nothing -> chs 
+    pure ( requestedAllowedChannels  , mode, cl')
+    
   where
-    claimAsJSON :: Maybe ByteString -> Text -> Claims -> ExceptT Text IO ByteString
-    claimAsJSON defaultVal name cl = case M.lookup name cl of
-      Just (JSON.String s) -> pure $ encodeUtf8 s
-      Just _ -> throwError "claim is not string value"
-      Nothing -> nonExistingClaim defaultVal name
+    claimAsJSON ::  Text -> Claims -> Maybe ByteString
+    claimAsJSON name cl = case M.lookup name cl of
+      Just (JSON.String s) -> Just $ encodeUtf8 s
+      Nothing -> Nothing
 
-
-    claimAsJSONList :: Maybe ByteString -> Text -> Claims -> ExceptT Text IO [ByteString]
-    claimAsJSONList defaultVal name cl = case M.lookup name cl of
+    claimAsJSONList :: Text -> Claims -> Maybe [ByteString]
+    claimAsJSONList name cl = case M.lookup name cl of
       Just channelsJson -> case JSON.fromJSON channelsJson :: JSON.Result [Text] of
-            JSON.Success channelsList -> pure $ encodeUtf8 <$> channelsList
+            JSON.Success channelsList -> Just $ encodeUtf8 <$> channelsList
             _ -> throwError "claim is not a valid String array"
-      Nothing -> nonExistingClaimList defaultVal name
-
-    nonExistingClaimList :: Maybe ByteString -> Text -> ExceptT Text IO [ByteString]
-    nonExistingClaimList Nothing name = throwError (name <> " not in claims")
-    nonExistingClaimList (Just defaultVal) _ = pure [defaultVal]
-
-    nonExistingClaim :: Maybe ByteString -> Text -> ExceptT Text IO ByteString
-    nonExistingClaim Nothing name = throwError (name <> " not in claims")
-    nonExistingClaim (Just defaultVal) _ = pure defaultVal
+      Nothing -> Nothing
 
 {- Private functions and types copied from postgrest
 
