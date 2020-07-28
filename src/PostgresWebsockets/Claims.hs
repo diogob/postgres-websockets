@@ -50,7 +50,8 @@ validateClaims requestChannel secret jwtToken time = runExceptT $ do
   requestedAllowedChannels <- case requestChannel of
     Just rc -> pure $ filter (== rc) channels
     Nothing -> pure channels
-  pure (requestedAllowedChannels, mode, cl')
+  validChannels <- if null requestedAllowedChannels then throwError "No allowed channels" else pure requestedAllowedChannels
+  pure (validChannels, mode, cl')
 
  where
   claimAsJSON :: Text -> Claims -> Maybe ByteString

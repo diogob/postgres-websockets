@@ -36,11 +36,11 @@ spec =
                    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2RlIjoiciIsImNoYW5uZWxzIjpbInRlc3QiLCJ0ZXN0MiJdfQ.MumdJ5FpFX4Z6SJD3qsygVF0r9vqxfqhj5J30O32N0k" time
                    `shouldReturn` Right (["test"], "r", M.fromList[("mode",String "r"),("channels",  toJSON ["test"::Text, "test2"] )])
 
-    it "requesting a channel not from the channels claim shoud return no channels" $ do
+    it "requesting a channel not from the channels claim shoud error" $ do
       time <- getCurrentTime
       validateClaims (Just (encodeUtf8 "notAllowed")) secret
                    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2RlIjoiciIsImNoYW5uZWxzIjpbInRlc3QiLCJ0ZXN0MiJdfQ.MumdJ5FpFX4Z6SJD3qsygVF0r9vqxfqhj5J30O32N0k" time
-                   `shouldReturn` Right ([], "r", M.fromList[("mode",String "r"),("channels",  toJSON ["test"::Text, "test2"] )])
+                   `shouldReturn` Left  "No allowed channels"
 
     it "requesting a channel with no mode fails" $ do
       time <- getCurrentTime
