@@ -25,43 +25,46 @@ type ConnectionInfo = ([ByteString], ByteString, Claims)
 {-| Given a secret, a token and a timestamp it validates the claims and returns
     either an error message or a triple containing channel, mode and claims hashmap.
 -}
-validateClaims :: Maybe ByteString -> ByteString -> LByteString -> UTCTime -> IO (Either Text ConnectionInfo)
-validateClaims requestChannel secret jwtToken time =
-  runExceptT $ do
-    cl <- liftIO $ jwtClaims time (parseJWK secret) jwtToken
-    cl' <- case cl of
-      JWTClaims c -> pure c
-      JWTInvalid JWTExpired -> throwError "Token expired"
-      _ -> throwError "Error"
-    channel <-  pure $ claimAsJSON "channel" cl' ::Maybe ByteString
-    channels <- claimAsJSONList "channels" cl' ::Maybe [ByteString]
-    chs <- case channel  of
-       Just c -> case channels  of
-           Just cs -> nub( c: cs )
-           Nothing -> [c]
-       Nothing -> case channels  of
-           Just cs -> cs  ::[ByteString]
-           Nothing -> [] ::[ByteString]
-    mode <-  let m = claimAsJSON "mode" cl' in case m of 
-          Just m -> pure m
-          Nothing -> throwError "Missing mode"  
-    requestedAllowedChannels <- case requestChannel of
-                                  Just rc -> filter (rc ==)  chs ::[ByteString]
-                                  Nothing -> chs 
-    pure ( requestedAllowedChannels  , mode, cl')
-    
-  where
-    claimAsJSON ::  Text -> Claims -> Maybe ByteString
-    claimAsJSON name cl = case M.lookup name cl of
-      Just (JSON.String s) -> Just $ encodeUtf8 s
-      Nothing -> Nothing
+validateClaims
+  :: Maybe ByteString
+  -> ByteString
+  -> LByteString
+  -> UTCTime
+  -> IO (Either Text ConnectionInfo)
+validateClaims requestChannel secret jwtToken time = runExceptT $ do
+  cl  <- liftIO $ jwtClaims time (parseJWK secret) jwtToken
+  cl' <- case cl of
+    JWTClaims  c          -> pure c
+    JWTInvalid JWTExpired -> throwError "Token expired"
+    _                     -> throwError "Error"
+  channels  <-  let chs = claimAsJSONList "channels" cl' in pure $ case claimAsJSON "channel" cl' of
+    Just c ->  case chs of
+      Just cs ->  nub (c : cs)
+      Nothing ->  [c]
+    Nothing -> fromMaybe [] chs
+  mode <-
+    let md = claimAsJSON "mode" cl'
+    in case md of
+          Just m  -> pure m
+          Nothing -> throwError "Missing mode"
+  requestedAllowedChannels <- case requestChannel of
+    Just rc -> pure $ filter (== rc) channels
+    Nothing -> pure channels
+  pure (requestedAllowedChannels, mode, cl')
 
-    claimAsJSONList :: Text -> Claims -> Maybe [ByteString]
-    claimAsJSONList name cl = case M.lookup name cl of
-      Just channelsJson -> case JSON.fromJSON channelsJson :: JSON.Result [Text] of
-            JSON.Success channelsList -> Just $ encodeUtf8 <$> channelsList
-            _ -> throwError "claim is not a valid String array"
-      Nothing -> Nothing
+ where
+  claimAsJSON :: Text -> Claims -> Maybe ByteString
+  claimAsJSON name cl = case M.lookup name cl of
+    Just (JSON.String s) -> Just $ encodeUtf8 s
+    _ -> Nothing
+
+  claimAsJSONList :: Text -> Claims -> Maybe [ByteString]
+  claimAsJSONList name cl = case M.lookup name cl of
+    Just channelsJson ->
+      case JSON.fromJSON channelsJson :: JSON.Result [Text] of
+        JSON.Success channelsList -> Just $ encodeUtf8 <$> channelsList
+        _ -> Nothing
+    Nothing -> Nothing
 
 {- Private functions and types copied from postgrest
 
