@@ -32,8 +32,8 @@ spec =
     it "no requesting channel should return all channels in the token" $ do
       time <- getCurrentTime
       validateClaims Nothing secret
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2RlIjoiciIsImNoYW5uZWxzIjpbInRlc3QiXX0.am8O0kbbcVNIpDPJy6ZSb49yE9w9vjlaBHzF3lro3e8" time
-        `shouldReturn` Right (["test"], "r", M.fromList[("mode",String "r"),("channels",  toJSON["test"::Text] )        ])
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2RlIjoiciIsImNoYW5uZWxzIjpbInRlc3QiLCJhbm90aGVyIHRlc3QiXX0.b9N8J8tPOPIxxFj5WJ7sWrmcL8ib63i8eirsRZTM9N0" time
+        `shouldReturn` Right (["test", "another test"], "r", M.fromList[("mode",String "r"),("channels",  toJSON["test"::Text, "another test"::Text] )        ])
 
     it "requesting a channel from the channels claim shoud return only the requested channel" $ do
       time <- getCurrentTime
