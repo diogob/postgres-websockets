@@ -47,9 +47,10 @@ validateClaims requestChannel secret jwtToken time = runExceptT $ do
     in case md of
           Just m  -> pure m
           Nothing -> throwError "Missing mode"
-  requestedAllowedChannels <- case requestChannel of
-    Just rc -> pure $ filter (== rc) channels
-    Nothing -> pure channels
+  requestedAllowedChannels <- case (requestChannel, length channels) of
+    (Just rc, 0) -> pure [rc]
+    (Just rc, _) -> pure $ filter (== rc) channels
+    (Nothing, _) -> pure channels
   validChannels <- if null requestedAllowedChannels then throwError "No allowed channels" else pure requestedAllowedChannels
   pure (validChannels, mode, cl')
 
