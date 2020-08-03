@@ -66,12 +66,17 @@ When you request access to a channel called `chat` the address of the websockets
 ```
 ws://chat/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2RlIjoicncifQ.QKGnMJe41OFZcjz_qQSplmWAmVd_hmVjijKUNoJYpis
 ```
-When the token contains a "channel" claim, the value of that claim has precedence over the requested channel.
+When the token contains a `channels` claim, the value of that claim should be a list of allowed channels.
+Any requested channel not set in that claim will result in an error opening the connection. 
+Tokens without the `channels` claim (like the example above) are capable of opening connections to any channel, so be careful when issuing those.
 
 
 2. Giving only the token
 
-When you inform only the token on the websocket address, the channel must be present in the claims of your token. The address will look like:
+When you inform only the token on the websocket address, the `channels` claim must be present.
+In this case all channels present in the claim will be available simultaneously in the same connection.
+This is useful for clients that need to monitor or boradcast a set of channels, being more convenient than managing multiple websockets.
+The address will look like:
 ```
 ws://eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2RlIjoicnciLCJjaGFubmVsIjoiY2hhdCJ9.fEm6P7GHeJWZG8OtZhv3H0JdqPljE5dainvsoupM9pA
 ```
@@ -90,7 +95,7 @@ Every message received from the browser will be in JSON format as:
 ```
 
 Where `claims` contain any custom claims added to the JWT with the added `message_delivered_at` which marks the timestamp in unix format of when the message was processed by postgres-websockets just before being sent to the database.
-Also `channel` contains the channel requested in the JWT, and this should be used to send any messages back to that particular client.
+Also `channel` contains the channel used to send the message, this should be used to send any messages back to that particular client.
 Finally `payload` contain a string with the message contents.
 
 A easy way to process messages received asynchronously is to use [pg-recorder](https://github.com/diogob/pg-recorder) with some custom stored procedures.
