@@ -1,5 +1,5 @@
 name:                postgres-websockets
-version:             0.7.0.0
+version:             0.8.0.0
 synopsis:            Middleware to map LISTEN/NOTIFY messages to Websockets
 description:         Please see README.md
 homepage:            https://github.com/diogob/postgres-websockets#readme
@@ -45,6 +45,7 @@ library
                      , time >= 1.8.0.2 && < 1.9
                      , contravariant >= 1.5.2 && < 1.6
                      , alarmclock >= 0.7.0.2 && < 0.8
+                     , async >= 2.2.0 && < 2.3
   default-language:    Haskell2010
   default-extensions: OverloadedStrings, NoImplicitPrelude, LambdaCase
 
