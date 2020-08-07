@@ -74,7 +74,12 @@ $(document).ready(function () {
         if(ws === null){
             var jwt = $('#jwt').val();
             var channel = $('#channel').val();
-            ws = createWebSocket('/' + channel + '/' + jwt);
+            if(channel == ""){
+              ws = createWebSocket('/' + jwt);
+            } else {
+              ws = createWebSocket('/' + channel + '/' + jwt);
+            }
+
             ws.onopen = function() {
                 ws.send(text);
             };

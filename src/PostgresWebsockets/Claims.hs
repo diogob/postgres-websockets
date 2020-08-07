@@ -36,7 +36,7 @@ validateClaims requestChannel secret jwtToken time = runExceptT $ do
   cl' <- case cl of
     JWTClaims  c          -> pure c
     JWTInvalid JWTExpired -> throwError "Token expired"
-    _                     -> throwError "Error"
+    JWTInvalid err -> throwError $ "Error: " <> show err
   channels  <-  let chs = claimAsJSONList "channels" cl' in pure $ case claimAsJSON "channel" cl' of
     Just c ->  case chs of
       Just cs ->  nub (c : cs)
@@ -77,7 +77,6 @@ validateClaims requestChannel secret jwtToken time = runExceptT $ do
   Possible situations encountered with client JWTs
 -}
 data JWTAttempt = JWTInvalid JWTError
-                | JWTMissingSecret
                 | JWTClaims (M.HashMap Text JSON.Value)
                 deriving Eq
 
