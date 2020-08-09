@@ -12,13 +12,12 @@ turned in configurable behaviour if needed.
 
 Other hardcoded options such as the minimum version number also belong here.
 -}
-module Config ( prettyVersion
-                        , readOptions
-                        , minimumPgVersion
-                        , PgVersion (..)
-                        , AppConfig (..)
-                        )
-       where
+module PostgresWebsockets.Config ( prettyVersion
+              , readOptions
+              , minimumPgVersion
+              , PgVersion (..)
+              , AppConfig (..)
+              ) where
 
 import Env
 import           Data.Text                   (intercalate)

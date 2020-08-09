@@ -2,7 +2,7 @@ module Main where
 
 import           Protolude hiding (replace)
 import           PostgresWebsockets
-import           Config                               (AppConfig (..),
+import           PostgresWebsockets.Config  (AppConfig (..),
                                                        PgVersion (..),
                                                        minimumPgVersion,
                                                        prettyVersion,
