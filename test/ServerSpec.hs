@@ -26,8 +26,7 @@ testServerConfig = AppConfig
                     }
 
 startTestServer :: IO ThreadId
-startTestServer = do
-    forkIO $ serve testServerConfig
+startTestServer = forkIO $ serve testServerConfig
 
 withServer :: IO () -> IO ()
 withServer action =
@@ -36,16 +35,16 @@ withServer action =
           (const action)
 
 sendWsData :: Text -> IO ()
-sendWsData msg = do
+sendWsData msg =
     withSocketsDo $ 
         WS.runClient 
             "localhost" 
             (configPort testServerConfig) 
             "/test/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2RlIjoicncifQ.auy9z4-pqoVEAay9oMi1FuG7ux_C_9RQCH8-wZgej18" 
-            (flip WS.sendTextData msg)
+            (`WS.sendTextData` msg)
 
 spec :: Spec
-spec = around_ withServer $ do
+spec = around_ withServer $
             describe "serve" $
-                it "should be able to send messages to test server" $ do
+                it "should be able to send messages to test server" $
                     sendWsData "test data"
