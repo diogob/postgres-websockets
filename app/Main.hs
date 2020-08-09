@@ -16,4 +16,4 @@ main = do
                <> " / Connects websockets to PostgreSQL asynchronous notifications."
 
   conf <- loadConfig
-  serve conf
+  void $ serve conf
