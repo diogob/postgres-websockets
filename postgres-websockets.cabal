@@ -21,6 +21,7 @@ library
                      , PostgresWebsockets.HasqlBroadcast
                      , PostgresWebsockets.Claims
                      , PostgresWebsockets.Config
+                     , PostgresWebsockets.Middleware
                      , Paths_postgres_websockets
   build-depends:       base >= 4.7 && < 5
                      , hasql-pool >= 0.5 && < 0.6
