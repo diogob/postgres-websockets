@@ -51,7 +51,7 @@ loadConfig = readOptions >>= loadSecretFile
 
 -- | Given a shutdown handler and an AppConfig builds a Warp Settings to start a stand-alone server
 warpSettings :: (IO () -> IO ()) -> AppConfig -> Settings
-warpSettings waitForShutdown AppConfig{..} = do
+warpSettings waitForShutdown AppConfig{..} =
       setHost (fromString $ toS configHost)
                   . setPort configPort
                   . setServerName (toS $ "postgres-websockets/" <> prettyVersion)
