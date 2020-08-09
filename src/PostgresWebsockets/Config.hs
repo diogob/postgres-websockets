@@ -15,15 +15,17 @@ Other hardcoded options such as the minimum version number also belong here.
 module PostgresWebsockets.Config 
         ( prettyVersion
         , loadConfig
+        , warpSettings
         , AppConfig (..)
         ) where
 
-import Env
+import           Env
 import           Data.Text                   (intercalate, pack, replace, strip, stripPrefix)
 import           Data.Version                (versionBranch)
 import           Paths_postgres_websockets   (version)
 import           Protolude hiding            (intercalate, (<>), optional, replace)
-
+import           Data.String (IsString(..))
+import           Network.Wai.Handler.Warp
 import qualified Data.ByteString                      as BS
 import qualified Data.ByteString.Base64               as B64
 
@@ -43,8 +45,21 @@ data AppConfig = AppConfig {
 prettyVersion :: Text
 prettyVersion = intercalate "." $ map show $ versionBranch version
 
+-- | Load all postgres-websockets config from Environment variables. This can be used to use just the middleware or to feed into warpSettings
 loadConfig :: IO AppConfig
 loadConfig = readOptions >>= loadSecretFile
+
+-- | Given a shutdown handler and an AppConfig builds a Warp Settings to start a stand-alone server
+warpSettings :: (IO () -> IO ()) -> AppConfig -> Settings
+warpSettings waitForShutdown AppConfig{..} = do
+      setHost (fromString $ toS configHost)
+                  . setPort configPort
+                  . setServerName (toS $ "postgres-websockets/" <> prettyVersion)
+                  . setTimeout 3600
+                  . setInstallShutdownHandler waitForShutdown
+                  . setGracefulShutdownTimeout (Just 5)
+                  $ defaultSettings
+
 
 -- private
 

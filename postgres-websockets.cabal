@@ -52,9 +52,10 @@ library
                      , envparse >= 0.4.1
                      , base64-bytestring >= 1.0.0.3 && < 1.1
                      , bytestring >= 0.10
+                     , warp >= 3.2 && < 4
 
   default-language:    Haskell2010
-  default-extensions: OverloadedStrings, NoImplicitPrelude, LambdaCase
+  default-extensions: OverloadedStrings, NoImplicitPrelude, LambdaCase, RecordWildCards
 
 executable postgres-websockets
   hs-source-dirs:      app

@@ -1,13 +1,10 @@
 module Main where
 
-import           Protolude hiding (replace)
+import           Protolude
 import           PostgresWebsockets
-import           PostgresWebsockets.Config  (AppConfig (..),
-                                                       prettyVersion,
-                                                       loadConfig)
+import           PostgresWebsockets.Config
 
-import           Data.String                          (IsString (..))
-import qualified Hasql.Pool                           as P
+import qualified Hasql.Pool as P
 import           Network.Wai.Application.Static
 import Data.Time.Clock (UTCTime, getCurrentTime)
 import Control.AutoUpdate       ( defaultUpdateSettings
@@ -33,19 +30,10 @@ main = do
 
   conf <- loadConfig
   shutdownSignal <- newEmptyMVar
-  let host = configHost conf
-      port = configPort conf
-      listenChannel = toS $ configListenChannel conf
+  let listenChannel = toS $ configListenChannel conf
       pgSettings = toS (configDatabase conf)
       waitForShutdown cl = void $ forkIO (takeMVar shutdownSignal >> cl >> die "Shutting server down...")
-
-      appSettings = setHost ((fromString . toS) host)
-                  . setPort port
-                  . setServerName (toS $ "postgres-websockets/" <> prettyVersion)
-                  . setTimeout 3600
-                  . setInstallShutdownHandler waitForShutdown
-                  . setGracefulShutdownTimeout (Just 5)
-                  $ defaultSettings
+      appSettings = warpSettings waitForShutdown conf
 
   putStrLn $ ("Listening on port " :: Text) <> show (configPort conf)
 
