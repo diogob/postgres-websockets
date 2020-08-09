@@ -4,13 +4,9 @@ import           Protolude hiding (replace)
 import           PostgresWebsockets
 import           PostgresWebsockets.Config  (AppConfig (..),
                                                        prettyVersion,
-                                                       readOptions)
+                                                       loadConfig)
 
-import qualified Data.ByteString                      as BS
-import qualified Data.ByteString.Base64               as B64
 import           Data.String                          (IsString (..))
-import           Data.Text                            (pack, replace, strip, stripPrefix)
-import           Data.Text.Encoding                   (encodeUtf8, decodeUtf8)
 import qualified Hasql.Pool                           as P
 import           Network.Wai.Application.Static
 import Data.Time.Clock (UTCTime, getCurrentTime)
@@ -35,7 +31,7 @@ main = do
                <> prettyVersion
                <> " / Connects websockets to PostgreSQL asynchronous notifications."
 
-  conf <- loadSecretFile =<< readOptions
+  conf <- loadConfig
   shutdownSignal <- newEmptyMVar
   let host = configHost conf
       port = configPort conf
@@ -70,32 +66,3 @@ main = do
     dummyApp :: Application
     dummyApp _ respond =
         respond $ responseLBS status200 [("Content-Type", "text/plain")] "Hello, Web!"
-
-loadSecretFile :: AppConfig -> IO AppConfig
-loadSecretFile conf = extractAndTransform secret
-  where
-    secret   = decodeUtf8 $ configJwtSecret conf
-    isB64     = configJwtSecretIsBase64 conf
-
-    extractAndTransform :: Text -> IO AppConfig
-    extractAndTransform s =
-      fmap setSecret $ transformString isB64 =<<
-        case stripPrefix "@" s of
-          Nothing       -> return . encodeUtf8 $ s
-          Just filename -> chomp <$> BS.readFile (toS filename)
-      where
-        chomp bs = fromMaybe bs (BS.stripSuffix "\n" bs)
-
-    -- Turns the Base64url encoded JWT into Base64
-    transformString :: Bool -> ByteString -> IO ByteString
-    transformString False t = return t
-    transformString True t =
-      case B64.decode $ encodeUtf8 $ strip $ replaceUrlChars $ decodeUtf8 t of
-        Left errMsg -> panic $ pack errMsg
-        Right bs    -> return bs
-
-    setSecret bs = conf {configJwtSecret = bs}
-
-    -- replace: Replace every occurrence of one substring with another
-    replaceUrlChars =
-      replace "_" "/" . replace "-" "+" . replace "." "="

@@ -12,18 +12,20 @@ turned in configurable behaviour if needed.
 
 Other hardcoded options such as the minimum version number also belong here.
 -}
-module PostgresWebsockets.Config ( prettyVersion
-              , readOptions
-              , minimumPgVersion
-              , PgVersion (..)
-              , AppConfig (..)
-              ) where
+module PostgresWebsockets.Config 
+        ( prettyVersion
+        , loadConfig
+        , AppConfig (..)
+        ) where
 
 import Env
-import           Data.Text                   (intercalate)
+import           Data.Text                   (intercalate, pack, replace, strip, stripPrefix)
 import           Data.Version                (versionBranch)
 import           Paths_postgres_websockets   (version)
-import           Protolude hiding            (intercalate, (<>), optional)
+import           Protolude hiding            (intercalate, (<>), optional, replace)
+
+import qualified Data.ByteString                      as BS
+import qualified Data.ByteString.Base64               as B64
 
 -- | Config file settings for the server
 data AppConfig = AppConfig {
@@ -41,6 +43,11 @@ data AppConfig = AppConfig {
 prettyVersion :: Text
 prettyVersion = intercalate "." $ map show $ versionBranch version
 
+loadConfig :: IO AppConfig
+loadConfig = readOptions >>= loadSecretFile
+
+-- private
+
 -- | Function to read and parse options from the environment
 readOptions :: IO AppConfig
 readOptions =
@@ -54,11 +61,32 @@ readOptions =
                 <*> var auto "PGWS_JWT_SECRET_BASE64" (def False <> helpDef show <> help "Indicate whether the JWT secret should be decoded from a base64 encoded string")
                 <*> var auto "PGWS_POOL_SIZE" (def 10 <> helpDef show <> help "How many connection to the database should be used by the connection pool")
 
-data PgVersion = PgVersion {
-  pgvNum  :: Int32
-, pgvName :: Text
-}
+loadSecretFile :: AppConfig -> IO AppConfig
+loadSecretFile conf = extractAndTransform secret
+  where
+    secret   = decodeUtf8 $ configJwtSecret conf
+    isB64     = configJwtSecretIsBase64 conf
 
--- | Tells the minimum PostgreSQL version required by this version of PostgresWebsockets
-minimumPgVersion :: PgVersion
-minimumPgVersion = PgVersion 90300 "9.3"
+    extractAndTransform :: Text -> IO AppConfig
+    extractAndTransform s =
+      fmap setSecret $ transformString isB64 =<<
+        case stripPrefix "@" s of
+          Nothing       -> return . encodeUtf8 $ s
+          Just filename -> chomp <$> BS.readFile (toS filename)
+      where
+        chomp bs = fromMaybe bs (BS.stripSuffix "\n" bs)
+
+    -- Turns the Base64url encoded JWT into Base64
+    transformString :: Bool -> ByteString -> IO ByteString
+    transformString False t = return t
+    transformString True t =
+      case B64.decode $ encodeUtf8 $ strip $ replaceUrlChars $ decodeUtf8 t of
+        Left errMsg -> panic $ pack errMsg
+        Right bs    -> return bs
+
+    setSecret bs = conf {configJwtSecret = bs}
+
+    -- replace: Replace every occurrence of one substring with another
+    replaceUrlChars =
+      replace "_" "/" . replace "-" "+" . replace "." "="
+
