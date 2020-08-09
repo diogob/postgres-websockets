@@ -7,4 +7,6 @@ module PostgresWebsockets
   ) where
 
 import           PostgresWebsockets.Middleware as Exports
+import           PostgresWebsockets.Server as Exports
+import           PostgresWebsockets.Config as Exports
 import           PostgresWebsockets.HasqlBroadcast (newHasqlBroadcaster)
