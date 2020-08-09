@@ -95,6 +95,8 @@ test-suite postgres-websockets-test
                      , unordered-containers >= 0.2
                      , wai-extra >= 3.0.29 && < 3.1
                      , stm >= 2.5.0.0 && < 2.6
+                     , websockets >= 0.12.7.0 && < 0.13
+                     , network >= 2.8.0.1 && < 2.9
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
   default-extensions: OverloadedStrings, NoImplicitPrelude
