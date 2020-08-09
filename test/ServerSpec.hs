@@ -29,7 +29,10 @@ testServerConfig = AppConfig
                     }
 
 startTestServer :: IO ThreadId
-startTestServer = forkIO $ serve testServerConfig
+startTestServer = do
+    threadId <- forkIO $ serve testServerConfig
+    threadDelay 1000
+    pure threadId
 
 withServer :: IO () -> IO ()
 withServer action =
@@ -59,6 +62,7 @@ waitForWsData channel = do
                     m <- WS.receiveData c
                     putMVar msg m
                 )
+    threadDelay 1000
     pure msg
 
 spec :: Spec
@@ -68,7 +72,6 @@ spec = around_ withServer $
                     sendWsData "test data"
                 it "should be able to receive messages from test server" $ do
                     msg <- waitForWsData "test"
-                    threadDelay 1000
                     sendWsData "test data"
                     msgJson <- takeMVar msg
                     (msgJson ^? key "payload" . _String) `shouldBe` Just "test data"
