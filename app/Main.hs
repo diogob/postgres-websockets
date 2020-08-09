@@ -3,8 +3,6 @@ module Main where
 import           Protolude hiding (replace)
 import           PostgresWebsockets
 import           PostgresWebsockets.Config  (AppConfig (..),
-                                                       PgVersion (..),
-                                                       minimumPgVersion,
                                                        prettyVersion,
                                                        readOptions)
 
@@ -13,10 +11,6 @@ import qualified Data.ByteString.Base64               as B64
 import           Data.String                          (IsString (..))
 import           Data.Text                            (pack, replace, strip, stripPrefix)
 import           Data.Text.Encoding                   (encodeUtf8, decodeUtf8)
-import qualified Hasql.Statement                      as H
-import qualified Hasql.Session                        as H
-import qualified Hasql.Decoders                       as HD
-import qualified Hasql.Encoders                       as HE
 import qualified Hasql.Pool                           as P
 import           Network.Wai.Application.Static
 import Data.Time.Clock (UTCTime, getCurrentTime)
@@ -31,16 +25,6 @@ import           Network.Wai.Handler.Warp
 import           Network.Wai.Middleware.RequestLogger (logStdout)
 import           System.IO                            (BufferMode (..),
                                                        hSetBuffering)
-
-isServerVersionSupported :: H.Session Bool
-isServerVersionSupported = do
-  ver <- H.statement () pgVersion
-  return $ ver >= pgvNum minimumPgVersion
- where
-  pgVersion =
-    H.Statement "SELECT current_setting('server_version_num')::integer"
-      HE.noParams (HD.singleRow $ HD.column $ HD.nonNullable HD.int4) False
-
 main :: IO ()
 main = do
   hSetBuffering stdout LineBuffering
