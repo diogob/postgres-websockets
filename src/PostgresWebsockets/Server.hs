@@ -25,8 +25,7 @@ import           Network.Wai.Handler.Warp
 import           Network.Wai.Middleware.RequestLogger (logStdout)
 
 -- | Start a stand-alone warp server using the parameters from AppConfig and a opening a database connection pool.
--- | Returns a MVar that shuts down the server once written to. 
-serve :: AppConfig -> IO (MVar ())
+serve :: AppConfig -> IO ()
 serve conf = do
   shutdownSignal <- newEmptyMVar
   let listenChannel = toS $ configListenChannel conf
@@ -44,8 +43,6 @@ serve conf = do
   runSettings appSettings $
     postgresWsMiddleware getTime listenChannel (configJwtSecret conf) pool multi $
     logStdout $ maybe dummyApp staticApp' (configPath conf)
-
-  pure shutdownSignal
 
   where
     mkGetTime :: IO (IO UTCTime)

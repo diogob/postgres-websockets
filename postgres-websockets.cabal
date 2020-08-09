@@ -79,6 +79,7 @@ test-suite postgres-websockets-test
   other-modules:       BroadcastSpec
                      , ClaimsSpec
                      , HasqlBroadcastSpec
+                     , ServerSpec
   build-depends:       base
                      , protolude >= 0.2.3
                      , postgres-websockets
