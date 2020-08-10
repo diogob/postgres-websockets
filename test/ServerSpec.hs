@@ -52,6 +52,12 @@ sendWsData uri msg =
 testChannel :: Text
 testChannel = "/test/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2RlIjoicncifQ.auy9z4-pqoVEAay9oMi1FuG7ux_C_9RQCH8-wZgej18"
 
+secondaryChannel :: Text
+secondaryChannel = "/secondary/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2RlIjoicncifQ.auy9z4-pqoVEAay9oMi1FuG7ux_C_9RQCH8-wZgej18"
+
+testAndSecondaryChannel :: Text
+testAndSecondaryChannel = "/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2RlIjoicnciLCJjaGFubmVscyI6WyJ0ZXN0Iiwic2Vjb25kYXJ5Il19.7tB2A9MhpY4tyqhfnHNy5FUYw4gwpKtL4UAHBXbNEz4"
+
 waitForWsData :: Text -> IO (MVar ByteString)
 waitForWsData uri = do
     msg <- newEmptyMVar
@@ -78,3 +84,14 @@ spec = around_ withServer $
                     sendWsData testChannel "test data"
                     msgJson <- takeMVar msg
                     (msgJson ^? key "payload" . _String) `shouldBe` Just "test data"
+                it "should be able to send messages to multiple channels in one shot" $ do
+                    msg <- waitForWsData testChannel
+                    secondaryMsg <- waitForWsData secondaryChannel
+                    sendWsData testAndSecondaryChannel "test data"
+                    msgJson <- takeMVar msg
+                    secondaryMsgJson <- takeMVar secondaryMsg
+
+                    (msgJson ^? key "payload" . _String) `shouldBe` Just "test data"
+                    (msgJson ^? key "channel" . _String) `shouldBe` Just "test"
+                    (secondaryMsgJson ^? key "payload" . _String) `shouldBe` Just "test data"
+                    (secondaryMsgJson ^? key "channel" . _String) `shouldBe` Just "secondary"
