@@ -61,15 +61,16 @@ wsApp getTime dbChannel secret pool multi pendingConn =
 
     -- the URI has one of the two formats - /:jwt or /:channel/:jwt
     pathElements = BS.split '/' $ BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
-    jwtToken
-      | length pathElements > 1 = headDef "" $ tailSafe pathElements
-      | length pathElements <= 1 = headDef "" pathElements
-    requestChannel
-      | length pathElements > 1 = Just $ headDef "" pathElements
-      | length pathElements <= 1 = Nothing
+    jwtToken = 
+      case length pathElements `compare` 1 of
+        GT -> headDef "" $ tailSafe pathElements
+        _ -> headDef "" pathElements
+    requestChannel =
+      case length pathElements `compare` 1 of
+        GT -> Just $ headDef "" pathElements
+        _ -> Nothing
     forkSessions :: ConnectionInfo -> IO ()
     forkSessions (chs, mode, validClaims) = do
-          -- role claim defaults to anon if not specified in jwt
           -- We should accept only after verifying JWT
           conn <- WS.acceptRequest pendingConn
           -- Fork a pinging thread to ensure browser connections stay alive

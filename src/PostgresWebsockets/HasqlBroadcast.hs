@@ -76,7 +76,6 @@ tryUntilConnected =
     onMessage multi "chat" (\ch ->
       forever $ fmap print (atomically $ readTChan ch)
    @
-
 -}
 newHasqlBroadcasterForChannel :: IO () -> Text -> IO Connection -> IO Multiplexer
 newHasqlBroadcasterForChannel onConnectionFailure ch getCon = do

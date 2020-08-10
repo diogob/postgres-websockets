@@ -2,13 +2,8 @@ module ServerSpec (spec) where
 
 import Protolude
 
-import Data.Function (id)
 import Test.Hspec
 import PostgresWebsockets
-
-import qualified Hasql.Connection as Hasql
-import qualified Hasql.Session as Hasql
-import qualified Hasql.Statement as Hasql
 
 import Control.Lens
 import Data.Aeson.Lens

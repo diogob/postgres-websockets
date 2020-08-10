@@ -14,10 +14,7 @@ import qualified Data.HashMap.Strict as M
 import           Protolude
 import Data.List
 import Data.Time.Clock (UTCTime)
-import Data.String (String, fromString)
 import qualified Data.Aeson as JSON
-import qualified Data.Aeson.Types as JSON
-
 
 type Claims = M.HashMap Text JSON.Value
 type ConnectionInfo = ([ByteString], ByteString, Claims)
@@ -86,11 +83,11 @@ data JWTAttempt = JWTInvalid JWTError
 -}
 jwtClaims :: UTCTime -> JWK -> LByteString -> IO JWTAttempt
 jwtClaims _ _ "" = return $ JWTClaims M.empty
-jwtClaims time jwk payload = do
+jwtClaims time jwk' payload = do
   let config = defaultJWTValidationSettings (const True)
   eJwt <- runExceptT $ do
     jwt <- decodeCompact payload
-    verifyClaimsAt config jwk time jwt
+    verifyClaimsAt config jwk' time jwt
   return $ case eJwt of
     Left e    -> JWTInvalid e
     Right jwt -> JWTClaims . claims2map $ jwt
