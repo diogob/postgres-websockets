@@ -40,24 +40,27 @@ withServer action =
           killThread
           (const action)
 
-sendWsData :: Text -> IO ()
-sendWsData msg =
+sendWsData :: Text -> Text -> IO ()
+sendWsData uri msg =
     withSocketsDo $ 
         WS.runClient 
             "localhost" 
             (configPort testServerConfig) 
-            "/test/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2RlIjoicncifQ.auy9z4-pqoVEAay9oMi1FuG7ux_C_9RQCH8-wZgej18" 
+            (toS uri) 
             (`WS.sendTextData` msg)
 
+testChannel :: Text
+testChannel = "/test/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2RlIjoicncifQ.auy9z4-pqoVEAay9oMi1FuG7ux_C_9RQCH8-wZgej18"
+
 waitForWsData :: Text -> IO (MVar ByteString)
-waitForWsData channel = do
+waitForWsData uri = do
     msg <- newEmptyMVar
     void $ forkIO $
         withSocketsDo $ 
             WS.runClient 
                 "localhost" 
                 (configPort testServerConfig) 
-                "/test/eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2RlIjoicncifQ.auy9z4-pqoVEAay9oMi1FuG7ux_C_9RQCH8-wZgej18" 
+                (toS uri) 
                 (\c -> do
                     m <- WS.receiveData c
                     putMVar msg m
@@ -69,9 +72,9 @@ spec :: Spec
 spec = around_ withServer $
             describe "serve" $ do
                 it "should be able to send messages to test server" $
-                    sendWsData "test data"
+                    sendWsData testChannel "test data"
                 it "should be able to receive messages from test server" $ do
-                    msg <- waitForWsData "test"
-                    sendWsData "test data"
+                    msg <- waitForWsData testChannel
+                    sendWsData testChannel "test data"
                     msgJson <- takeMVar msg
                     (msgJson ^? key "payload" . _String) `shouldBe` Just "test data"
