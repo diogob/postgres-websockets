@@ -74,6 +74,22 @@ waitForWsData uri = do
     threadDelay 1000
     pure msg
 
+waitForMultipleWsData :: Int -> Text -> IO (MVar [ByteString])
+waitForMultipleWsData messageCount uri = do
+    msg <- newEmptyMVar
+    void $ forkIO $
+        withSocketsDo $ 
+            WS.runClient 
+                "localhost" 
+                (configPort testServerConfig) 
+                (toS uri) 
+                (\c -> do
+                    m <- sequence $ replicate messageCount (WS.receiveData c)
+                    putMVar msg m
+                )
+    threadDelay 1000
+    pure msg
+
 spec :: Spec
 spec = around_ withServer $
             describe "serve" $ do
@@ -95,3 +111,11 @@ spec = around_ withServer $
                     (msgJson ^? key "channel" . _String) `shouldBe` Just "test"
                     (secondaryMsgJson ^? key "payload" . _String) `shouldBe` Just "test data"
                     (secondaryMsgJson ^? key "channel" . _String) `shouldBe` Just "secondary"
+                it "should be able to receive from multiple channels in one shot" $ do
+                    msgs <- waitForMultipleWsData 2 testAndSecondaryChannel
+                    sendWsData testAndSecondaryChannel "test data"
+                    msgsJson <- takeMVar msgs
+
+                    forM_ 
+                        msgsJson 
+                        (\msgJson -> (msgJson ^? key "payload" . _String) `shouldBe` Just "test data")
