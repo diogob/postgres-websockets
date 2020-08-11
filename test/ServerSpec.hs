@@ -4,6 +4,7 @@ import Protolude
 
 import Test.Hspec
 import PostgresWebsockets
+import PostgresWebsockets.Config
 
 import Control.Lens
 import Data.Aeson.Lens
@@ -79,7 +80,7 @@ waitForMultipleWsData messageCount uri = do
                 (configPort testServerConfig) 
                 (toS uri) 
                 (\c -> do
-                    m <- sequence $ replicate messageCount (WS.receiveData c)
+                    m <- replicateM messageCount (WS.receiveData c)
                     putMVar msg m
                 )
     threadDelay 1000
