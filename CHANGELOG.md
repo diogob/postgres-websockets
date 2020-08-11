@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.8.0.1
+
+- Fix compilation error due to missing version upper bound for protolude.
+
 ## 0.8.0.0
 
 - Added support for opening multiple channels at once and also issue tokens that allow multiple channels - thanks to @jamesmstone
