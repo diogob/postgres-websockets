@@ -1,9 +1,13 @@
-{-| PostgresWebsockets functions to broadcast messages to several listening clients
-    This module provides a type called Multiplexer.
-    The multiplexer contains a map of channels and a producer thread.
+{-| 
+Module      : PostgresWebsockets.Broadcast
+Description : Distribute messages from one producer to several consumers.
 
-    This module avoids any database implementation details, it is used by HasqlBroadcast where
-    the database logic is combined.
+PostgresWebsockets functions to broadcast messages to several listening clients
+This module provides a type called Multiplexer.
+The multiplexer contains a map of channels and a producer thread.
+
+This module avoids any database implementation details, it is used by HasqlBroadcast where
+the database logic is combined.
 -}
 module PostgresWebsockets.Broadcast ( Multiplexer (src)
                              , Message (..)

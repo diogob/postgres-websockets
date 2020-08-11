@@ -1,5 +1,8 @@
-{-| PostgresWebsockets Middleware, composing this allows postgrest to create
-    websockets connections that will communicate with the database through LISTEN/NOTIFY channels.
+{-|
+Module      : PostgresWebsockets.Middleware
+Description : PostgresWebsockets WAI middleware, add functionality to any WAI application.
+
+Allow websockets connections that will communicate with the database through LISTEN/NOTIFY channels.
 -}
 {-# LANGUAGE DeriveGeneric #-}
 

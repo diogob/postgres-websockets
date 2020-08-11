@@ -2,7 +2,6 @@
 Module      : PostgresWebsockets.Server
 Description : Functions to start a full stand-alone PostgresWebsockets server.
 -}
-
 module PostgresWebsockets.Server
         ( serve 
         ) where

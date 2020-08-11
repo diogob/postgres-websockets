@@ -1,7 +1,11 @@
-{-| This module provides the JWT claims validation. Since websockets and
-    listening connections in the database tend to be resource intensive
-    (not to mention stateful) we need claims authorizing a specific channel and
-    mode of operation.
+{-|
+Module      : PostgresWebsockets.Claims
+Description : Parse and validate JWT to open postgres-websockets channels.
+
+This module provides the JWT claims validation. Since websockets and
+listening connections in the database tend to be resource intensive
+(not to mention stateful) we need claims authorizing a specific channel and
+mode of operation.
 -}
 module PostgresWebsockets.Claims
   ( ConnectionInfo,validateClaims
@@ -65,11 +69,6 @@ validateClaims requestChannel secret jwtToken time = runExceptT $ do
         _ -> Nothing
     Nothing -> Nothing
 
-{- Private functions and types copied from postgrest
-
-   This code duplication will be short lived since postgrest will migrate towards jose
-   Then this library will use jose's verifyClaims and error types.
--}
 {-|
   Possible situations encountered with client JWTs
 -}

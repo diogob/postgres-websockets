@@ -1,5 +1,8 @@
-{-| PostgresWebsockets main library interface
-    All function necessary to start a fully functionaing service should be re-exported here.
+{-|
+Module      : PostgresWebsockets
+Description : PostgresWebsockets main library interface.
+
+These are all function necessary to start a fully functionaing service.
 -}
 module PostgresWebsockets
   ( prettyVersion

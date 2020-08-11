@@ -1,6 +1,10 @@
-{-| Uses Broadcast module adding database as a source producer.
-    This module provides a function to produce a 'Multiplexer' from a Hasql 'Connection'.
-    The producer issues a LISTEN command upon Open commands and UNLISTEN upon Close.
+{-| 
+Module      : PostgresWebsockets.Broadcast
+Description : Build a Hasql.Notifications based producer 'Multiplexer'.
+
+Uses Broadcast module adding database as a source producer.
+This module provides a function to produce a 'Multiplexer' from a Hasql 'Connection'.
+The producer issues a LISTEN command upon Open commands and UNLISTEN upon Close.
 -}
 module PostgresWebsockets.HasqlBroadcast
   ( newHasqlBroadcaster
