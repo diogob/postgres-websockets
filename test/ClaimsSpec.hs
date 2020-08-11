@@ -4,7 +4,7 @@ import           Protolude
 
 import qualified Data.HashMap.Strict as M
 import           Test.Hspec
-import           Data.Aeson          (Value (..),  toJSON, Array, fromJSON )
+import           Data.Aeson          (Value (..),  toJSON)
 import Data.Time.Clock
 import           PostgresWebsockets.Claims
 

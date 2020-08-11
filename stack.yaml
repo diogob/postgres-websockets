@@ -6,6 +6,5 @@ extra-deps:
 - primitive-extras-0.7.1@sha256:23905c57089418b1a2d324cfee3e81bbd5a344a0fa56a827867b2dce275fdb5e
 - hasql-notifications-0.1.0.0@sha256:9ab112d2bb5da0d55abd65f0d27a7bb1dc4aeb792518d9a2ea8a16e243e19985,2156
 
-
 ghc-options:
   postgres-websockets: -Wall -fwarn-identities -fno-warn-redundant-constraints

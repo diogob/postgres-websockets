@@ -2,7 +2,7 @@
 # - https://circleci.com/docs/2.0/language-haskell/
 # - https://circleci.com/blog/publishing-to-github-releases-via-circleci/
 #
-version: 2
+version: 2.1
 jobs:
   publish:
     docker:

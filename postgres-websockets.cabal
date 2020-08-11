@@ -20,6 +20,11 @@ library
                      , PostgresWebsockets.Broadcast
                      , PostgresWebsockets.HasqlBroadcast
                      , PostgresWebsockets.Claims
+                     , PostgresWebsockets.Config
+
+  other-modules:       Paths_postgres_websockets
+                     , PostgresWebsockets.Server
+                     , PostgresWebsockets.Middleware
   build-depends:       base >= 4.7 && < 5
                      , hasql-pool >= 0.5 && < 0.6
                      , text >= 1.2 && < 1.3
@@ -46,32 +51,25 @@ library
                      , contravariant >= 1.5.2 && < 1.6
                      , alarmclock >= 0.7.0.2 && < 0.8
                      , async >= 2.2.0 && < 2.3
+                     , envparse >= 0.4.1
+                     , base64-bytestring >= 1.0.0.3 && < 1.1
+                     , bytestring >= 0.10
+                     , warp >= 3.2 && < 4
+                     , wai-extra >= 3.0.29 && < 3.1
+                     , wai-app-static >= 3.1.7.1 && < 3.2
+                     , auto-update >= 0.1.6 && < 0.2
+
   default-language:    Haskell2010
-  default-extensions: OverloadedStrings, NoImplicitPrelude, LambdaCase
+  default-extensions: OverloadedStrings, NoImplicitPrelude, LambdaCase, RecordWildCards
 
 executable postgres-websockets
   hs-source-dirs:      app
   main-is:             Main.hs
-  other-modules:       Config
-                     , Paths_postgres_websockets
+  other-modules:
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base >= 4.7 && < 5
-                     , transformers >= 0.4 && < 0.6
-                     , hasql >= 0.19
-                     , hasql-pool >= 0.4
-                     , warp >= 3.2 && < 4
                      , postgres-websockets
                      , protolude >= 0.2.3
-                     , base64-bytestring >= 1.0.0.3 && < 1.1
-                     , bytestring >= 0.10
-                     , text >= 1.2 && < 1.3
-                     , time >= 1.8.0.2 && < 1.9
-                     , wai >= 3.2 && < 4
-                     , wai-extra >= 3.0.29 && < 3.1
-                     , wai-app-static >= 3.1.7.1 && < 3.2
-                     , http-types >= 0.9
-                     , envparse >= 0.4.1
-                     , auto-update >= 0.1.6 && < 0.2
   default-language:    Haskell2010
   default-extensions: OverloadedStrings, NoImplicitPrelude, QuasiQuotes
 
@@ -82,6 +80,7 @@ test-suite postgres-websockets-test
   other-modules:       BroadcastSpec
                      , ClaimsSpec
                      , HasqlBroadcastSpec
+                     , ServerSpec
   build-depends:       base
                      , protolude >= 0.2.3
                      , postgres-websockets
@@ -97,6 +96,10 @@ test-suite postgres-websockets-test
                      , unordered-containers >= 0.2
                      , wai-extra >= 3.0.29 && < 3.1
                      , stm >= 2.5.0.0 && < 2.6
+                     , websockets >= 0.12.7.0 && < 0.13
+                     , network >= 2.8.0.1 && < 2.9
+                     , lens >= 4.17.1 && < 4.18
+                     , lens-aeson
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
   default-extensions: OverloadedStrings, NoImplicitPrelude
