@@ -25,23 +25,24 @@ import           Network.Wai.Middleware.RequestLogger (logStdout)
 
 -- | Start a stand-alone warp server using the parameters from AppConfig and a opening a database connection pool.
 serve :: AppConfig -> IO ()
-serve conf = do
+serve conf@AppConfig{..} = do
   shutdownSignal <- newEmptyMVar
-  let listenChannel = toS $ configListenChannel conf
-      pgSettings = toS (configDatabase conf)
-      waitForShutdown cl = void $ forkIO (takeMVar shutdownSignal >> cl >> die "Shutting server down...")
+  let listenChannel = toS configListenChannel
+      pgSettings = toS configDatabase
+      waitForShutdown cl = void $ forkIO (takeMVar shutdownSignal >> cl)
       appSettings = warpSettings waitForShutdown conf
 
-  putStrLn $ ("Listening on port " :: Text) <> show (configPort conf)
+  putStrLn $ ("Listening on port " :: Text) <> show configPort
 
   let shutdown = putErrLn ("Broadcaster connection is dead" :: Text) >> putMVar shutdownSignal ()
-  pool <- P.acquire (configPool conf, 10, pgSettings)
-  multi <- newHasqlBroadcaster shutdown listenChannel pgSettings
+  pool <- P.acquire (configPool, 10, pgSettings)
+  multi <- newHasqlBroadcaster shutdown listenChannel configRetries pgSettings
   getTime <- mkGetTime
 
   runSettings appSettings $
-    postgresWsMiddleware getTime listenChannel (configJwtSecret conf) pool multi $
-    logStdout $ maybe dummyApp staticApp' (configPath conf)
+    postgresWsMiddleware getTime listenChannel configJwtSecret pool multi $
+    logStdout $ maybe dummyApp staticApp' configPath
+  die "Shutting down server..."
 
   where
     mkGetTime :: IO (IO UTCTime)

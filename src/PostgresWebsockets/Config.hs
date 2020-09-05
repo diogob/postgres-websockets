@@ -34,6 +34,7 @@ data AppConfig = AppConfig {
   , configJwtSecret         :: ByteString
   , configJwtSecretIsBase64 :: Bool
   , configPool              :: Int
+  , configRetries           :: Int
   }
 
 -- | User friendly version number
@@ -70,6 +71,7 @@ readOptions =
                 <*> var str "PGWS_JWT_SECRET" (help "Secret used to sign JWT tokens used to open communications channels")
                 <*> var auto "PGWS_JWT_SECRET_BASE64" (def False <> helpDef show <> help "Indicate whether the JWT secret should be decoded from a base64 encoded string")
                 <*> var auto "PGWS_POOL_SIZE" (def 10 <> helpDef show <> help "How many connection to the database should be used by the connection pool")
+                <*> var auto "PGWS_RETRIES" (def 5 <> helpDef show <> help "How many times it should try to connect to the database on startup before exiting with an error")
 
 loadSecretFile :: AppConfig -> IO AppConfig
 loadSecretFile conf = extractAndTransform secret
