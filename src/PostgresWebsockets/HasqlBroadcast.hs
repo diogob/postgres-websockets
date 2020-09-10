@@ -23,15 +23,15 @@ import Data.Aeson              (decode, Value(..))
 import Data.HashMap.Lazy       (lookupDefault)
 import Data.Either.Combinators (mapBoth)
 import Data.Function           (id)
-import Control.Retry           (RetryStatus, retrying, capDelay, exponentialBackoff)
+import Control.Retry           (RetryStatus(..), retrying, capDelay, exponentialBackoff)
 
 import PostgresWebsockets.Broadcast
 
 {- | Returns a multiplexer from a connection URI, keeps trying to connect in case there is any error.
    This function also spawns a thread that keeps relaying the messages from the database to the multiplexer's listeners
 -}
-newHasqlBroadcaster :: IO () -> Text -> ByteString -> IO Multiplexer
-newHasqlBroadcaster onConnectionFailure ch = newHasqlBroadcasterForConnection . tryUntilConnected
+newHasqlBroadcaster :: IO () -> Text -> Int -> ByteString -> IO Multiplexer
+newHasqlBroadcaster onConnectionFailure ch maxRetries = newHasqlBroadcasterForConnection . tryUntilConnected maxRetries
   where
     newHasqlBroadcasterForConnection = newHasqlBroadcasterForChannel onConnectionFailure ch
 
@@ -44,8 +44,8 @@ newHasqlBroadcasterOrError onConnectionFailure ch =
   where
     newHasqlBroadcasterForConnection = newHasqlBroadcasterForChannel onConnectionFailure ch
 
-tryUntilConnected :: ByteString -> IO Connection
-tryUntilConnected =
+tryUntilConnected :: Int -> ByteString -> IO Connection
+tryUntilConnected maxRetries =
   fmap (either (panic "Failure on connection retry") id) . retryConnection
   where
     retryConnection conStr = retrying retryPolicy shouldRetry (const $ acquire conStr)
@@ -53,11 +53,11 @@ tryUntilConnected =
     firstDelayInMicroseconds = 1000000
     retryPolicy = capDelay maxDelayInMicroseconds $ exponentialBackoff firstDelayInMicroseconds
     shouldRetry :: RetryStatus -> Either ConnectionError Connection -> IO Bool
-    shouldRetry _ con =
+    shouldRetry RetryStatus{..} con =
       case con of
         Left err -> do
           putErrLn $ "Error connecting notification listener to database: " <> show err
-          return True
+          pure $ rsIterNumber < maxRetries - 1
         _ -> return False
 
 {- | Returns a multiplexer from a channel and an IO Connection, listen for different database notifications on the provided channel using the connection produced.
