@@ -2,7 +2,7 @@
 Module      : PostgresWebsockets
 Description : PostgresWebsockets main library interface.
 
-These are all function necessary to start a fully functionaing service.
+These are all function necessary to configure and start the server.
 -}
 module PostgresWebsockets
   ( prettyVersion
