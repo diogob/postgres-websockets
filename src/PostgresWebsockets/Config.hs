@@ -43,7 +43,7 @@ prettyVersion = intercalate "." $ map show $ versionBranch version
 
 -- | Load all postgres-websockets config from Environment variables. This can be used to use just the middleware or to feed into warpSettings
 loadConfig :: IO AppConfig
-loadConfig = readOptions >>= loadSecretFile
+loadConfig = readOptions >>= loadSecretFile >>= loadDatabaseURIFile
 
 -- | Given a shutdown handler and an AppConfig builds a Warp Settings to start a stand-alone server
 warpSettings :: (IO () -> IO ()) -> AppConfig -> Settings
@@ -72,6 +72,14 @@ readOptions =
                 <*> var auto "PGWS_JWT_SECRET_BASE64" (def False <> helpDef show <> help "Indicate whether the JWT secret should be decoded from a base64 encoded string")
                 <*> var auto "PGWS_POOL_SIZE" (def 10 <> helpDef show <> help "How many connection to the database should be used by the connection pool")
                 <*> var auto "PGWS_RETRIES" (def 5 <> helpDef show <> help "How many times it should try to connect to the database on startup before exiting with an error")
+
+loadDatabaseURIFile :: AppConfig -> IO AppConfig
+loadDatabaseURIFile conf@AppConfig{..} =
+  case stripPrefix "@" configDatabase of
+    Nothing       -> pure conf
+    Just filename -> setDatabase . strip <$> readFile (toS filename)
+  where
+    setDatabase uri = conf {configDatabase = uri}
 
 loadSecretFile :: AppConfig -> IO AppConfig
 loadSecretFile conf = extractAndTransform secret

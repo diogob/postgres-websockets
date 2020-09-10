@@ -52,7 +52,9 @@ source sample-env && ~/.local/bin/postgres-websockets
 ```
 After running the above command, open your browser on http://localhost:3000 to see an example of usage.
 
-The sample config file provided in the [sample.conf](https://github.com/diogob/postgres-websockets/tree/master/sample.conf) file comes with a jwt secret just for testing and is used in the sample client.
+The sample config file provided in the [sample-env](https://github.com/diogob/postgres-websockets/tree/master/sample-env) file comes with a jwt secret just for testing and is used in the sample client.
+Note that the `sample-env` points to `./database-uri.txt` to load the URI from an external file. This is determined by the use of `@` as a prefix to the value of the variable `PGWS_DB_URI`. 
+This is entirely optional and the URI could be exported directly as `PGWS_DB_URI` without using the prefix `@`.
 You will find the complete sources for the example under the folder [client-example](https://github.com/diogob/postgres-websockets/tree/master/client-example).
 To run the server without giving access to any static files one can unser the variable `PGWS_ROOT_PATH`.
 
