@@ -10,24 +10,26 @@ module PostgresWebsockets.Middleware
   ( postgresWsMiddleware
   ) where
 
-import qualified Hasql.Pool                     as H
-import qualified Hasql.Notifications            as H
-import qualified Network.Wai                    as Wai
+import Protolude
+import Data.Time.Clock (UTCTime)
+import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds, posixSecondsToUTCTime)
+import Control.Concurrent.AlarmClock (newAlarmClock, setAlarm)
+import qualified Hasql.Notifications as H
+import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.WebSockets as WS
-import qualified Network.WebSockets             as WS
-import           Protolude
+import qualified Network.WebSockets as WS
 
-import qualified Data.Aeson                     as A
-import qualified Data.ByteString.Char8          as BS
-import qualified Data.ByteString.Lazy           as BL
-import qualified Data.HashMap.Strict            as M
-import qualified Data.Text.Encoding.Error       as T
-import           Data.Time.Clock (UTCTime)
-import           Data.Time.Clock.POSIX          (utcTimeToPOSIXSeconds, posixSecondsToUTCTime)
-import           Control.Concurrent.AlarmClock (newAlarmClock, setAlarm)
-import           PostgresWebsockets.Broadcast          (Multiplexer, onMessage)
-import qualified PostgresWebsockets.Broadcast          as B
-import           PostgresWebsockets.Claims
+import qualified Data.Aeson as A
+import qualified Data.ByteString.Char8 as BS
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.HashMap.Strict as M
+import qualified Data.Text.Encoding.Error as T
+
+import PostgresWebsockets.Broadcast (onMessage)
+import PostgresWebsockets.Claims ( ConnectionInfo, validateClaims )
+import PostgresWebsockets.Context ( Context(..) )
+import PostgresWebsockets.Config (AppConfig(..))
+import qualified PostgresWebsockets.Broadcast as B
 
 data Message = Message
   { claims  :: A.Object
@@ -38,11 +40,9 @@ data Message = Message
 instance A.ToJSON Message
 
 -- | Given a secret, a function to fetch the system time, a Hasql Pool and a Multiplexer this will give you a WAI middleware.
-postgresWsMiddleware :: IO UTCTime -> Text -> ByteString -> H.Pool -> Multiplexer -> Wai.Application -> Wai.Application
-postgresWsMiddleware =
-  WS.websocketsOr WS.defaultConnectionOptions `compose` wsApp
-  where
-    compose = (.) . (.) . (.) . (.) . (.)
+postgresWsMiddleware :: Context -> Wai.Middleware
+postgresWsMiddleware = 
+  WS.websocketsOr WS.defaultConnectionOptions . wsApp
 
 -- private functions
 jwtExpirationStatusCode :: Word16
@@ -50,9 +50,9 @@ jwtExpirationStatusCode = 3001
 
 -- when the websocket is closed a ConnectionClosed Exception is triggered
 -- this kills all children and frees resources for us
-wsApp :: IO UTCTime -> Text -> ByteString -> H.Pool -> Multiplexer -> WS.ServerApp
-wsApp getTime dbChannel secret pool multi pendingConn =
-  getTime >>= validateClaims requestChannel secret (toS jwtToken) >>= either rejectRequest forkSessions
+wsApp :: Context -> WS.ServerApp
+wsApp Context{..} pendingConn =
+  ctxGetTime >>= validateClaims requestChannel (configJwtSecret ctxConfig) (toS jwtToken) >>= either rejectRequest forkSessions
   where
     hasRead m = m == ("r" :: ByteString) || m == ("rw" :: ByteString)
     hasWrite m = m == ("w" :: ByteString) || m == ("rw" :: ByteString)
@@ -86,11 +86,11 @@ wsApp getTime dbChannel secret pool multi pendingConn =
               Nothing -> pure ()
 
             when (hasRead mode) $
-              forM_ chs $ flip (onMessage multi) $ WS.sendTextData conn . B.payload
+              forM_ chs $ flip (onMessage ctxMulti) $ WS.sendTextData conn . B.payload
 
             when (hasWrite mode) $
-              let sendNotifications = void . H.notifyPool pool dbChannel . toS
-              in notifySession validClaims conn getTime sendNotifications chs
+              let sendNotifications = void . H.notifyPool ctxPool (configListenChannel ctxConfig) . toS
+              in notifySession validClaims conn ctxGetTime sendNotifications chs
 
             waitForever <- newEmptyMVar
             void $ takeMVar waitForever

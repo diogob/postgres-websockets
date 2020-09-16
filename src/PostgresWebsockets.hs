@@ -11,6 +11,6 @@ module PostgresWebsockets
   , postgresWsMiddleware
   ) where
 
-import           PostgresWebsockets.Middleware
-import           PostgresWebsockets.Server
-import           PostgresWebsockets.Config
+import PostgresWebsockets.Middleware ( postgresWsMiddleware )
+import PostgresWebsockets.Server ( serve )
+import PostgresWebsockets.Config ( prettyVersion, loadConfig )

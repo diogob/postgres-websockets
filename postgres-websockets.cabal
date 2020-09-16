@@ -25,6 +25,7 @@ library
   other-modules:       Paths_postgres_websockets
                      , PostgresWebsockets.Server
                      , PostgresWebsockets.Middleware
+                     , PostgresWebsockets.Context
   build-depends:       base >= 4.7 && < 5
                      , hasql-pool >= 0.5 && < 0.6
                      , text >= 1.2 && < 1.3

@@ -19,11 +19,11 @@ import Protolude hiding (putErrLn)
 
 import Hasql.Connection
 import Hasql.Notifications
-import Data.Aeson              (decode, Value(..))
-import Data.HashMap.Lazy       (lookupDefault)
+import Data.Aeson (decode, Value(..))
+import Data.HashMap.Lazy (lookupDefault)
 import Data.Either.Combinators (mapBoth)
-import Data.Function           (id)
-import Control.Retry           (RetryStatus(..), retrying, capDelay, exponentialBackoff)
+import Data.Function (id)
+import Control.Retry (RetryStatus(..), retrying, capDelay, exponentialBackoff)
 
 import PostgresWebsockets.Broadcast
 

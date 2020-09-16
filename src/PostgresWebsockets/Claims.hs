@@ -11,14 +11,15 @@ module PostgresWebsockets.Claims
   ( ConnectionInfo,validateClaims
   ) where
 
-import           Control.Lens
-import qualified Crypto.JOSE.Types   as JOSE.Types
-import           Crypto.JWT
-import qualified Data.HashMap.Strict as M
-import           Protolude
+import Protolude
+import Control.Lens
+import Crypto.JWT
 import Data.List
 import Data.Time.Clock (UTCTime)
+import qualified Crypto.JOSE.Types as JOSE.Types
+import qualified Data.HashMap.Strict as M
 import qualified Data.Aeson as JSON
+
 
 type Claims = M.HashMap Text JSON.Value
 type ConnectionInfo = ([ByteString], ByteString, Claims)
