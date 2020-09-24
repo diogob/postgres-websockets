@@ -89,8 +89,12 @@ wsApp Context{..} pendingConn =
               forM_ chs $ flip (onMessage ctxMulti) $ WS.sendTextData conn . B.payload
 
             when (hasWrite mode) $
-              let sendNotifications = void . H.notifyPool ctxPool (configListenChannel ctxConfig) . toS
-              in notifySession validClaims conn ctxGetTime sendNotifications chs
+              let sendNotifications = 
+                      relayChannelData
+                        (void . H.notifyPool ctxPool (configListenChannel ctxConfig) . toS)
+                        validClaims
+                        ctxGetTime
+              in notifySession conn sendNotifications chs
 
             waitForever <- newEmptyMVar
             void $ takeMVar waitForever
@@ -98,30 +102,28 @@ wsApp Context{..} pendingConn =
 -- Having both channel and claims as parameters seem redundant
 -- But it allows the function to ignore the claims structure and the source
 -- of the channel, so all claims decoding can be coded in the caller
-notifySession :: A.Object
-              -> WS.Connection
-              -> IO UTCTime
-              -> (ByteString -> IO ())
+notifySession :: WS.Connection
+              -> (ByteString -> Text -> IO ())
               -> [ByteString]
               -> IO ()
-notifySession claimsToSend wsCon getTime send chs =
+notifySession wsCon sendToChannel chs =
   withAsync (forever relayData) wait
   where
     relayData = do 
       msg <- WS.receiveData wsCon
-      forM_ chs (relayChannelData msg . toS)
+      forM_ chs (sendToChannel msg . toS)
 
-    relayChannelData msg ch = do
-      claims' <- claimsWithTime ch
-      send $ jsonMsg ch claims' msg
-
+relayChannelData :: (ByteString -> IO ()) -> A.Object -> IO UTCTime -> ByteString -> Text -> IO ()
+relayChannelData send claimsToSend getTime msg ch =
+  claimsWithTime >>= (send . jsonMsg)
+  where
     -- we need to decode the bytestring to re-encode valid JSON for the notification
-    jsonMsg :: Text -> M.HashMap Text A.Value -> ByteString -> ByteString
-    jsonMsg ch cl = BL.toStrict . A.encode . Message cl ch . decodeUtf8With T.lenientDecode
+    jsonMsg :: M.HashMap Text A.Value -> ByteString
+    jsonMsg cl = BL.toStrict . A.encode . Message cl ch . decodeUtf8With T.lenientDecode $ msg
 
-    claimsWithTime :: Text -> IO (M.HashMap Text A.Value)
-    claimsWithTime ch = do
+    claimsWithTime :: IO (M.HashMap Text A.Value)
+    claimsWithTime = do
       time <- utcTimeToPOSIXSeconds <$> getTime
-      return $ M.insert "message_delivered_at" (A.Number $ realToFrac time) (claimsWithChannel ch)
+      return $ M.insert "message_delivered_at" (A.Number $ realToFrac time) claimsWithChannel
 
-    claimsWithChannel ch = M.insert "channel" (A.String ch) claimsToSend
+    claimsWithChannel = M.insert "channel" (A.String ch) claimsToSend

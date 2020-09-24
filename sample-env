@@ -10,6 +10,9 @@ export PGWS_ROOT_PATH="./client-example"
 ## Sends a copy of every message received from websocket clients to the channel specified bellow as an aditional NOTIFY command.
 export PGWS_LISTEN_CHANNEL="postgres-websockets-listener"
 
+## Send postgres-websockets server events to this channel (will be sent both to the database and the connected websocket clients)
+export PGWS_META_CHANNEL="server-info"
+
 ## Host and port on which the websockets server (and the static files server) will be listening.
 export PGWS_HOST="*4"
 export PGWS_PORT=3000

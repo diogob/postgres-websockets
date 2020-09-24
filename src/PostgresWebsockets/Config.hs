@@ -31,6 +31,7 @@ data AppConfig = AppConfig {
   , configHost              :: Text
   , configPort              :: Int
   , configListenChannel     :: Text
+  , configMetaChannel       :: Maybe Text
   , configJwtSecret         :: ByteString
   , configJwtSecretIsBase64 :: Bool
   , configPool              :: Int
@@ -68,6 +69,7 @@ readOptions =
                 <*> var str "PGWS_HOST" (def "*4" <> helpDef show <> help "Address the server will listen for websocket connections")
                 <*> var auto "PGWS_PORT" (def 3000 <> helpDef show <> help "Port the server will listen for websocket connections")
                 <*> var str "PGWS_LISTEN_CHANNEL" (def "postgres-websockets-listener" <> helpDef show <> help "Master channel used in the database to send or read messages in any notification channel")
+                <*> optional (var str "PGWS_META_CHANNEL" (help "Websockets channel used to send events about the server state changes."))
                 <*> var str "PGWS_JWT_SECRET" (help "Secret used to sign JWT tokens used to open communications channels")
                 <*> var auto "PGWS_JWT_SECRET_BASE64" (def False <> helpDef show <> help "Indicate whether the JWT secret should be decoded from a base64 encoded string")
                 <*> var auto "PGWS_POOL_SIZE" (def 10 <> helpDef show <> help "How many connection to the database should be used by the connection pool")
