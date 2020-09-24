@@ -85,16 +85,21 @@ wsApp Context{..} pendingConn =
               Just _ -> pure ()
               Nothing -> pure ()
 
+            let sendNotification = 
+                    relayChannelData
+                      (void . H.notifyPool ctxPool (configListenChannel ctxConfig) . toS)
+                      validClaims
+                      ctxGetTime
+
             when (hasRead mode) $
               forM_ chs $ flip (onMessage ctxMulti) $ WS.sendTextData conn . B.payload
 
             when (hasWrite mode) $
-              let sendNotifications = 
-                      relayChannelData
-                        (void . H.notifyPool ctxPool (configListenChannel ctxConfig) . toS)
-                        validClaims
-                        ctxGetTime
-              in notifySession conn sendNotifications chs
+              notifySession conn sendNotification chs
+
+            case configMetaChannel ctxConfig of
+              Nothing -> pure ()
+              Just ch -> sendNotification "Connecion Open" ch
 
             waitForever <- newEmptyMVar
             void $ takeMVar waitForever
@@ -102,10 +107,7 @@ wsApp Context{..} pendingConn =
 -- Having both channel and claims as parameters seem redundant
 -- But it allows the function to ignore the claims structure and the source
 -- of the channel, so all claims decoding can be coded in the caller
-notifySession :: WS.Connection
-              -> (ByteString -> Text -> IO ())
-              -> [ByteString]
-              -> IO ()
+notifySession :: WS.Connection -> (ByteString -> Text -> IO ()) -> [ByteString] -> IO ()
 notifySession wsCon sendToChannel chs =
   withAsync (forever relayData) wait
   where
