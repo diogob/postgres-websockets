@@ -64,7 +64,7 @@ function jwt() {
 }
 
 $(document).ready(function () {
-    var ws = null;
+    var ws = null, meta = null;
 
     $('#channel').keyup(updateJWT);
     updateJWT();
@@ -74,6 +74,10 @@ $(document).ready(function () {
         if(ws === null){
             var jwt = $('#jwt').val();
             var channel = $('#channel').val();
+
+            meta = createWebSocket('/server-info/' + jwt);
+            meta.onmessage = onMessage('#meta-messages');
+
             if(channel == ""){
               ws = createWebSocket('/' + jwt);
             } else {

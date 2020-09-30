@@ -91,15 +91,15 @@ wsApp Context{..} pendingConn =
                       validClaims
                       ctxGetTime
 
+            case configMetaChannel ctxConfig of
+              Nothing -> pure ()
+              Just ch -> sendNotification "Connecion Open" ch
+
             when (hasRead mode) $
               forM_ chs $ flip (onMessage ctxMulti) $ WS.sendTextData conn . B.payload
 
             when (hasWrite mode) $
               notifySession conn sendNotification chs
-
-            case configMetaChannel ctxConfig of
-              Nothing -> pure ()
-              Just ch -> sendNotification "Connecion Open" ch
 
             waitForever <- newEmptyMVar
             void $ takeMVar waitForever
