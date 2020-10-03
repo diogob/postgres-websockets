@@ -15,6 +15,7 @@ import Data.Time.Clock (UTCTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds, posixSecondsToUTCTime)
 import Control.Concurrent.AlarmClock (newAlarmClock, setAlarm)
 import qualified Hasql.Notifications as H
+import qualified Hasql.Pool as H
 import qualified Network.Wai as Wai
 import qualified Network.Wai.Handler.WebSockets as WS
 import qualified Network.WebSockets as WS
@@ -31,17 +32,25 @@ import PostgresWebsockets.Context ( Context(..) )
 import PostgresWebsockets.Config (AppConfig(..))
 import qualified PostgresWebsockets.Broadcast as B
 
+
+data Event =
+    WebsocketMessage
+  | ConnectionOpen
+  deriving (Show, Eq, Generic)
+
 data Message = Message
   { claims  :: A.Object
-  , channel :: Text
+  , event   :: Event
   , payload :: Text
+  , channel :: Text
   } deriving (Show, Eq, Generic)
 
+instance A.ToJSON Event
 instance A.ToJSON Message
 
 -- | Given a secret, a function to fetch the system time, a Hasql Pool and a Multiplexer this will give you a WAI middleware.
 postgresWsMiddleware :: Context -> Wai.Middleware
-postgresWsMiddleware = 
+postgresWsMiddleware =
   WS.websocketsOr WS.defaultConnectionOptions . wsApp
 
 -- private functions
@@ -85,15 +94,15 @@ wsApp Context{..} pendingConn =
               Just _ -> pure ()
               Nothing -> pure ()
 
-            let sendNotification = 
-                    relayChannelData
-                      (void . H.notifyPool ctxPool (configListenChannel ctxConfig) . toS)
-                      validClaims
-                      ctxGetTime
+            let sendNotification msg channel = sendMessageWithTimestamp $ websocketMessageForChannel msg channel
+                sendMessageToDatabase = sendToDatabase ctxPool (configListenChannel ctxConfig)
+                sendMessageWithTimestamp = timestampMessage ctxGetTime >=> sendMessageToDatabase
+                websocketMessageForChannel = Message validClaims WebsocketMessage
+                connectionOpenMessage = Message validClaims ConnectionOpen
 
             case configMetaChannel ctxConfig of
               Nothing -> pure ()
-              Just ch -> sendNotification "Connecion Open" ch
+              Just ch -> sendMessageWithTimestamp $ connectionOpenMessage (toS $ BS.intercalate "," chs) ch
 
             when (hasRead mode) $
               forM_ chs $ flip (onMessage ctxMulti) $ WS.sendTextData conn . B.payload
@@ -107,25 +116,22 @@ wsApp Context{..} pendingConn =
 -- Having both channel and claims as parameters seem redundant
 -- But it allows the function to ignore the claims structure and the source
 -- of the channel, so all claims decoding can be coded in the caller
-notifySession :: WS.Connection -> (ByteString -> Text -> IO ()) -> [ByteString] -> IO ()
+notifySession :: WS.Connection -> (Text -> Text -> IO ()) -> [ByteString] -> IO ()
 notifySession wsCon sendToChannel chs =
   withAsync (forever relayData) wait
   where
-    relayData = do 
+    relayData = do
       msg <- WS.receiveData wsCon
       forM_ chs (sendToChannel msg . toS)
 
-relayChannelData :: (ByteString -> IO ()) -> A.Object -> IO UTCTime -> ByteString -> Text -> IO ()
-relayChannelData send claimsToSend getTime msg ch =
-  claimsWithTime >>= (send . jsonMsg)
+sendToDatabase :: H.Pool -> Text -> Message -> IO ()
+sendToDatabase pool dbChannel =
+  notify . jsonMsg
   where
-    -- we need to decode the bytestring to re-encode valid JSON for the notification
-    jsonMsg :: M.HashMap Text A.Value -> ByteString
-    jsonMsg cl = BL.toStrict . A.encode . Message cl ch . decodeUtf8With T.lenientDecode $ msg
+    notify = void . H.notifyPool pool dbChannel . toS
+    jsonMsg = BL.toStrict . A.encode
 
-    claimsWithTime :: IO (M.HashMap Text A.Value)
-    claimsWithTime = do
-      time <- utcTimeToPOSIXSeconds <$> getTime
-      return $ M.insert "message_delivered_at" (A.Number $ realToFrac time) claimsWithChannel
-
-    claimsWithChannel = M.insert "channel" (A.String ch) claimsToSend
+timestampMessage :: IO UTCTime -> Message -> IO Message
+timestampMessage getTime msg@Message{..} = do
+  time <- utcTimeToPOSIXSeconds <$> getTime
+  return $ msg{ claims = M.insert "message_delivered_at" (A.Number $ realToFrac time) claims}

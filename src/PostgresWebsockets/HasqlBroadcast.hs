@@ -99,11 +99,11 @@ newHasqlBroadcasterForChannel onConnectionFailure ch getCon = do
         _ -> d
     lookupStringDef _ d _ = d
     channelDef = lookupStringDef "channel"
-    openProducer msgs = do
+    openProducer msgQ = do
       con <- getCon
       listen con $ toPgIdentifier ch
       waitForNotifications
-        (\c m-> atomically $ writeTQueue msgs $ toMsg c m)
+        (\c m-> atomically $ writeTQueue msgQ $ toMsg c m)
         con
 
 putErrLn :: Text -> IO ()

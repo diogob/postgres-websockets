@@ -20,8 +20,10 @@ testServerConfig = AppConfig
                     , configPort = 8080
                     , configListenChannel = "postgres-websockets-test-channel"
                     , configJwtSecret = "reallyreallyreallyreallyverysafe"
+                    , configMetaChannel = Nothing
                     , configJwtSecretIsBase64 = False
                     , configPool = 10
+                    , configRetries = 5
                     }
 
 startTestServer :: IO ThreadId
