@@ -90,9 +90,10 @@ To use a secure socket (`wss://`) you will need a proxy server like nginx to han
 Every message received from the browser will be in JSON format as:
 ```javascript
 {
-  "claims": { "message_delivered_at": 0.0, "a_custom_claim_from_the_jwt": "your_custom_value" },
+  "event": "WebsocketMessage",
   "channel": "destination_channel",
-  "payload": "message content"
+  "payload": "message content",
+  "claims": { "message_delivered_at": 0.0, "a_custom_claim_from_the_jwt": "your_custom_value" }
 }
 ```
 
@@ -109,8 +110,19 @@ To send a message to a particular channel on the browser one should notify the p
 ```sql
 SELECT pg_notify(
   'postgres-websockets-listener',
-  json_build_object('channel', 'chat', 'payload', 'test')::text
+  json_build_object('event', 'WebsocketMessage', 'channel', 'chat', 'payload', 'test')::text
 );
 ```
 
 Where `postgres-websockets-listener` is the database channel used by your instance of postgres-websockets and `chat` is the channel where the browser is connected (the same issued in the JWT used to connect).
+
+## Monitoring Connections
+
+To monitor connection opening one should set the variable `PGWS_META_CHANNEL` which will enable the meta-data messages generation in the server on the channel name specified.
+For instamce, if we use the configuration in the [sample-env](./sample-env) we will see messages like the one bellow each time a connection is estabilished (only after the JWT is validated).
+
+```javascript
+{"event":"ConnectionOpen","channel":"server-info","payload":"server-info","claims":{"mode":"rw","message_delivered_at":1.602719440727465893e9}}
+```
+
+You can monitor these messages on another websocket connection with a proper read token for the channel `server-info` or also having an additional database listener on the `PGWS_LISTEN_CHANNEL`.
