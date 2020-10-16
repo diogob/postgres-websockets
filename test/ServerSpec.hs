@@ -13,36 +13,38 @@ import qualified Network.WebSockets as WS
 import           Network.Socket (withSocketsDo)
 
 testServerConfig :: AppConfig
-testServerConfig = AppConfig 
+testServerConfig = AppConfig
                     { configDatabase = "postgres://localhost/postgres"
                     , configPath = Nothing
                     , configHost = "*"
                     , configPort = 8080
                     , configListenChannel = "postgres-websockets-test-channel"
                     , configJwtSecret = "reallyreallyreallyreallyverysafe"
+                    , configMetaChannel = Nothing
                     , configJwtSecretIsBase64 = False
                     , configPool = 10
+                    , configRetries = 5
                     }
 
 startTestServer :: IO ThreadId
 startTestServer = do
     threadId <- forkIO $ serve testServerConfig
-    threadDelay 1000
+    threadDelay 500000
     pure threadId
 
 withServer :: IO () -> IO ()
 withServer action =
   bracket startTestServer
-          killThread
+          (\tid -> killThread tid >> threadDelay 500000)
           (const action)
 
 sendWsData :: Text -> Text -> IO ()
 sendWsData uri msg =
-    withSocketsDo $ 
-        WS.runClient 
-            "localhost" 
-            (configPort testServerConfig) 
-            (toS uri) 
+    withSocketsDo $
+        WS.runClient
+            "localhost"
+            (configPort testServerConfig)
+            (toS uri)
             (`WS.sendTextData` msg)
 
 testChannel :: Text
@@ -58,27 +60,27 @@ waitForWsData :: Text -> IO (MVar ByteString)
 waitForWsData uri = do
     msg <- newEmptyMVar
     void $ forkIO $
-        withSocketsDo $ 
-            WS.runClient 
-                "localhost" 
-                (configPort testServerConfig) 
-                (toS uri) 
+        withSocketsDo $
+            WS.runClient
+                "localhost"
+                (configPort testServerConfig)
+                (toS uri)
                 (\c -> do
                     m <- WS.receiveData c
                     putMVar msg m
                 )
-    threadDelay 1000
+    threadDelay 10000
     pure msg
 
 waitForMultipleWsData :: Int -> Text -> IO (MVar [ByteString])
 waitForMultipleWsData messageCount uri = do
     msg <- newEmptyMVar
     void $ forkIO $
-        withSocketsDo $ 
-            WS.runClient 
-                "localhost" 
-                (configPort testServerConfig) 
-                (toS uri) 
+        withSocketsDo $
+            WS.runClient
+                "localhost"
+                (configPort testServerConfig)
+                (toS uri)
                 (\c -> do
                     m <- replicateM messageCount (WS.receiveData c)
                     putMVar msg m
@@ -112,6 +114,6 @@ spec = around_ withServer $
                     sendWsData testAndSecondaryChannel "test data"
                     msgsJson <- takeMVar msgs
 
-                    forM_ 
-                        msgsJson 
+                    forM_
+                        msgsJson
                         (\msgJson -> (msgJson ^? key "payload" . _String) `shouldBe` Just "test data")

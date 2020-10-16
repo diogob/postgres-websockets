@@ -19,11 +19,11 @@ import Protolude hiding (putErrLn)
 
 import Hasql.Connection
 import Hasql.Notifications
-import Data.Aeson              (decode, Value(..))
-import Data.HashMap.Lazy       (lookupDefault)
+import Data.Aeson (decode, Value(..))
+import Data.HashMap.Lazy (lookupDefault)
 import Data.Either.Combinators (mapBoth)
-import Data.Function           (id)
-import Control.Retry           (RetryStatus(..), retrying, capDelay, exponentialBackoff)
+import Data.Function (id)
+import Control.Retry (RetryStatus(..), retrying, capDelay, exponentialBackoff)
 
 import PostgresWebsockets.Broadcast
 
@@ -99,11 +99,11 @@ newHasqlBroadcasterForChannel onConnectionFailure ch getCon = do
         _ -> d
     lookupStringDef _ d _ = d
     channelDef = lookupStringDef "channel"
-    openProducer msgs = do
+    openProducer msgQ = do
       con <- getCon
       listen con $ toPgIdentifier ch
       waitForNotifications
-        (\c m-> atomically $ writeTQueue msgs $ toMsg c m)
+        (\c m-> atomically $ writeTQueue msgQ $ toMsg c m)
         con
 
 putErrLn :: Text -> IO ()
