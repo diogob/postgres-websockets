@@ -1,7 +1,4 @@
-FROM alpine:3.11.6
-
-RUN echo "@testing http://nl.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositories
-RUN apk -U add shadow@testing
+FROM alpine:3.12
 
 RUN apk add --update ca-certificates openssl && update-ca-certificates
 
