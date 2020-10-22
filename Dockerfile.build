@@ -4,5 +4,8 @@ RUN apk add --update ca-certificates openssl && update-ca-certificates
 
 RUN apk add ghc alpine-sdk linux-headers postgresql-dev zlib-dev
 
+# Required to keep compatibility with stack (groupadd is required for building)
+RUN apk -U add shadow
+
 RUN wget -qO- https://get.haskellstack.org/ | sh
 RUN stack config set system-ghc --global true
