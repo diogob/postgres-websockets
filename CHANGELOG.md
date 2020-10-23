@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 0.10.0.1
+
+- Upgrade stackage to LTS 16.11. Recompiled with GHC 8.8.3.
+- Upgrade Alpine base docker image to Alpine 3.12
+
 ## 0.10.0.0
 
 - Add `PGWS_META_CHANNEL` to configure optional metadata channel to send events from the server. Initially the oply event is `ConnectionOpen`.

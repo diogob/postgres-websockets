@@ -6,7 +6,7 @@ version: 2.1
 jobs:
   publish:
     docker:
-      - image: fpco/stack-build-small:lts-14
+      - image: fpco/stack-build-small:lts-16.11
     steps:
       - attach_workspace:
           at: ws
@@ -30,7 +30,7 @@ jobs:
 
   build-test:
     docker:
-      - image: fpco/stack-build:lts-14.27
+      - image: fpco/stack-build:lts-16.11
       - image: postgres:11-alpine
         environment:
           POSTGRES_DB: postgres_ws_test
