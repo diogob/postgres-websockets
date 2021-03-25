@@ -21,7 +21,8 @@ module PostgresWebsockets.Broadcast ( Multiplexer (src)
                              , readTChan
                              ) where
 
-import Protolude
+import Protolude hiding (toS)
+import Protolude.Conv
 import qualified StmContainers.Map as M
 import Control.Concurrent.STM.TChan
 import Control.Concurrent.STM.TQueue

@@ -10,7 +10,8 @@ module PostgresWebsockets.Middleware
   ( postgresWsMiddleware
   ) where
 
-import Protolude
+import Protolude hiding (toS)
+import Protolude.Conv
 import Data.Time.Clock (UTCTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds, posixSecondsToUTCTime)
 import Control.Concurrent.AlarmClock (newAlarmClock, setAlarm)
@@ -24,7 +25,6 @@ import qualified Data.Aeson as A
 import qualified Data.ByteString.Char8 as BS
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.HashMap.Strict as M
-import qualified Data.Text.Encoding.Error as T
 
 import PostgresWebsockets.Broadcast (onMessage)
 import PostgresWebsockets.Claims ( ConnectionInfo, validateClaims )

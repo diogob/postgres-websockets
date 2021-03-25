@@ -1,4 +1,4 @@
-resolver: lts-16.11
+resolver: lts-17.7
 extra-deps:
 - envparse-0.4.1@sha256:989902e6368532548f61de1fa245ad2b39176cddd8743b20071af519a709ce30
 - hasql-notifications-0.1.0.0@sha256:9ab112d2bb5da0d55abd65f0d27a7bb1dc4aeb792518d9a2ea8a16e243e19985,2156

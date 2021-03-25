@@ -7,7 +7,8 @@ module PostgresWebsockets.Context
         , mkContext
         ) where
 
-import Protolude
+import Protolude hiding (toS)
+import Protolude.Conv
 import Data.Time.Clock (UTCTime, getCurrentTime)
 import Control.AutoUpdate       ( defaultUpdateSettings
                                 , mkAutoUpdate
