@@ -12,13 +12,6 @@ packages:
   original:
     hackage: envparse-0.4.1@sha256:989902e6368532548f61de1fa245ad2b39176cddd8743b20071af519a709ce30
 - completed:
-    hackage: hasql-notifications-0.1.0.0@sha256:9ab112d2bb5da0d55abd65f0d27a7bb1dc4aeb792518d9a2ea8a16e243e19985,2156
-    pantry-tree:
-      size: 452
-      sha256: 3f5c51ec2bc7b58b5b6e8c871c8ed903a8dd1fbbb37cce9607407933d678e205
-  original:
-    hackage: hasql-notifications-0.1.0.0@sha256:9ab112d2bb5da0d55abd65f0d27a7bb1dc4aeb792518d9a2ea8a16e243e19985,2156
-- completed:
     hackage: stm-containers-1.1.0.4@sha256:f83a683357b6e3b1dda3e70d2077a37224ed534df1f74c4e11f3f6daa7945c5b,3248
     pantry-tree:
       size: 761

@@ -38,20 +38,16 @@ library
                      , lens >= 4.17.1
                      , jose >= 0.6
                      , unordered-containers >= 0.2
-                     , postgresql-libpq >= 0.9 && < 1.0
                      , aeson >= 1.4.6.0 && < 1.6
                      , protolude >= 0.2.3 && < 0.4
                      , hasql >= 1.4.1
-                     , hasql-notifications >= 0.1.0.0 && < 0.2
+                     , hasql-notifications >= 0.1.0.0 && < 0.3
                      , either >= 5.0.1.1 && < 5.1
                      , stm-containers >= 1.1.0.2 && < 1.2
                      , stm >= 2.5.0.0 && < 2.6
                      , retry >= 0.8.1.0 && < 0.9
-                     , stringsearch >= 0.3.6.6 && < 0.4
                      , time >= 1.8.0.2 && < 1.10
-                     , contravariant >= 1.5.2 && < 1.6
                      , alarmclock >= 0.7.0.2 && < 0.8
-                     , async >= 2.2.0 && < 2.3
                      , envparse >= 0.4.1
                      , base64-bytestring >= 1.0.0.3 && < 1.2
                      , bytestring >= 0.10
@@ -86,12 +82,10 @@ test-suite postgres-websockets-test
                      , protolude >= 0.2.3 && < 0.4
                      , postgres-websockets
                      , hspec >= 2.7.1 && < 2.8
-                     , hspec-wai >= 0.9.2 && < 0.11
-                     , hspec-wai-json >= 0.9.2 && < 0.11
                      , aeson >= 1.4.6.0 && < 1.6
                      , hasql >= 0.19
                      , hasql-pool >= 0.4
-                     , hasql-notifications >= 0.1.0.0 && < 0.2
+                     , hasql-notifications >= 0.1.0.0 && < 0.3
                      , http-types >= 0.9
                      , time >= 1.8.0.2 && < 1.10
                      , unordered-containers >= 0.2
