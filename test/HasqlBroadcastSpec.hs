@@ -15,11 +15,11 @@ spec = describe "newHasqlBroadcaster" $ do
             <$> acquire connStr
 
     it "relay messages sent to the appropriate database channel" $ do
-      multi <- either (panic .show) id <$> newHasqlBroadcasterOrError (pure ()) "postgres-websockets" "postgres://localhost/postgres_ws_test"
+      multi <- either (panic .show) id <$> newHasqlBroadcasterOrError (pure ()) "postgres-websockets" "postgres://postgres:roottoor@localhost:5432/postgres_ws_test"
       msg <- liftIO newEmptyMVar
       onMessage multi "test" $ putMVar msg
 
-      con <- newConnection "postgres://localhost/postgres_ws_test"
+      con <- newConnection "postgres://postgres:roottoor@localhost:5432/postgres_ws_test"
       void $ notify con (toPgIdentifier "postgres-websockets") "{\"channel\": \"test\", \"payload\": \"hello there\"}"
 
       readMVar msg `shouldReturn` Message "test" "{\"channel\": \"test\", \"payload\": \"hello there\"}"

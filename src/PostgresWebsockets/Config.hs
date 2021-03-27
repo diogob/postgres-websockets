@@ -18,7 +18,8 @@ import           Env
 import           Data.Text                   (intercalate, pack, replace, strip, stripPrefix)
 import           Data.Version                (versionBranch)
 import           Paths_postgres_websockets   (version)
-import           Protolude hiding            (intercalate, (<>), optional, replace)
+import           Protolude hiding            (intercalate, (<>), optional, replace, toS)
+import           Protolude.Conv
 import           Data.String (IsString(..))
 import           Network.Wai.Handler.Warp
 import qualified Data.ByteString                      as BS

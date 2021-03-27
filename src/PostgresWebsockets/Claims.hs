@@ -11,7 +11,8 @@ module PostgresWebsockets.Claims
   ( ConnectionInfo,validateClaims
   ) where
 
-import Protolude
+import Protolude hiding (toS)
+import Protolude.Conv
 import Control.Lens
 import Crypto.JWT
 import Data.List

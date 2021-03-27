@@ -1,4 +1,7 @@
-# postgres-websockets [![CircleCI](https://circleci.com/gh/diogob/postgres-websockets.svg?style=svg)](https://circleci.com/gh/diogob/postgres-websockets) [![Hackage Matrix CI](https://matrix.hackage.haskell.org/api/v2/packages/postgres-websockets/badge)](https://matrix.hackage.haskell.org/package/postgres-websockets)
+# postgres-websockets 
+
+![CI](https://github.com/diogob/postgres-websockets/actions/workflows/ci.yml/badge.svg)
+[![Hackage Matrix CI](https://matrix.hackage.haskell.org/api/v2/packages/postgres-websockets/badge)](https://matrix.hackage.haskell.org/package/postgres-websockets)
 
 
 postgres-websockets is a [middleware](https://hackage.haskell.org/package/wai) that adds websockets capabilites on top of [PostgreSQL](https://www.postgresql.org)'s asynchronous notifications using LISTEN and NOTIFY commands.

@@ -15,7 +15,9 @@ module PostgresWebsockets.HasqlBroadcast
   , relayMessagesForever
   ) where
 
-import Protolude hiding (putErrLn)
+import Protolude hiding (putErrLn, toS, show)
+import GHC.Show
+import Protolude.Conv
 
 import Hasql.Connection
 import Hasql.Notifications
@@ -40,7 +42,7 @@ newHasqlBroadcaster onConnectionFailure ch maxRetries = newHasqlBroadcasterForCo
 -}
 newHasqlBroadcasterOrError :: IO () -> Text -> ByteString -> IO (Either ByteString Multiplexer)
 newHasqlBroadcasterOrError onConnectionFailure ch =
-  acquire >=> (sequence . mapBoth show (newHasqlBroadcasterForConnection . return))
+  acquire >=> (sequence . mapBoth (toSL . show) (newHasqlBroadcasterForConnection . return))
   where
     newHasqlBroadcasterForConnection = newHasqlBroadcasterForChannel onConnectionFailure ch
 
@@ -56,7 +58,7 @@ tryUntilConnected maxRetries =
     shouldRetry RetryStatus{..} con =
       case con of
         Left err -> do
-          putErrLn $ "Error connecting notification listener to database: " <> show err
+          putErrLn $ "Error connecting notification listener to database: " <> (toS . show) err
           pure $ rsIterNumber < maxRetries - 1
         _ -> return False
 

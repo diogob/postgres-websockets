@@ -14,7 +14,7 @@ import           Network.Socket (withSocketsDo)
 
 testServerConfig :: AppConfig
 testServerConfig = AppConfig
-                    { configDatabase = "postgres://localhost/postgres"
+                    { configDatabase = "postgres://postgres:roottoor@localhost:5432/postgres_ws_test"
                     , configPath = Nothing
                     , configHost = "*"
                     , configPort = 8080
@@ -42,7 +42,7 @@ sendWsData :: Text -> Text -> IO ()
 sendWsData uri msg =
     withSocketsDo $
         WS.runClient
-            "localhost"
+            "127.0.0.1"
             (configPort testServerConfig)
             (toS uri)
             (`WS.sendTextData` msg)
@@ -62,7 +62,7 @@ waitForWsData uri = do
     void $ forkIO $
         withSocketsDo $
             WS.runClient
-                "localhost"
+                "127.0.0.1"
                 (configPort testServerConfig)
                 (toS uri)
                 (\c -> do
@@ -78,7 +78,7 @@ waitForMultipleWsData messageCount uri = do
     void $ forkIO $
         withSocketsDo $
             WS.runClient
-                "localhost"
+                "127.0.0.1"
                 (configPort testServerConfig)
                 (toS uri)
                 (\c -> do
