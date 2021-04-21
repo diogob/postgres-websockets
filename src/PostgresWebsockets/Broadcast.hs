@@ -9,7 +9,7 @@ The multiplexer contains a map of channels and a producer thread.
 This module avoids any database implementation details, it is used by HasqlBroadcast where
 the database logic is combined.
 -}
-module PostgresWebsockets.Broadcast ( Multiplexer (src)
+module PostgresWebsockets.Broadcast ( Multiplexer
                              , Message (..)
                              , newMultiplexer
                              , onMessage
@@ -34,7 +34,6 @@ data Message = Message { channel :: ByteString
                        } deriving (Eq, Show)
 
 data Multiplexer = Multiplexer { channels :: M.Map ByteString Channel
-                               , src :: ThreadId
                                , messages :: TQueue Message
                                }
 
@@ -64,8 +63,8 @@ newMultiplexer :: (TQueue Message -> IO a)
                -> IO Multiplexer
 newMultiplexer openProducer closeProducer = do
   msgs <- newTQueueIO
-  m <- liftA2 Multiplexer M.newIO (forkFinally (openProducer msgs) closeProducer)
-  return $ m msgs
+  void $ forkFinally (openProducer msgs) closeProducer
+  Multiplexer <$> M.newIO <*> pure msgs
 
 openChannel ::  Multiplexer -> ByteString -> STM Channel
 openChannel multi chan = do
