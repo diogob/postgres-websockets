@@ -32,7 +32,7 @@ mkContext :: AppConfig -> IO () -> IO Context
 mkContext conf@AppConfig{..} shutdown = do
   Context conf
     <$> P.acquire (configPool, 10, pgSettings)
-    <*> newHasqlBroadcaster shutdown (toS configListenChannel) configRetries pgSettings
+    <*> newHasqlBroadcaster shutdown (toS configListenChannel) configRetries configReconnectInterval pgSettings
     <*> mkGetTime
   where
     mkGetTime :: IO (IO UTCTime)

@@ -32,10 +32,10 @@ import PostgresWebsockets.Broadcast
 {- | Returns a multiplexer from a connection URI, keeps trying to connect in case there is any error.
    This function also spawns a thread that keeps relaying the messages from the database to the multiplexer's listeners
 -}
-newHasqlBroadcaster :: IO () -> Text -> Int -> ByteString -> IO Multiplexer
-newHasqlBroadcaster onConnectionFailure ch maxRetries = newHasqlBroadcasterForConnection . tryUntilConnected maxRetries
+newHasqlBroadcaster :: IO () -> Text -> Int -> Int -> ByteString -> IO Multiplexer
+newHasqlBroadcaster onConnectionFailure ch maxRetries checkInterval = newHasqlBroadcasterForConnection . tryUntilConnected maxRetries
   where
-    newHasqlBroadcasterForConnection = newHasqlBroadcasterForChannel onConnectionFailure ch
+    newHasqlBroadcasterForConnection = newHasqlBroadcasterForChannel onConnectionFailure ch checkInterval
 
 {- | Returns a multiplexer from a connection URI or an error message on the left case
    This function also spawns a thread that keeps relaying the messages from the database to the multiplexer's listeners
@@ -44,7 +44,7 @@ newHasqlBroadcasterOrError :: IO () -> Text -> ByteString -> IO (Either ByteStri
 newHasqlBroadcasterOrError onConnectionFailure ch =
   acquire >=> (sequence . mapBoth (toSL . show) (newHasqlBroadcasterForConnection . return))
   where
-    newHasqlBroadcasterForConnection = newHasqlBroadcasterForChannel onConnectionFailure ch
+    newHasqlBroadcasterForConnection = newHasqlBroadcasterForChannel onConnectionFailure ch 0
 
 tryUntilConnected :: Int -> ByteString -> IO Connection
 tryUntilConnected maxRetries =
@@ -83,8 +83,8 @@ tryUntilConnected maxRetries =
       forever $ fmap print (atomically $ readTChan ch)
    @
 -}
-newHasqlBroadcasterForChannel :: IO () -> Text -> IO Connection -> IO Multiplexer
-newHasqlBroadcasterForChannel onConnectionFailure ch getCon = do
+newHasqlBroadcasterForChannel :: IO () -> Text -> Int -> IO Connection -> IO Multiplexer
+newHasqlBroadcasterForChannel onConnectionFailure ch checkInterval getCon = do
   multi <- newMultiplexer openProducer $ const onConnectionFailure
   void $ relayMessagesForever multi
   return multi
