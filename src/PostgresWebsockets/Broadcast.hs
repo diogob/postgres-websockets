@@ -1,49 +1,56 @@
-{-| 
-Module      : PostgresWebsockets.Broadcast
-Description : Distribute messages from one producer to several consumers.
+-- |
+-- Module      : PostgresWebsockets.Broadcast
+-- Description : Distribute messages from one producer to several consumers.
+--
+-- PostgresWebsockets functions to broadcast messages to several listening clients
+-- This module provides a type called Multiplexer.
+-- The multiplexer contains a map of channels and a producer thread.
+--
+-- This module avoids any database implementation details, it is used by HasqlBroadcast where
+-- the database logic is combined.
+module PostgresWebsockets.Broadcast
+  ( Multiplexer,
+    Message (..),
+    newMultiplexer,
+    onMessage,
+    relayMessages,
+    relayMessagesForever,
+    superviseMultiplexer,
 
-PostgresWebsockets functions to broadcast messages to several listening clients
-This module provides a type called Multiplexer.
-The multiplexer contains a map of channels and a producer thread.
+    -- * Re-exports
+    readTQueue,
+    writeTQueue,
+    readTChan,
+  )
+where
 
-This module avoids any database implementation details, it is used by HasqlBroadcast where
-the database logic is combined.
--}
-module PostgresWebsockets.Broadcast ( Multiplexer
-                             , Message (..)
-                             , newMultiplexer
-                             , onMessage
-                             , relayMessages
-                             , relayMessagesForever
-                             , superviseMultiplexer
-                             -- * Re-exports
-                             , readTQueue
-                             , writeTQueue
-                             , readTChan
-                             ) where
-
+import Control.Concurrent.STM.TChan
+import Control.Concurrent.STM.TQueue
 import Protolude hiding (toS)
 import Protolude.Conv
 import qualified StmContainers.Map as M
-import Control.Concurrent.STM.TChan
-import Control.Concurrent.STM.TQueue
 
-data Message = Message { channel :: Text
-                       , payload :: Text
-                       } deriving (Eq, Show)
+data Message = Message
+  { channel :: Text,
+    payload :: Text
+  }
+  deriving (Eq, Show)
 
-data Multiplexer = Multiplexer { channels :: M.Map Text Channel
-                               , messages :: TQueue Message
-                               , producerThreadId :: MVar ThreadId
-                               , reopenProducer :: IO ThreadId
-                               }
-data Channel = Channel { broadcast :: TChan Message
-                       , listeners :: Integer
-                       }
+data Multiplexer = Multiplexer
+  { channels :: M.Map Text Channel,
+    messages :: TQueue Message,
+    producerThreadId :: MVar ThreadId,
+    reopenProducer :: IO ThreadId
+  }
+
+data Channel = Channel
+  { broadcast :: TChan Message,
+    listeners :: Integer
+  }
 
 -- | Opens a thread that relays messages from the producer thread to the channels forever
 relayMessagesForever :: Multiplexer -> IO ThreadId
-relayMessagesForever =  forkIO . forever . relayMessages
+relayMessagesForever = forkIO . forever . relayMessages
 
 -- | Reads the messages from the producer and relays them to the active listeners in their respective channels.
 relayMessages :: Multiplexer -> IO ()
@@ -55,9 +62,10 @@ relayMessages multi =
       Nothing -> return ()
       Just c -> writeTChan (broadcast c) m
 
-newMultiplexer :: (TQueue Message -> IO a)
-               -> (Either SomeException a -> IO ())
-               -> IO Multiplexer
+newMultiplexer ::
+  (TQueue Message -> IO a) ->
+  (Either SomeException a -> IO ()) ->
+  IO Multiplexer
 newMultiplexer openProducer closeProducer = do
   msgs <- newTQueueIO
   let forkNewProducer = forkFinally (openProducer msgs) closeProducer
@@ -66,36 +74,38 @@ newMultiplexer openProducer closeProducer = do
   producerThreadId <- newMVar tid
   pure $ Multiplexer multiplexerMap msgs producerThreadId forkNewProducer
 
-{- |  Given a multiplexer, a number of milliseconds and an IO computation that returns a boolean
-      Runs the IO computation at every interval of milliseconds interval and reopens the multiplexer producer
-      if the resulting boolean is true
-      Call this in case you want to ensure the producer thread is killed and restarted under a certain condition
--}
+-- |  Given a multiplexer, a number of milliseconds and an IO computation that returns a boolean
+--      Runs the IO computation at every interval of milliseconds interval and reopens the multiplexer producer
+--      if the resulting boolean is true
+--      Call this in case you want to ensure the producer thread is killed and restarted under a certain condition
 superviseMultiplexer :: Multiplexer -> Int -> IO Bool -> IO ()
 superviseMultiplexer multi msInterval shouldRestart = do
-  void $ forkIO $ forever $ do
-    threadDelay msInterval
-    sr <- shouldRestart
-    when sr $ do
-      void $ killThread <$> readMVar (producerThreadId multi)
-      void $ swapMVar (producerThreadId multi) <$> reopenProducer multi
+  void $
+    forkIO $
+      forever $ do
+        threadDelay msInterval
+        sr <- shouldRestart
+        when sr $ do
+          void $ killThread <$> readMVar (producerThreadId multi)
+          void $ swapMVar (producerThreadId multi) <$> reopenProducer multi
 
-openChannel ::  Multiplexer -> Text -> STM Channel
+openChannel :: Multiplexer -> Text -> STM Channel
 openChannel multi chan = do
-    c <- newBroadcastTChan
-    let newChannel = Channel{ broadcast = c
-                            , listeners = 0
-                            }
-    M.insert newChannel chan (channels multi)
-    return newChannel
+  c <- newBroadcastTChan
+  let newChannel =
+        Channel
+          { broadcast = c,
+            listeners = 0
+          }
+  M.insert newChannel chan (channels multi)
+  return newChannel
 
-{- |  Adds a listener to a certain multiplexer's channel.
-      The listener must be a function that takes a 'TChan Message' and perform any IO action.
-      All listeners run in their own thread.
-      The first listener will open the channel, when a listener dies it will check if there acquire
-      any others and close the channel when that's the case.
--}
-onMessage :: Multiplexer -> Text -> (Message -> IO()) -> IO ()
+-- |  Adds a listener to a certain multiplexer's channel.
+--      The listener must be a function that takes a 'TChan Message' and perform any IO action.
+--      All listeners run in their own thread.
+--      The first listener will open the channel, when a listener dies it will check if there acquire
+--      any others and close the channel when that's the case.
+onMessage :: Multiplexer -> Text -> (Message -> IO ()) -> IO ()
 onMessage multi chan action = do
   listener <- atomically $ openChannelWhenNotFound >>= addListener
   void $ forkFinally (forever (atomically (readTChan listener) >>= action)) disposeListener
@@ -105,13 +115,13 @@ onMessage multi chan action = do
       let c = fromMaybe (panic $ "trying to remove listener from non existing channel: " <> toS chan) mC
       M.delete chan (channels multi)
       when (listeners c - 1 > 0) $
-        M.insert Channel{ broadcast = broadcast c, listeners = listeners c - 1 } chan (channels multi)
+        M.insert Channel {broadcast = broadcast c, listeners = listeners c - 1} chan (channels multi)
     openChannelWhenNotFound =
       M.lookup chan (channels multi) >>= \case
-                                            Nothing -> openChannel multi chan
-                                            Just ch -> return ch
+        Nothing -> openChannel multi chan
+        Just ch -> return ch
     addListener ch = do
       M.delete chan (channels multi)
-      let newChannel = Channel{ broadcast = broadcast ch, listeners = listeners ch + 1}
+      let newChannel = Channel {broadcast = broadcast ch, listeners = listeners ch + 1}
       M.insert newChannel chan (channels multi)
       dupTChan $ broadcast newChannel
