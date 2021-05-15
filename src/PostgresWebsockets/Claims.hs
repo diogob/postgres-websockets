@@ -23,13 +23,13 @@ import qualified Data.Aeson as JSON
 
 
 type Claims = M.HashMap Text JSON.Value
-type ConnectionInfo = ([ByteString], ByteString, Claims)
+type ConnectionInfo = ([Text], Text, Claims)
 
 {-| Given a secret, a token and a timestamp it validates the claims and returns
     either an error message or a triple containing channel, mode and claims hashmap.
 -}
 validateClaims
-  :: Maybe ByteString
+  :: Maybe Text
   -> ByteString
   -> LByteString
   -> UTCTime
@@ -58,16 +58,16 @@ validateClaims requestChannel secret jwtToken time = runExceptT $ do
   pure (validChannels, mode, cl')
 
  where
-  claimAsJSON :: Text -> Claims -> Maybe ByteString
+  claimAsJSON :: Text -> Claims -> Maybe Text
   claimAsJSON name cl = case M.lookup name cl of
-    Just (JSON.String s) -> Just $ encodeUtf8 s
+    Just (JSON.String s) -> Just s
     _ -> Nothing
 
-  claimAsJSONList :: Text -> Claims -> Maybe [ByteString]
+  claimAsJSONList :: Text -> Claims -> Maybe [Text]
   claimAsJSONList name cl = case M.lookup name cl of
     Just channelsJson ->
       case JSON.fromJSON channelsJson :: JSON.Result [Text] of
-        JSON.Success channelsList -> Just $ encodeUtf8 <$> channelsList
+        JSON.Success channelsList -> Just channelsList
         _ -> Nothing
     Nothing -> Nothing
 

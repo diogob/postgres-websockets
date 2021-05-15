@@ -89,23 +89,23 @@ newHasqlBroadcasterForChannel onConnectionFailure ch checkInterval getCon = do
   void $ relayMessagesForever multi
   return multi
   where
-    toMsg :: ByteString -> ByteString -> Message
+    toMsg :: Text -> Text -> Message
     toMsg c m = case decode (toS m) of
                    Just v -> Message (channelDef c v) m
                    Nothing -> Message c m
 
-    lookupStringDef :: Text -> ByteString -> Value -> ByteString
+    lookupStringDef :: Text -> Text -> Value -> Text
     lookupStringDef key d (Object obj) =
       case lookupDefault (String $ toS d) key obj of
         String s -> toS s
-        _ -> d
-    lookupStringDef _ d _ = d
+        _ -> toS d
+    lookupStringDef _ d _ = toS d
     channelDef = lookupStringDef "channel"
     openProducer msgQ = do
       con <- getCon
       listen con $ toPgIdentifier ch
       waitForNotifications
-        (\c m-> atomically $ writeTQueue msgQ $ toMsg c m)
+        (\c m-> atomically $ writeTQueue msgQ $ toMsg (toS c) (toS m))
         con
 
 putErrLn :: Text -> IO ()

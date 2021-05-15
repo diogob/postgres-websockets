@@ -15,6 +15,7 @@ module PostgresWebsockets.Broadcast ( Multiplexer
                              , onMessage
                              , relayMessages
                              , relayMessagesForever
+                             , superviseMultiplexer
                              -- * Re-exports
                              , readTQueue
                              , writeTQueue
@@ -27,19 +28,15 @@ import qualified StmContainers.Map as M
 import Control.Concurrent.STM.TChan
 import Control.Concurrent.STM.TQueue
 
-import GHC.Show
-
-data Message = Message { channel :: ByteString
-                       , payload :: ByteString
+data Message = Message { channel :: Text
+                       , payload :: Text
                        } deriving (Eq, Show)
 
-data Multiplexer = Multiplexer { channels :: M.Map ByteString Channel
+data Multiplexer = Multiplexer { channels :: M.Map Text Channel
                                , messages :: TQueue Message
+                               , producerThreadId :: MVar ThreadId
+                               , reopenProducer :: IO ThreadId
                                }
-
-instance Show Multiplexer where
-  show Multiplexer{} = "Multiplexer"
-
 data Channel = Channel { broadcast :: TChan Message
                        , listeners :: Integer
                        }
@@ -63,10 +60,27 @@ newMultiplexer :: (TQueue Message -> IO a)
                -> IO Multiplexer
 newMultiplexer openProducer closeProducer = do
   msgs <- newTQueueIO
-  void $ forkFinally (openProducer msgs) closeProducer
-  Multiplexer <$> M.newIO <*> pure msgs
+  let forkNewProducer = forkFinally (openProducer msgs) closeProducer
+  tid <- forkNewProducer
+  multiplexerMap <- M.newIO
+  producerThreadId <- newMVar tid
+  pure $ Multiplexer multiplexerMap msgs producerThreadId forkNewProducer
 
-openChannel ::  Multiplexer -> ByteString -> STM Channel
+{- |  Given a multiplexer, a number of milliseconds and an IO computation that returns a boolean
+      Runs the IO computation at every interval of milliseconds interval and reopens the multiplexer producer
+      if the resulting boolean is true
+      Call this in case you want to ensure the producer thread is killed and restarted under a certain condition
+-}
+superviseMultiplexer :: Multiplexer -> Int -> IO Bool -> IO ()
+superviseMultiplexer multi msInterval shouldRestart = do
+  void $ forkIO $ forever $ do
+    threadDelay msInterval
+    sr <- shouldRestart
+    when sr $ do
+      void $ killThread <$> readMVar (producerThreadId multi)
+      void $ swapMVar (producerThreadId multi) <$> reopenProducer multi
+
+openChannel ::  Multiplexer -> Text -> STM Channel
 openChannel multi chan = do
     c <- newBroadcastTChan
     let newChannel = Channel{ broadcast = c
@@ -81,7 +95,7 @@ openChannel multi chan = do
       The first listener will open the channel, when a listener dies it will check if there acquire
       any others and close the channel when that's the case.
 -}
-onMessage :: Multiplexer -> ByteString -> (Message -> IO()) -> IO ()
+onMessage :: Multiplexer -> Text -> (Message -> IO()) -> IO ()
 onMessage multi chan action = do
   listener <- atomically $ openChannelWhenNotFound >>= addListener
   void $ forkFinally (forever (atomically (readTChan listener) >>= action)) disposeListener

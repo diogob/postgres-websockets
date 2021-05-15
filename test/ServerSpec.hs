@@ -24,6 +24,7 @@ testServerConfig = AppConfig
                     , configJwtSecretIsBase64 = False
                     , configPool = 10
                     , configRetries = 5
+                    , configReconnectInterval  = 0
                     }
 
 startTestServer :: IO ThreadId
