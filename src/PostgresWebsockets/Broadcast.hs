@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 -- |
 -- Module      : PostgresWebsockets.Broadcast
 -- Description : Distribute messages from one producer to several consumers.
@@ -26,8 +28,9 @@ where
 
 import Control.Concurrent.STM.TChan
 import Control.Concurrent.STM.TQueue
+import qualified Data.Aeson as A
 import Protolude hiding (toS)
-import Protolude.Conv
+import Protolude.Conv (toS)
 import qualified StmContainers.Map as M
 
 data Message = Message
@@ -43,10 +46,19 @@ data Multiplexer = Multiplexer
     reopenProducer :: IO ThreadId
   }
 
+data MultiplexerSnapshot = MultiplexerSnapshot
+  { channelsSize :: Int,
+    messageQueueEmpty :: Bool,
+    producerId :: Text
+  }
+  deriving (Generic)
+
 data Channel = Channel
   { broadcast :: TChan Message,
     listeners :: Integer
   }
+
+instance A.ToJSON MultiplexerSnapshot
 
 -- | Opens a thread that relays messages from the producer thread to the channels forever
 relayMessagesForever :: Multiplexer -> IO ThreadId
