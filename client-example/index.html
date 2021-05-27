@@ -1,43 +1,51 @@
 <html>
-    <head>
-        <title>postgres-websockets example</title>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>
-        <script src="https://kjur.github.io/jsrsasign/jsrsasign-all-min.js"></script>
-        <script type="text/JavaScript" src="client.js"></script>
-        <link rel="stylesheet" type="text/css" href="screen.css"></script>
-    </head>
-    <body>
-        <h1>postgres-websockets example</h1>
-        <div id="main">
-            <div id="warnings">
-            </div>
-            <div id="join-section">
-                <h2>Open Connection</h2>
-                <form id="join-form" action="">
-                    <label for="channel">Chat Channel</label>
-                    <br/>
-                    <input type="text" id="channel" value="chat" />
-                    <br/>
-                    <label for="jwt">JWT</label>
-                    <br/>
-                    <textarea id="jwt" cols="50" rows="5"></textarea>
-                </form>
-            </div>
-            <div id="chat-section">
-                <h2>Chat</h2>
-                <form id="message-form" action="">
-                    <label for="text">Type a message and hit send to trigger a database notify in the chat channel</label>
-                    <input id="text" type="text" size="40" />
-                    <input id="send" type="submit" value="Send" />
-                </form>
+
+<head>
+    <title>postgres-websockets example</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.2/jquery.min.js"></script>
+    <script src="https://kjur.github.io/jsrsasign/jsrsasign-all-min.js"></script>
+    <script type="text/JavaScript" src="client.js"></script>
+    <link rel="stylesheet" type="text/css" href="screen.css">
+    </script>
+</head>
+
+<body>
+    <h1>postgres-websockets example</h1>
+    <div id="main">
+        <div id="warnings">
+        </div>
+        <div id="join-section">
+            <h2>Open Connection</h2>
+            <form id="join-form" action="">
+                <label for="channel">Base postgres-websockets URL</label>
                 <br />
-                <h2>Messages sent to chat channel</h2>
-                <div id="messages">
-                </div>
-                <h2>Messages sent to meta channel</h2>
-                <div id="meta-messages">
-                </div>
+                <input type="text" id="ws-uri" value="" />
+                <br />
+                <label for="channel">Chat Channel</label>
+                <br />
+                <input type="text" id="channel" value="chat" />
+                <br />
+                <label for="jwt">JWT</label>
+                <br />
+                <textarea id="jwt" cols="50" rows="5"></textarea>
+            </form>
+        </div>
+        <div id="chat-section">
+            <h2>Chat</h2>
+            <form id="message-form" action="">
+                <label for="text">Type a message and hit send to trigger a database notify in the chat channel</label>
+                <input id="text" type="text" size="40" />
+                <input id="send" type="submit" value="Send" />
+            </form>
+            <br />
+            <h2>Messages sent to chat channel</h2>
+            <div id="messages">
+            </div>
+            <h2>Messages sent to meta channel</h2>
+            <div id="meta-messages">
             </div>
         </div>
-    </body>
+    </div>
+</body>
+
 </html>
