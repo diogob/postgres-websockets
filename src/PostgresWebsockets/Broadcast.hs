@@ -60,6 +60,15 @@ data Channel = Channel
 
 instance A.ToJSON MultiplexerSnapshot
 
+-- | Given a multiplexer derive a type that can be printed for debugging or logging purposes
+takeSnapshot :: Multiplexer -> IO MultiplexerSnapshot
+takeSnapshot multi =
+  MultiplexerSnapshot <$> size <*> e <*> thread
+  where
+    size = atomically $ M.size $ channels multi
+    thread = show <$> readMVar (producerThreadId multi)
+    e = atomically $ isEmptyTQueue $ messages multi
+
 -- | Opens a thread that relays messages from the producer thread to the channels forever
 relayMessagesForever :: Multiplexer -> IO ThreadId
 relayMessagesForever = forkIO . forever . relayMessages
@@ -89,17 +98,26 @@ newMultiplexer openProducer closeProducer = do
 -- |  Given a multiplexer, a number of milliseconds and an IO computation that returns a boolean
 --      Runs the IO computation at every interval of milliseconds interval and reopens the multiplexer producer
 --      if the resulting boolean is true
+--      When interval is 0 this is NOOP, so the minimum interval is 1ms
 --      Call this in case you want to ensure the producer thread is killed and restarted under a certain condition
 superviseMultiplexer :: Multiplexer -> Int -> IO Bool -> IO ()
 superviseMultiplexer multi msInterval shouldRestart = do
   void $
     forkIO $
       forever $ do
-        threadDelay msInterval
+        threadDelay $ msInterval * 1000
         sr <- shouldRestart
         when sr $ do
+          snapBefore <- takeSnapshot multi
           void $ killThread <$> readMVar (producerThreadId multi)
-          void $ swapMVar (producerThreadId multi) <$> reopenProducer multi
+          new <- reopenProducer multi
+          void $ swapMVar (producerThreadId multi) new
+          snapAfter <- takeSnapshot multi
+          putStrLn $
+            "Restarting producer. Multiplexer updated: "
+              <> A.encode snapBefore
+              <> " -> "
+              <> A.encode snapAfter
 
 openChannel :: Multiplexer -> Text -> STM Channel
 openChannel multi chan = do
