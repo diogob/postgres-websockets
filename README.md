@@ -1,4 +1,4 @@
-# postgres-websockets 
+# postgres-websockets
 
 ![CI](https://github.com/diogob/postgres-websockets/actions/workflows/ci.yml/badge.svg)
 [![Hackage Matrix CI](https://matrix.hackage.haskell.org/api/v2/packages/postgres-websockets/badge)](https://matrix.hackage.haskell.org/package/postgres-websockets)
@@ -129,3 +129,10 @@ For instamce, if we use the configuration in the [sample-env](./sample-env) we w
 ```
 
 You can monitor these messages on another websocket connection with a proper read token for the channel `server-info` or also having an additional database listener on the `PGWS_LISTEN_CHANNEL`.
+
+## Recovering from listener database connection failures
+
+The database conneciton used to wait for notification where the `LISTEN` command is issued can cause problems when it fails. To prevent these problem from completely disrupting our websockets server there are two ways to configure postgres-websockets:
+
+* Self healing connection - postgres-websockets comes with a connection supervisor baked in. You just need to set the configuration `PGWS_CHECK_LISTENER_INTERVAL` to a number of milliseconds that will be the maximum amount of time losing messages. There is a cost for this since at each interval an additional SELECT query will be issued to ensure the listener connection is still active. If the connecion is not found the connection thread will be killed and respawned. This method has the advantage of keeping all channels and websocket connections alive while the database connection is severed (although messages will be lost).
+* Using external supervision - you can also unset `PGWS_CHECK_LISTENER_INTERVAL` and postgres-websockets will try to shutdown the server when the database connection is lost. This does not seem to work in 100% of the cases, since in theory is possible to have the database connection closed and the producer thread lingering. But in most cases it should work and some external process can then restart the server. The downside is that all websocket connections will be lost.

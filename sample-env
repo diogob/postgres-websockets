@@ -21,3 +21,7 @@ export PGWS_PORT=3000
 ## (use "@filename" to load from separate file)
 export PGWS_JWT_SECRET="auwhfdnskjhewfi34uwehdlaehsfkuaeiskjnfduierhfsiweskjcnzeiluwhskdewishdnpwe"
 export PGWS_JWT_SECRET_BASE64=False
+
+## Check database listener every 10 seconds
+## comment it out to disable and shutdown the server on listener errors (can be useful when using external process supervisors)
+export PGWS_CHECK_LISTENER_INTERVAL=10000

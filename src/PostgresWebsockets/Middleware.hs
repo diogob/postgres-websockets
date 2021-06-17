@@ -23,6 +23,7 @@ import qualified Network.WebSockets as WS
 
 import qualified Data.Aeson as A
 import qualified Data.ByteString.Char8 as BS
+import qualified Data.Text as T
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.HashMap.Strict as M
 
@@ -63,8 +64,8 @@ wsApp :: Context -> WS.ServerApp
 wsApp Context{..} pendingConn =
   ctxGetTime >>= validateClaims requestChannel (configJwtSecret ctxConfig) (toS jwtToken) >>= either rejectRequest forkSessions
   where
-    hasRead m = m == ("r" :: ByteString) || m == ("rw" :: ByteString)
-    hasWrite m = m == ("w" :: ByteString) || m == ("rw" :: ByteString)
+    hasRead m = m == ("r" :: Text) || m == ("rw" :: Text)
+    hasWrite m = m == ("w" :: Text) || m == ("rw" :: Text)
 
     rejectRequest :: Text -> IO ()
     rejectRequest msg = do
@@ -72,8 +73,8 @@ wsApp Context{..} pendingConn =
       WS.rejectRequest pendingConn (toS msg)
 
     -- the URI has one of the two formats - /:jwt or /:channel/:jwt
-    pathElements = BS.split '/' $ BS.drop 1 $ WS.requestPath $ WS.pendingRequest pendingConn
-    jwtToken = 
+    pathElements = T.split (== '/') $ T.drop 1 $ (toSL . WS.requestPath) $ WS.pendingRequest pendingConn
+    jwtToken =
       case length pathElements `compare` 1 of
         GT -> headDef "" $ tailSafe pathElements
         _ -> headDef "" pathElements
@@ -102,7 +103,7 @@ wsApp Context{..} pendingConn =
 
             case configMetaChannel ctxConfig of
               Nothing -> pure ()
-              Just ch -> sendMessageWithTimestamp $ connectionOpenMessage (toS $ BS.intercalate "," chs) ch
+              Just ch -> sendMessageWithTimestamp $ connectionOpenMessage (toS $ T.intercalate "," chs) ch
 
             when (hasRead mode) $
               forM_ chs $ flip (onMessage ctxMulti) $ WS.sendTextData conn . B.payload
@@ -116,7 +117,7 @@ wsApp Context{..} pendingConn =
 -- Having both channel and claims as parameters seem redundant
 -- But it allows the function to ignore the claims structure and the source
 -- of the channel, so all claims decoding can be coded in the caller
-notifySession :: WS.Connection -> (Text -> Text -> IO ()) -> [ByteString] -> IO ()
+notifySession :: WS.Connection -> (Text -> Text -> IO ()) -> [Text] -> IO ()
 notifySession wsCon sendToChannel chs =
   withAsync (forever relayData) wait
   where
