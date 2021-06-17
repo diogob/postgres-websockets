@@ -22,7 +22,6 @@ import qualified Network.Wai.Handler.WebSockets as WS
 import qualified Network.WebSockets as WS
 
 import qualified Data.Aeson as A
-import qualified Data.ByteString.Char8 as BS
 import qualified Data.Text as T
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.HashMap.Strict as M
