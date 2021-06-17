@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.11.0.0
+
+- Add `PGWS_CHECK_LISTENER_INTERVAL` to configure interval to check database listener connection and respawn listener in case the connection is not found.
+
 ## 0.10.0.1
 
 - Upgrade stackage to LTS 16.11. Recompiled with GHC 8.8.3.
