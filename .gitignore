@@ -12,3 +12,5 @@ site
 rails.conf
 cabal-helper*
 .dir-locals.el
+server.key
+server.crt

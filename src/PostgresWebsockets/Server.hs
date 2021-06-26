@@ -10,6 +10,7 @@ import Network.HTTP.Types (status200)
 import Network.Wai (Application, responseLBS)
 import Network.Wai.Application.Static (defaultFileServerSettings, staticApp)
 import Network.Wai.Handler.Warp (runSettings)
+import Network.Wai.Handler.WarpTLS (runTLS, tlsSettings)
 import Network.Wai.Middleware.RequestLogger (logStdout)
 import PostgresWebsockets.Config (AppConfig (..), warpSettings)
 import PostgresWebsockets.Context (mkContext)
@@ -29,7 +30,10 @@ serve conf@AppConfig {..} = do
       appSettings = warpSettings waitForShutdown conf
       app = postgresWsMiddleware ctx $ logStdout $ maybe dummyApp staticApp' configPath
 
-  runSettings appSettings app
+  case (configCertificateFile, configKeyFile) of
+    (Just certificate, Just key) -> runTLS (tlsSettings (toS certificate) (toS key)) appSettings app
+    _ -> runSettings appSettings app
+
   die "Shutting down server..."
   where
     staticApp' :: Text -> Application
