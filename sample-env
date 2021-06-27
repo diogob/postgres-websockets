@@ -25,3 +25,7 @@ export PGWS_JWT_SECRET_BASE64=False
 ## Check database listener every 10 seconds
 ## comment it out to disable and shutdown the server on listener errors (can be useful when using external process supervisors)
 export PGWS_CHECK_LISTENER_INTERVAL=10000
+
+## Place server.crt and server.key in the working directory and uncomment the following lines for TLS connections (wss)
+# export PGWS_CERTIFICATE_FILE="./certificate.pem"
+# export PGWS_KEY_FILE="./key.pem"

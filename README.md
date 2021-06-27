@@ -26,6 +26,10 @@ cd postgres-websockets
 docker-compose up
 ```
 
+### Pre-compiled binaries
+
+You can download binaries from the [releases page](./releases). Currently only linux binaries complied against Ubuntu on amd64 are provided.
+
 ### Building from source
 To build the project I recommend the use of [Stack](http://docs.haskellstack.org/en/stable/README/).
 You also need to have [git](https://git-scm.com) installed to download the source code.
@@ -86,7 +90,13 @@ The address will look like:
 ws://eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2RlIjoicnciLCJjaGFubmVsIjoiY2hhdCJ9.fEm6P7GHeJWZG8OtZhv3H0JdqPljE5dainvsoupM9pA
 ```
 
-To use a secure socket (`wss://`) you will need a proxy server like nginx to handle the TLS layer. Some services (e.g. Heroku) will handle this automatially.
+To use a secure socket (`wss://`) you can set the configuration variables `PGWS_CERTIFICATE_FILE` and `PGWS_KEY_FILE`. Once these two variables point to a valid X.509 certificate the server will enable TLS connections. Bellow a quick example of how to generate a self-signed certificate using [OpenSSL](https://www.openssl.org/) command line tool:
+
+```
+openssl genrsa -out key.pem 2048
+openssl req -new -key key.pem -out certificate.csr
+openssl x509 -req -in certificate.csr -signkey key.pem -out certificate.pem
+```
 
 ## Receiving messages from the browser
 

@@ -37,8 +37,11 @@ data AppConfig = AppConfig
     configJwtSecretIsBase64 :: Bool,
     configPool :: Int,
     configRetries :: Int,
-    configReconnectInterval :: Maybe Int
+    configReconnectInterval :: Maybe Int,
+    configCertificateFile :: Maybe Text,
+    configKeyFile :: Maybe Text
   }
+  deriving (Show)
 
 -- | User friendly version number
 prettyVersion :: Text
@@ -46,7 +49,11 @@ prettyVersion = intercalate "." $ map show $ versionBranch version
 
 -- | Load all postgres-websockets config from Environment variables. This can be used to use just the middleware or to feed into warpSettings
 loadConfig :: IO AppConfig
-loadConfig = readOptions >>= loadSecretFile >>= loadDatabaseURIFile
+loadConfig =
+  readOptions
+    >>= verifyTLSConfig
+    >>= loadSecretFile
+    >>= loadDatabaseURIFile
 
 -- | Given a shutdown handler and an AppConfig builds a Warp Settings to start a stand-alone server
 warpSettings :: (IO () -> IO ()) -> AppConfig -> Settings
@@ -76,6 +83,14 @@ readOptions =
       <*> var auto "PGWS_POOL_SIZE" (def 10 <> helpDef show <> help "How many connection to the database should be used by the connection pool")
       <*> var auto "PGWS_RETRIES" (def 5 <> helpDef show <> help "How many times it should try to connect to the database on startup before exiting with an error")
       <*> optional (var auto "PGWS_CHECK_LISTENER_INTERVAL" (helpDef show <> help "Interval for supervisor thread to check if listener connection is alive. 0 to disable it."))
+      <*> optional (var str "PGWS_CERTIFICATE_FILE" (helpDef show <> help "Certificate file to serve secure websockets connection (wss)."))
+      <*> optional (var str "PGWS_KEY_FILE" (helpDef show <> help "Key file to serve secure websockets connection (wss)."))
+
+verifyTLSConfig :: AppConfig -> IO AppConfig
+verifyTLSConfig conf@AppConfig {..} = do
+  when (isJust configCertificateFile /= isJust configKeyFile) $
+    panic "PGWS_TLS_CERTIFICATE and PGWS_TLS_KEY must be set in tandem"
+  pure conf
 
 loadDatabaseURIFile :: AppConfig -> IO AppConfig
 loadDatabaseURIFile conf@AppConfig {..} =
