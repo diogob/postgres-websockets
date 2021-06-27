@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.11.1.0
+
+- Add TLS native connection so we can have `wss://` connections without using any sort of proxy `PGWS_CERTIFICATE_FILE` and `PGWS_KEY_FILE` should be used to set the the TLS certificate and enable secure connections.
+
 ## 0.11.0.0
 
 - Add `PGWS_CHECK_LISTENER_INTERVAL` to configure interval to check database listener connection and respawn listener in case the connection is not found.

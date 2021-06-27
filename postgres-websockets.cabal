@@ -1,5 +1,5 @@
 name:                postgres-websockets
-version:             0.11.0.0
+version:             0.11.1.0
 synopsis:            Middleware to map LISTEN/NOTIFY messages to Websockets
 description:         WAI middleware that adds websockets capabilites on top of PostgreSQL's asynchronous notifications using LISTEN and NOTIFY commands. Fully functioning server included.
 homepage:            https://github.com/diogob/postgres-websockets#readme

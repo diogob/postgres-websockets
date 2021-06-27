@@ -27,5 +27,5 @@ export PGWS_JWT_SECRET_BASE64=False
 export PGWS_CHECK_LISTENER_INTERVAL=10000
 
 ## Place server.crt and server.key in the working directory and uncomment the following lines for TLS connections (wss)
-# export PGWS_CERTIFICATE_FILE="./server.crt"
-# export PGWS_KEY_FILE="./server.key"
+# export PGWS_CERTIFICATE_FILE="./certificate.pem"
+# export PGWS_KEY_FILE="./key.pem"
