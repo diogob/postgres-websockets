@@ -28,7 +28,7 @@ docker-compose up
 
 ### Pre-compiled binaries
 
-You can download binaries from the [releases page](./releases). Currently only linux binaries complied against Ubuntu on amd64 are provided.
+You can download binaries from the [releases page](https://github.com/diogob/postgres-websockets/releases). Currently only linux binaries complied against Ubuntu on amd64 are provided.
 
 ### Building from source
 To build the project I recommend the use of [Stack](http://docs.haskellstack.org/en/stable/README/).
