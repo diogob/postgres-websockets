@@ -22,7 +22,9 @@ testServerConfig =
       configJwtSecretIsBase64 = False,
       configPool = 10,
       configRetries = 5,
-      configReconnectInterval = Nothing
+      configReconnectInterval = Nothing,
+      configCertificateFile = Nothing,
+      configKeyFile = Nothing
     }
 
 startTestServer :: IO ThreadId
