@@ -38,7 +38,7 @@ library
                      , lens >= 4.17.1
                      , jose >= 0.6
                      , unordered-containers >= 0.2
-                     , aeson >= 1.4.6.0 && < 1.6
+                     , aeson >= 1.4.6.0 && < 2.1
                      , protolude >= 0.2.3 && < 0.4
                      , hasql >= 1.4.1
                      , hasql-notifications >= 0.1.0.0 && < 0.3
@@ -49,7 +49,7 @@ library
                      , time >= 1.8.0.2 && < 1.10
                      , alarmclock >= 0.7.0.2 && < 0.8
                      , envparse >= 0.4.1
-                     , base64-bytestring >= 1.0.0.3 && < 1.2
+                     , base64-bytestring >= 1.0.0.3 && < 1.3
                      , bytestring >= 0.10
                      , warp >= 3.2 && < 4
                      , warp-tls >= 3.2 && < 4
@@ -82,8 +82,8 @@ test-suite postgres-websockets-test
   build-depends:       base
                      , protolude >= 0.2.3 && < 0.4
                      , postgres-websockets
-                     , hspec >= 2.7.1 && < 2.8
-                     , aeson >= 1.4.6.0 && < 1.6
+                     , hspec >= 2.7.1 && < 2.9
+                     , aeson >= 1.4.6.0 && < 2.1
                      , hasql >= 0.19
                      , hasql-pool >= 0.4
                      , hasql-notifications >= 0.1.0.0 && < 0.3
@@ -94,7 +94,7 @@ test-suite postgres-websockets-test
                      , stm >= 2.5.0.0 && < 2.6
                      , websockets >= 0.12.7.0 && < 0.13
                      , network >= 2.8.0.1 && < 3.2
-                     , lens >= 4.17.1 && < 4.20
+                     , lens >= 4.17.1 && < 5.1
                      , lens-aeson
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010

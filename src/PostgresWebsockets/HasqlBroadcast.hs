@@ -17,9 +17,11 @@ where
 
 import Control.Retry (RetryStatus (..), capDelay, exponentialBackoff, retrying)
 import Data.Aeson (Value (..), decode)
+import qualified Data.Aeson.KeyMap as JSON
+import qualified Data.Aeson.Key as Key
+
 import Data.Either.Combinators (mapBoth)
 import Data.Function (id)
-import Data.HashMap.Lazy (lookupDefault)
 import GHC.Show
 import Hasql.Connection
 import qualified Hasql.Decoders as HD
@@ -102,6 +104,9 @@ newHasqlBroadcasterForChannel onConnectionFailure ch checkInterval getCon = do
         String s -> toS s
         _ -> toS d
     lookupStringDef _ d _ = toS d
+
+    lookupDefault d key obj = fromMaybe d $ JSON.lookup (Key.fromText key) obj
+
     channelDef = lookupStringDef "channel"
     shouldRestart = do
       con <- getCon

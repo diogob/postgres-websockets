@@ -22,9 +22,11 @@ import qualified Network.Wai.Handler.WebSockets as WS
 import qualified Network.WebSockets as WS
 
 import qualified Data.Aeson as A
+import qualified Data.Aeson.KeyMap as A
+import qualified Data.Aeson.Key as Key
+
 import qualified Data.Text as T
 import qualified Data.ByteString.Lazy as BL
-import qualified Data.HashMap.Strict as M
 
 import PostgresWebsockets.Broadcast (onMessage)
 import PostgresWebsockets.Claims ( ConnectionInfo, validateClaims )
@@ -87,7 +89,7 @@ wsApp Context{..} pendingConn =
           conn <- WS.acceptRequest pendingConn
           -- Fork a pinging thread to ensure browser connections stay alive
           WS.withPingThread conn 30 (pure ()) $ do
-            case M.lookup "exp" validClaims of
+            case A.lookup "exp" validClaims of
               Just (A.Number expClaim) -> do
                 connectionExpirer <- newAlarmClock $ const (WS.sendCloseCode conn jwtExpirationStatusCode ("JWT expired" :: ByteString))
                 setAlarm connectionExpirer (posixSecondsToUTCTime $ realToFrac expClaim)
@@ -134,4 +136,4 @@ sendToDatabase pool dbChannel =
 timestampMessage :: IO UTCTime -> Message -> IO Message
 timestampMessage getTime msg@Message{..} = do
   time <- utcTimeToPOSIXSeconds <$> getTime
-  return $ msg{ claims = M.insert "message_delivered_at" (A.Number $ realToFrac time) claims}
+  return $ msg{ claims = A.insert (Key.fromText "message_delivered_at") (A.Number $ realToFrac time) claims}

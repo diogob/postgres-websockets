@@ -5,43 +5,33 @@
 
 packages:
 - completed:
-    hackage: envparse-0.4.1@sha256:989902e6368532548f61de1fa245ad2b39176cddd8743b20071af519a709ce30,2842
+    hackage: retry-0.8.1.2@sha256:b81e7d7e5f068da82349a3c157a2ab25d399c9ca4841d1b6e54e8c4050cb065f,2189
     pantry-tree:
-      size: 1180
-      sha256: 35044d67979fe2a5cff05cf8736a06a265592433cdd03e13a72908ceed892612
+      size: 433
+      sha256: a9ebf74c0fce47b4e743c4d1a2c72fcc949a702e5790fa2784c835db17492012
   original:
-    hackage: envparse-0.4.1@sha256:989902e6368532548f61de1fa245ad2b39176cddd8743b20071af519a709ce30
+    hackage: retry-0.8.1.2@sha256:b81e7d7e5f068da82349a3c157a2ab25d399c9ca4841d1b6e54e8c4050cb065f,2189
 - completed:
-    hackage: stm-containers-1.1.0.4@sha256:f83a683357b6e3b1dda3e70d2077a37224ed534df1f74c4e11f3f6daa7945c5b,3248
+    hackage: stm-containers-1.1.0.5@sha256:dffad326e360cf937840bf61f00c6e7dcc4fe62b4db420bf51266b08559f5020,3248
     pantry-tree:
       size: 761
-      sha256: 059c5a2d657d392aca0a887648f57380d6321734dc8879c056a44d4414308ac6
+      sha256: e09db5d8233874c789dad634896b0240e40c6a5fcdce055730cd62b1a6f94cb4
   original:
-    hackage: stm-containers-1.1.0.4@sha256:f83a683357b6e3b1dda3e70d2077a37224ed534df1f74c4e11f3f6daa7945c5b,3248
+    hackage: stm-containers-1.1.0.5@sha256:dffad326e360cf937840bf61f00c6e7dcc4fe62b4db420bf51266b08559f5020,3248
 - completed:
-    hackage: stm-hamt-1.2.0.4@sha256:7957497c022554b7599e790696d1a3e56359ad99e5da36a251894c626ca1f60a,3970
+    name: protolude
+    version: 0.3.1
+    git: https://github.com/protolude/protolude.git
     pantry-tree:
-      size: 1009
-      sha256: d9a8be48da86bd4a2ba9d52ea29b9a74f1b686d439ba1bbfba04ab1a002391da
+      size: 3146
+      sha256: 685ed0191298da9540e772ffa746eb078d4f4a77ed8012a9933d3c79644b1054
+    commit: 3e249724fd0ead27370c8c297b1ecd38f92cbd5b
   original:
-    hackage: stm-hamt-1.2.0.4@sha256:7957497c022554b7599e790696d1a3e56359ad99e5da36a251894c626ca1f60a,3970
-- completed:
-    hackage: primitive-extras-0.8@sha256:fca0310150496867f5b9421fe1541ecda87fae17eae44885a29f9c52dd00c8ff,2963
-    pantry-tree:
-      size: 1105
-      sha256: e7c1d26202b80d1fca2ef780ec7fe76ede1275f4d9a996c6d44c08d8de1c45db
-  original:
-    hackage: primitive-extras-0.8@sha256:fca0310150496867f5b9421fe1541ecda87fae17eae44885a29f9c52dd00c8ff,2963
-- completed:
-    hackage: primitive-unlifted-0.1.3.0@sha256:a98f827740f5dcf097d885b3a47c32f4462204449620abc9d51b8c4f8619f9e6,1427
-    pantry-tree:
-      size: 420
-      sha256: c882dca2a96b98d02b0d21875b651edb11ac67d90e736c0de7a92c410a19eb7f
-  original:
-    hackage: primitive-unlifted-0.1.3.0@sha256:a98f827740f5dcf097d885b3a47c32f4462204449620abc9d51b8c4f8619f9e6,1427
+    git: https://github.com/protolude/protolude.git
+    commit: 3e249724fd0ead27370c8c297b1ecd38f92cbd5b
 snapshots:
 - completed:
-    size: 565715
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/17/7.yaml
-    sha256: 1b5e4124989399e60e7a7901f0cefd910beea546131fb07a13a7208c4cc8b7ee
-  original: lts-17.7
+    size: 616897
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/19/0.yaml
+    sha256: bbf2be02f17940bac1f87cb462d4fb0c3355de6dcfc53d84f4f9ad3ee2164f65
+  original: lts-19.0
