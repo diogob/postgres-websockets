@@ -1,5 +1,10 @@
 # CHANGELOG
 
+## 0.11.2.0
+
+- Upgrade stackage to LTS 19.0. Recompiled with GHC 9.0.2.
+- Change code so we can use aeson's LTS 19.0 version (2.0.3.0).
+
 ## 0.11.1.0
 
 - Add TLS native connection so we can have `wss://` connections without using any sort of proxy `PGWS_CERTIFICATE_FILE` and `PGWS_KEY_FILE` should be used to set the the TLS certificate and enable secure connections.
