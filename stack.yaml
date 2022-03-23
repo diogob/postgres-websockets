@@ -1,11 +1,9 @@
-resolver: lts-17.7
+resolver: lts-19.0
 extra-deps:
-- envparse-0.4.1@sha256:989902e6368532548f61de1fa245ad2b39176cddd8743b20071af519a709ce30
-- stm-containers-1.1.0.4@sha256:f83a683357b6e3b1dda3e70d2077a37224ed534df1f74c4e11f3f6daa7945c5b,3248
-- stm-hamt-1.2.0.4@sha256:7957497c022554b7599e790696d1a3e56359ad99e5da36a251894c626ca1f60a,3970
-- primitive-extras-0.8@sha256:fca0310150496867f5b9421fe1541ecda87fae17eae44885a29f9c52dd00c8ff,2963
-- primitive-unlifted-0.1.3.0@sha256:a98f827740f5dcf097d885b3a47c32f4462204449620abc9d51b8c4f8619f9e6,1427
-
+- retry-0.8.1.2@sha256:b81e7d7e5f068da82349a3c157a2ab25d399c9ca4841d1b6e54e8c4050cb065f,2189
+- stm-containers-1.1.0.5@sha256:dffad326e360cf937840bf61f00c6e7dcc4fe62b4db420bf51266b08559f5020,3248
+- git: https://github.com/protolude/protolude.git
+  commit: 3e249724fd0ead27370c8c297b1ecd38f92cbd5b
 packages:
 - .
 

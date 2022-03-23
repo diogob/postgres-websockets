@@ -18,15 +18,15 @@ import Crypto.JWT
 import Data.List
 import Data.Time.Clock (UTCTime)
 import qualified Crypto.JOSE.Types as JOSE.Types
-import qualified Data.HashMap.Strict as M
 import qualified Data.Aeson as JSON
+import qualified Data.Aeson.KeyMap as JSON
+import qualified Data.Aeson.Key as Key
 
-
-type Claims = M.HashMap Text JSON.Value
+type Claims = JSON.KeyMap JSON.Value
 type ConnectionInfo = ([Text], Text, Claims)
 
 {-| Given a secret, a token and a timestamp it validates the claims and returns
-    either an error message or a triple containing channel, mode and claims hashmap.
+    either an error message or a triple containing channel, mode and claims KeyMap.
 -}
 validateClaims
   :: Maybe Text
@@ -59,12 +59,12 @@ validateClaims requestChannel secret jwtToken time = runExceptT $ do
 
  where
   claimAsJSON :: Text -> Claims -> Maybe Text
-  claimAsJSON name cl = case M.lookup name cl of
+  claimAsJSON name cl = case JSON.lookup (Key.fromText name) cl of
     Just (JSON.String s) -> Just s
     _ -> Nothing
 
   claimAsJSONList :: Text -> Claims -> Maybe [Text]
-  claimAsJSONList name cl = case M.lookup name cl of
+  claimAsJSONList name cl = case JSON.lookup (Key.fromText name) cl of
     Just channelsJson ->
       case JSON.fromJSON channelsJson :: JSON.Result [Text] of
         JSON.Success channelsList -> Just channelsList
@@ -75,7 +75,7 @@ validateClaims requestChannel secret jwtToken time = runExceptT $ do
   Possible situations encountered with client JWTs
 -}
 data JWTAttempt = JWTInvalid JWTError
-                | JWTClaims (M.HashMap Text JSON.Value)
+                | JWTClaims (JSON.KeyMap JSON.Value)
                 deriving Eq
 
 {-|
@@ -83,7 +83,7 @@ data JWTAttempt = JWTInvalid JWTError
   of JWT claims.
 -}
 jwtClaims :: UTCTime -> JWK -> LByteString -> IO JWTAttempt
-jwtClaims _ _ "" = return $ JWTClaims M.empty
+jwtClaims _ _ "" = return $ JWTClaims JSON.empty
 jwtClaims time jwk' payload = do
   let config = defaultJWTValidationSettings (const True)
   eJwt <- runExceptT $ do
@@ -97,11 +97,11 @@ jwtClaims time jwk' payload = do
   Internal helper used to turn JWT ClaimSet into something
   easier to work with
 -}
-claims2map :: ClaimsSet -> M.HashMap Text JSON.Value
+claims2map :: ClaimsSet -> JSON.KeyMap JSON.Value
 claims2map = val2map . JSON.toJSON
  where
   val2map (JSON.Object o) = o
-  val2map _          = M.empty
+  val2map _          = JSON.empty
 
 {-|
   Internal helper to generate HMAC-SHA256. When the jwt key in the
