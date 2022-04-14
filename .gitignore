@@ -14,3 +14,4 @@ cabal-helper*
 .dir-locals.el
 server.key
 server.crt
+dist-newstyle
