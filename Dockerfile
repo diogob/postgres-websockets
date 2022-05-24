@@ -14,10 +14,11 @@ RUN adduser -D postgres-websockets
 USER postgres-websockets
 
 ENV PGWS_DB_URI= \
-    PGWS_JWT_SECRET=
+  PGWS_JWT_SECRET=
 
 # Run the binary on container start
 # (substitute your project name for 'example')
 CMD postgres-websockets
 
 EXPOSE 3000
+STOPSIGNAL SIGINT
