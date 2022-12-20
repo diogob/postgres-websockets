@@ -1,4 +1,4 @@
-resolver: lts-19.0
+resolver: lts-19.33
 extra-deps:
 - exceptions-0.10.4@sha256:7ed09aed03683d5b4337088061106c2389d274b3472031a330ff1b220bad2b2d,2796
 - retry-0.8.1.2@sha256:b81e7d7e5f068da82349a3c157a2ab25d399c9ca4841d1b6e54e8c4050cb065f,2189
