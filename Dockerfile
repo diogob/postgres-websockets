@@ -1,5 +1,5 @@
 # Use Alpine Linux as base image
-FROM alpine:3.12
+FROM alpine:3.17
 
 # Install libpq and gmp dependencies (dynamic libraries required by the project)
 RUN apk update && apk add libpq gmp libffi
