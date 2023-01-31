@@ -27,7 +27,7 @@ library
                      , PostgresWebsockets.Middleware
                      , PostgresWebsockets.Context
   build-depends:       base >= 4.7 && < 5
-                     , hasql-pool >= 0.5 && < 0.6
+                     , hasql-pool >= 0.5 && < 0.9
                      , text >= 1.2 && < 1.3
                      , wai >= 3.2 && < 4
                      , websockets >= 0.9 && < 0.13
@@ -40,8 +40,9 @@ library
                      , unordered-containers >= 0.2
                      , aeson >= 2.0 && < 2.1
                      , protolude >= 0.2.3 && < 0.4
-                     , hasql >= 1.4.1
+                     , hasql >= 1.6
                      , hasql-notifications >= 0.1.0.0 && < 0.3
+                     , hasql-listen-notify >= 0.1.0 && < 0.2
                      , either >= 5.0.1.1 && < 5.1
                      , stm-containers >= 1.1.0.2 && < 1.2
                      , stm >= 2.5.0.0 && < 2.6
@@ -94,7 +95,7 @@ test-suite postgres-websockets-test
                      , stm >= 2.5.0.0 && < 2.6
                      , websockets >= 0.12.7.0 && < 0.13
                      , network >= 2.8.0.1 && < 3.2
-                     , lens >= 4.17.1 && < 5.1
+                     , lens >= 4.17.1 && <= 5.2
                      , lens-aeson
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
