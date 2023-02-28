@@ -1,10 +1,8 @@
-resolver: lts-19.33
+resolver: lts-20.12
 extra-deps:
 - exceptions-0.10.4@sha256:7ed09aed03683d5b4337088061106c2389d274b3472031a330ff1b220bad2b2d,2796
 - retry-0.8.1.2@sha256:b81e7d7e5f068da82349a3c157a2ab25d399c9ca4841d1b6e54e8c4050cb065f,2189
 - stm-containers-1.1.0.5@sha256:dffad326e360cf937840bf61f00c6e7dcc4fe62b4db420bf51266b08559f5020,3248
-- git: https://github.com/protolude/protolude.git
-  commit: 3e249724fd0ead27370c8c297b1ecd38f92cbd5b
 packages:
 - .
 

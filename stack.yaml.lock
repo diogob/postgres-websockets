@@ -25,20 +25,9 @@ packages:
       size: 761
   original:
     hackage: stm-containers-1.1.0.5@sha256:dffad326e360cf937840bf61f00c6e7dcc4fe62b4db420bf51266b08559f5020,3248
-- completed:
-    commit: 3e249724fd0ead27370c8c297b1ecd38f92cbd5b
-    git: https://github.com/protolude/protolude.git
-    name: protolude
-    pantry-tree:
-      sha256: 685ed0191298da9540e772ffa746eb078d4f4a77ed8012a9933d3c79644b1054
-      size: 3146
-    version: 0.3.1
-  original:
-    commit: 3e249724fd0ead27370c8c297b1ecd38f92cbd5b
-    git: https://github.com/protolude/protolude.git
 snapshots:
 - completed:
-    sha256: 6d1532d40621957a25bad5195bfca7938e8a06d923c91bc52aa0f3c41181f2d4
-    size: 619204
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/19/33.yaml
-  original: lts-19.33
+    sha256: af5d667f6096e535b9c725a72cffe0f6c060e0568d9f9eeda04caee70d0d9d2d
+    size: 649133
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/12.yaml
+  original: lts-20.12

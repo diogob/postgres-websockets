@@ -31,7 +31,7 @@ data Context = Context
 mkContext :: AppConfig -> IO () -> IO Context
 mkContext conf@AppConfig {..} shutdownServer = do
   Context conf
-    <$> P.acquire (configPool, 10, pgSettings)
+    <$> P.acquire configPool (Just 10000) pgSettings
     <*> newHasqlBroadcaster shutdown (toS configListenChannel) configRetries configReconnectInterval pgSettings
     <*> mkGetTime
   where
