@@ -37,7 +37,7 @@ Having installed stack the following commands should install `postgres-websocket
 git clone https://github.com/diogob/postgres-websockets.git
 cd postgres-websockets
 stack setup
-stack build
+stack install
 ```
 
 If you have any problems processing any Postgres related library on a Mac, try installing [Postgres.app](http://postgresapp.com/).
