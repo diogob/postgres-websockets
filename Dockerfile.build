@@ -1,4 +1,4 @@
-FROM alpine:3.17
+FROM alpine:edge
 
 RUN apk add --update ca-certificates openssl && update-ca-certificates
 
