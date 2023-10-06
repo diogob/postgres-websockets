@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.11.2.1
+
+- Upgrade stackage to 21.14
+
 ## 0.11.2.0
 
 - Upgrade stackage to LTS 19.0. Recompiled with GHC 9.0.2.
