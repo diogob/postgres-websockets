@@ -3,31 +3,10 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages:
-- completed:
-    hackage: exceptions-0.10.4@sha256:7ed09aed03683d5b4337088061106c2389d274b3472031a330ff1b220bad2b2d,2796
-    pantry-tree:
-      sha256: f1eb6efc7f747444de23771bef8ac4d4c2f0e2f99bb149d72a9441d8df022263
-      size: 908
-  original:
-    hackage: exceptions-0.10.4@sha256:7ed09aed03683d5b4337088061106c2389d274b3472031a330ff1b220bad2b2d,2796
-- completed:
-    hackage: retry-0.8.1.2@sha256:b81e7d7e5f068da82349a3c157a2ab25d399c9ca4841d1b6e54e8c4050cb065f,2189
-    pantry-tree:
-      sha256: a9ebf74c0fce47b4e743c4d1a2c72fcc949a702e5790fa2784c835db17492012
-      size: 433
-  original:
-    hackage: retry-0.8.1.2@sha256:b81e7d7e5f068da82349a3c157a2ab25d399c9ca4841d1b6e54e8c4050cb065f,2189
-- completed:
-    hackage: stm-containers-1.1.0.5@sha256:dffad326e360cf937840bf61f00c6e7dcc4fe62b4db420bf51266b08559f5020,3248
-    pantry-tree:
-      sha256: e09db5d8233874c789dad634896b0240e40c6a5fcdce055730cd62b1a6f94cb4
-      size: 761
-  original:
-    hackage: stm-containers-1.1.0.5@sha256:dffad326e360cf937840bf61f00c6e7dcc4fe62b4db420bf51266b08559f5020,3248
+packages: []
 snapshots:
 - completed:
-    sha256: af5d667f6096e535b9c725a72cffe0f6c060e0568d9f9eeda04caee70d0d9d2d
-    size: 649133
-    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/20/12.yaml
-  original: lts-20.12
+    sha256: 60e54c1ba3c1e7163acf6dafa9d56b2d3b23f88a31ad53a1c9d888f32561f8da
+    size: 639819
+    url: https://raw.githubusercontent.com/commercialhaskell/stackage-snapshots/master/lts/21/14.yaml
+  original: lts-21.14
