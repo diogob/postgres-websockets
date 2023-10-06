@@ -40,6 +40,16 @@ stack setup
 stack install
 ```
 
+If you are building inside a Docker image, you might also need to pin the resolver:
+
+```dockerfile
+FROM haskell:9.2.6-slim
+
+# ...
+
+RUN stack install --resolver lts-20.12
+```
+
 If you have any problems processing any Postgres related library on a Mac, try installing [Postgres.app](http://postgresapp.com/).
 
 After the build, you should be able to run the server using `~/.local/bin/postgres-websockets` (you can add `~/.local/bin` to your PATH variable):
