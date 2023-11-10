@@ -7,14 +7,13 @@ on:
     branches: [main]
 
 jobs:
-  stack:
-    name: stack / ${{ matrix.os }} / ghc ${{ matrix.ghc }}
+  build:
+    name: build / ${{ matrix.os }} / ghc ${{ matrix.ghc }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest]
-        stack: ["2.7.3"]
-        ghc: ["9.0.2"]
+        ghc: ["9.6.3"]
 
     services:
       postgres:
@@ -31,32 +30,31 @@ jobs:
         ports:
           - 5432:5432
     steps:
-    - uses: actions/checkout@v2
-      if: github.event.action == 'opened' || github.event.action == 'synchronize' || github.event.ref == 'refs/heads/main'
+    - uses: actions/checkout@v4
 
-    - uses: haskell/actions/setup@v1
+    - uses: haskell-actions/setup@v2
       name: Setup Haskell Stack
       with:
         ghc-version: ${{ matrix.ghc }}
-        stack-version: ${{ matrix.stack }}
 
     - uses: actions/cache@v2.1.3
-      name: Cache ~/.stack
+      name: Cache ~/dist-newstyle
       with:
-        path: ~/.stack
-        key: ${{ matrix.os }}-${{ matrix.ghc }}-stack-v3
+        path: ~/dist-newstyle
+        key: ${{ matrix.os }}-${{ matrix.ghc }}-v3
 
     - name: Build Dependencies
       run: |
-        stack build --system-ghc --test --no-run-tests --only-dependencies
+        cabal build --only-dependencies
+        cabal install hspec-discover
 
     - name: Build
       run: |
-        stack build --system-ghc --test --no-run-tests
+        cabal build
 
     - name: Test
       run: |
-        stack test --system-ghc
+        cabal test
 
     - name: ${{ matrix.os }} binaries
       uses: actions/upload-artifact@v2
