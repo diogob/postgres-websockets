@@ -2,7 +2,7 @@ FROM debian:bookworm-slim as builder
 
 # Postgres-websockets repo metadata
 ARG GIT_REPO=https://github.com/diogob/postgres-websockets.git
-ARG GIT_TAG=multiple-docker-architectures
+ARG GIT_TAG=master
 
 # Install System Dependencies
 RUN apt-get update \
@@ -37,17 +37,17 @@ RUN \
 
 # install ghcup
 RUN \
-    BOOTSTRAP_HASKELL_MINIMAL=1 BOOTSTRAP_HASKELL_NONINTERACTIVE=1 ./download-ghcup.sh \
-    && chmod +x /usr/bin/ghcup \
-    && ghcup config set gpg-setting GPGStrict
+    BOOTSTRAP_HASKELL_MINIMAL=1 BOOTSTRAP_HASKELL_NONINTERACTIVE=1 /app/postgres-websockets/download-ghcup.sh \
+    && chmod +x ~/.ghcup/bin/ghcup \
+    && ~/.ghcup/bin/ghcup config set gpg-setting GPGStrict
 
 ARG GHC=9.6.3
 ARG CABAL=latest
 
 # install GHC and cabal
 RUN \
-    ghcup -v install ghc --isolate /usr/local --force ${GHC} && \
-    ghcup -v install cabal --isolate /usr/local/bin --force ${CABAL}
+    ~/.ghcup/bin/ghcup -v install ghc --isolate /usr/local --force ${GHC} && \
+    ~/.ghcup/bin/ghcup -v install cabal --isolate /usr/local/bin --force ${CABAL}
 
 RUN cabal update
 RUN cabal build
