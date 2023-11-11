@@ -1,7 +1,0 @@
-resolver: lts-21.14
-extra-deps:
-packages:
-- .
-
-ghc-options:
-  postgres-websockets: -Wall -fwarn-identities -fno-warn-redundant-constraints

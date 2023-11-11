@@ -1,24 +1,71 @@
-# Use Alpine Linux as base image
-FROM alpine:edge
+FROM debian:bookworm-slim as builder
 
-# Install libpq and gmp dependencies (dynamic libraries required by the project)
-RUN apk update && apk add libpq gmp libffi
+# Postgres-websockets repo metadata
+ARG GIT_REPO=https://github.com/diogob/postgres-websockets.git
+ARG GIT_TAG=multiple-docker-architectures
 
-# Copy the prebuilt binary from stack-work into the container
-# (substitute your project name for 'example')
-COPY .stack-work/docker/_home/.local/bin/postgres-websockets /usr/local/bin/postgres-websockets
-COPY docker.conf /etc/postgres-websockets.conf
-COPY ./client-example /home/postgres-websockets/client-example
+# Install System Dependencies
+RUN apt-get update \
+    && apt-get install -y \
+        libpq-dev \
+        wget \
+        git \
+        build-essential \
+        libffi-dev \
+        libgmp-dev \
+        zlib1g-dev \
+        curl \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN adduser -D postgres-websockets
-USER postgres-websockets
+# Clone the Repository
+WORKDIR /app
+RUN git clone \
+    $GIT_REPO \
+    --branch $GIT_TAG \
+    --depth 1
 
-ENV PGWS_DB_URI= \
-  PGWS_JWT_SECRET=
+# Build the Project from source using the resolver it specifies
+# https://github.com/diogob/postgres-websockets/tree/master#building-from-source
+WORKDIR /app/postgres-websockets
+RUN curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+# install gpg keys
+RUN \
+    gpg --batch --keyserver keyserver.ubuntu.com --recv-keys 7D1E8AFD1D4A16D71FADA2F2CCC85C0E40C06A8C \
+    && gpg --batch --keyserver keyserver.ubuntu.com --recv-keys FE5AB6C91FEA597C3B31180B73EDE9E8CFBAEF01 \
+    && gpg --batch --keyserver keyserver.ubuntu.com --recv-keys 88B57FCF7DB53B4DB3BFA4B1588764FBE22D19C4 \
+    && gpg --batch --keyserver keyserver.ubuntu.com --recv-keys EAF2A9A722C0C96F2B431CA511AAD8CEDEE0CAEF
 
-# Run the binary on container start
-# (substitute your project name for 'example')
-CMD postgres-websockets
+# install ghcup
+RUN \
+    curl https://downloads.haskell.org/~ghcup/x86_64-linux-ghcup > /usr/bin/ghcup \
+    && chmod +x /usr/bin/ghcup \
+    && ghcup config set gpg-setting GPGStrict
 
-EXPOSE 3000
-STOPSIGNAL SIGINT
+ARG GHC=9.6.3
+ARG CABAL=latest
+
+# install GHC and cabal
+RUN \
+    ghcup -v install ghc --isolate /usr/local --force ${GHC} && \
+    ghcup -v install cabal --isolate /usr/local/bin --force ${CABAL}
+
+RUN cabal update
+RUN cabal build
+RUN cp `find dist-newstyle -executable -type f -name postgres-websockets` ./
+
+# Lightweight Final Image
+FROM debian:bookworm-slim
+
+# Install Runtime Dependencies
+RUN apt-get update \
+    && apt-get install -y \
+        libpq-dev \
+        libgmp-dev \
+        zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy the Binary from the Builder
+COPY --from=builder /app/postgres-websockets/postgres-websockets /usr/local/bin/postgres-websockets
+
+# Set the Entry Point
+ENTRYPOINT ["postgres-websockets"]
