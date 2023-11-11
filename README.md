@@ -29,41 +29,30 @@ docker-compose up
 You can download binaries from the [releases page](https://github.com/diogob/postgres-websockets/releases). Currently, only Linux binaries complied against Ubuntu on amd64 are provided.
 
 ### Building from source
-To build the project, I recommend the use of [Stack](http://docs.haskellstack.org/en/stable/README/).
+To build the project, I recommend the use of [GHCup](https://www.haskell.org/ghcup/) to install GHC and cabal.
 You also need to have [git](https://git-scm.com) installed to download the source code.
-Having installed stack the following commands should install `postgres-websockets` into your `~/.local/bin` directory:
+Having installed ghc and cabal the following commands should install `postgres-websockets` into your `~/.cabal/bin` directory:
 
 ```bash
 git clone https://github.com/diogob/postgres-websockets.git
 cd postgres-websockets
-stack setup
-stack install
-```
-
-If you are building inside a Docker image, you might also need to pin the resolver:
-
-```dockerfile
-FROM haskell:9.2.6-slim
-
-# ...
-
-RUN stack install --resolver lts-20.12
+cabal install
 ```
 
 If you have any problems processing any Postgres related library on a Mac, try installing [Postgres.app](http://postgresapp.com/).
 
-After the build, you should be able to run the server using `~/.local/bin/postgres-websockets` (you can add `~/.local/bin` to your PATH variable):
+After the build, you should be able to run the server using `~/.cabal/bin/postgres-websockets` (you can add `~/.cabal/bin` to your PATH variable):
 
 To run the example below you will need a PostgreSQL server running on port 5432 of your localhost.
 ```bash
-PGWS_DB_URI="postgres://localhost:5432/postgres" PGWS_JWT_SECRET="auwhfdnskjhewfi34uwehdlaehsfkuaeiskjnfduierhfsiweskjcnzeiluwhskdewishdnpwe" ~/.local/bin/postgres-websockets
+PGWS_DB_URI="postgres://localhost:5432/postgres" PGWS_JWT_SECRET="auwhfdnskjhewfi34uwehdlaehsfkuaeiskjnfduierhfsiweskjcnzeiluwhskdewishdnpwe" ~/.cabal/bin/postgres-websockets
 postgres-websockets <version> / Connects websockets to PostgreSQL asynchronous notifications.
 Listening on port 3000
 ```
 
  You can also use the provided [sample-env](./sample-env) file to export the needed variables:
 ```bash
-source sample-env && ~/.local/bin/postgres-websockets
+source sample-env && ~/.cabal/bin/postgres-websockets
 ```
 After running the above command, open your browser on http://localhost:3000 to see an example of usage.
 
