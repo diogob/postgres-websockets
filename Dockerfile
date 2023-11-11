@@ -27,7 +27,7 @@ RUN git clone \
 # Build the Project from source using the resolver it specifies
 # https://github.com/diogob/postgres-websockets/tree/master#building-from-source
 WORKDIR /app/postgres-websockets
-RUN curl --proto '=https' --tlsv1.2 -sSf https://get-ghcup.haskell.org | sh
+
 # install gpg keys
 RUN \
     gpg --batch --keyserver keyserver.ubuntu.com --recv-keys 7D1E8AFD1D4A16D71FADA2F2CCC85C0E40C06A8C \
@@ -37,7 +37,7 @@ RUN \
 
 # install ghcup
 RUN \
-    curl https://downloads.haskell.org/~ghcup/x86_64-linux-ghcup > /usr/bin/ghcup \
+    BOOTSTRAP_HASKELL_MINIMAL=1 BOOTSTRAP_HASKELL_NONINTERACTIVE=1 ./download-ghcup.sh \
     && chmod +x /usr/bin/ghcup \
     && ghcup config set gpg-setting GPGStrict
 
