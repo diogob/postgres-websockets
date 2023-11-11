@@ -33,7 +33,7 @@ jobs:
     - uses: actions/checkout@v4
 
     - uses: haskell-actions/setup@v2
-      name: Setup Haskell Stack
+      name: Setup Haskell
       with:
         ghc-version: ${{ matrix.ghc }}
 
@@ -61,4 +61,4 @@ jobs:
       with:
         name: Store binaries
         path: |
-          dist-newstyle/**/postgres-websockets
+          dist-newstyle/build/**/postgres-websockets/postgres-websockets

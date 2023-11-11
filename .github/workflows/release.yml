@@ -7,35 +7,13 @@ on:
       - '*'
 
 jobs:
-  docker:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          platforms: linux/arm64
-          push: true
-          tags: user/app:test
-  stack:
-    name: stack / ${{ matrix.os }} / ghc ${{ matrix.ghc }}
+  build:
+    name: release / ${{ matrix.os }} / ghc ${{ matrix.ghc }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest]
-        stack: ["2.5.1"]
-        ghc: ["8.10.4"]
+        ghc: ["9.6.3"]
 
     services:
       postgres:
@@ -52,23 +30,22 @@ jobs:
         ports:
           - 5432:5432
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
-    - uses: haskell/actions/setup@v1
-      name: Setup Haskell Stack
+    - uses: haskell-actions/setup@v2
+      name: Setup Haskell
       with:
         ghc-version: ${{ matrix.ghc }}
-        stack-version: ${{ matrix.stack }}
 
     - uses: actions/cache@v2.1.3
-      name: Cache ~/.stack
+      name: Cache ~/dist-newstyle
       with:
-        path: ~/.stack
-        key: ${{ matrix.os }}-${{ matrix.ghc }}-stack-v3
+        path: ~/dist-newstyle
+        key: ${{ matrix.os }}-${{ matrix.ghc }}-v3
 
     - name: Build
       run: |
-        stack build --system-ghc
+        cabal build
 
     - name: Download ghr
       run: |
@@ -78,11 +55,11 @@ jobs:
         tar --strip-components=1 -zxvf ghr_v0.14.0_linux_amd64.tar.gz ghr_v0.14.0_linux_amd64/ghr
 
     - name: Calculate and save checksum
-      run:  sha256sum `find .stack-work/dist -executable -type f -name postgres-websockets` > .stack-work/dist/postgres-websockets.sha256
+      run:  sha256sum `find dist-newstyle -executable -type f -name postgres-websockets` > dist-newstyle/postgres-websockets.sha256
 
     - name: Publish Release on GitHub
       run: |
         mkdir ./release
-        cp .stack-work/dist/postgres-websockets.sha256 `find .stack-work/dist -executable -type f -name postgres-websockets` ./release/
+        cp dist-newstyle/postgres-websockets.sha256 `find dist-newstyle -executable -type f -name postgres-websockets` ./release/
         VERSION=$(awk '/^version: / { print $2 };' < postgres-websockets.cabal)
         ./ghr -t ${{ secrets.GITHUB_TOKEN }} ${VERSION} ./release
