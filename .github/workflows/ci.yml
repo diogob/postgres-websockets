@@ -61,4 +61,4 @@ jobs:
       with:
         name: Store binaries
         path: |
-          .stack-work/dist/**/postgres-websockets
+          dist-newstyle/**/postgres-websockets
