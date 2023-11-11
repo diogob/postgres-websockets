@@ -27,35 +27,34 @@ library
                      , PostgresWebsockets.Middleware
                      , PostgresWebsockets.Context
   build-depends:       base >= 4.7 && < 5
-                     , hasql-pool >= 0.8 && < 0.10
-                     , text >= 1.2 && < 2.2
-                     , wai >= 3.2 && < 4
-                     , websockets >= 0.9 && < 0.13
-                     , wai-websockets >= 3.0 && < 4
-                     , http-types >= 0.9
-                     , bytestring >= 0.10
-                     , postgresql-libpq >= 0.9.4.2
-                     , lens >= 4.17.1
-                     , jose >= 0.6
-                     , unordered-containers >= 0.2
                      , aeson >= 2.0 && < 2.2
-                     , protolude >= 0.2.3 && < 0.4
-                     , hasql >= 1.4.1
-                     , hasql-notifications >= 0.1.0.0 && < 0.3
-                     , either >= 5.0.1.1 && < 5.1
-                     , stm-containers >= 1.1.0.2 && < 1.3
-                     , stm >= 2.5.0.0 && < 2.6
-                     , retry >= 0.8.1.0 && < 0.10
-                     , time >= 1.8.0.2 && < 1.13
                      , alarmclock >= 0.7.0.2 && < 0.8
-                     , envparse >= 0.4.1
+                     , auto-update >= 0.1.6 && < 0.2
                      , base64-bytestring >= 1.0.0.3 && < 1.3
-                     , bytestring >= 0.10
+                     , bytestring >= 0.11.5 && < 0.12
+                     , either >= 5.0.1.1 && < 5.1
+                     , envparse >= 0.5.0 && < 0.6
+                     , hasql >= 1.6.3 && < 1.7
+                     , hasql-notifications >= 0.1.0.0 && < 0.3
+                     , hasql-pool >= 0.8 && < 0.10
+                     , http-types >= 0.12.3 && < 0.13
+                     , jose >= 0.11 && < 0.12
+                     , lens >= 5.2.3 && < 5.3
+                     , postgresql-libpq >= 0.10.0 && < 0.11
+                     , protolude >= 0.2.3 && < 0.4
+                     , retry >= 0.8.1.0 && < 0.10
+                     , stm >= 2.5.0.0 && < 2.6
+                     , stm-containers >= 1.1.0.2 && < 1.3
+                     , text >= 1.2 && < 2.2
+                     , time >= 1.8.0.2 && < 1.13
+                     , unordered-containers >= 0.2.19 && < 0.3
+                     , wai >= 3.2 && < 4
+                     , wai-app-static >= 3.1.7.1 && < 3.2
+                     , wai-extra >= 3.0.29 && < 3.2
+                     , wai-websockets >= 3.0 && < 4
                      , warp >= 3.2 && < 4
                      , warp-tls >= 3.2 && < 4
-                     , wai-extra >= 3.0.29 && < 3.2
-                     , wai-app-static >= 3.1.7.1 && < 3.2
-                     , auto-update >= 0.1.6 && < 0.2
+                     , websockets >= 0.9 && < 0.13
 
   default-language:    Haskell2010
   default-extensions: OverloadedStrings, NoImplicitPrelude, LambdaCase, RecordWildCards
