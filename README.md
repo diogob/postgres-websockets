@@ -1,6 +1,4 @@
-# postgres-websockets
-
-![CI](https://github.com/diogob/postgres-websockets/actions/workflows/ci.yml/badge.svg)
+# postgres-websockets ![CI](https://github.com/diogob/postgres-websockets/actions/workflows/ci.yml/badge.svg)
 
 postgres-websockets is a [middleware](https://hackage.haskell.org/package/wai) that adds websockets capabilites on top of [PostgreSQL](https://www.postgresql.org)'s asynchronous notifications using LISTEN and NOTIFY commands.
 
