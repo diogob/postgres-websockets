@@ -22,6 +22,7 @@ git clone https://github.com/diogob/postgres-websockets.git
 cd postgres-websockets
 docker-compose up
 ```
+Open your browser on http://localhost:3000 to see an example of usage.
 
 ### Pre-compiled binaries
 
@@ -47,17 +48,13 @@ To run the example below you will need a PostgreSQL server running on port 5432 
 ```bash
 source sample-env && ~/.cabal/bin/postgres-websockets
 ```
-After running the above command, open your browser on http://localhost:3000 to see an example of usage.
+Open your browser on http://localhost:3000 to see an example of usage.
 
 ### Runtime configuration
 
 The sample config file provided in the [sample-env](https://github.com/diogob/postgres-websockets/tree/master/sample-env) file has a jwt secret just for testing and is used in the [sample client]((https://github.com/diogob/postgres-websockets/tree/master/client-example)).
 
-## Opening connections
-
-To open a websocket connection to the server, there are two possible request formats:
-
-1. Requesting a channel and giving a token
+## Opening a connection to one channel with a token
 
 When you request access to a channel called `chat` the address of the websockets will look like:
 ```
@@ -69,7 +66,7 @@ The token on the URL above has no `channels` claim, therefore is can be used to 
 When the token contains a `channels` claim, the value of that claim should be a list of allowed channels.
 Any requested channel not set in that claim will result in an error opening the connection. 
 
-2. Giving only the token
+## Connecting to multiple channels
 
 When you inform only the token on the websocket address, the `channels` claim must be present.
 In this case, all channels present in the claim will be available simultaneously in the same connection.
