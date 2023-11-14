@@ -66,6 +66,7 @@ RUN apt-get update \
 
 # Copy the Binary from the Builder
 COPY --from=builder /app/postgres-websockets/postgres-websockets /usr/local/bin/postgres-websockets
+COPY --from=builder /app/postgres-websockets/client-example /home/postgres-websockets/client-example
 
 # Set the Entry Point
 ENTRYPOINT ["postgres-websockets"]

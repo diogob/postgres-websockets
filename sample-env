@@ -1,10 +1,11 @@
 ## PostgreSQL URI where the server will connect to issue NOTIFY and LISTEN commands
-export PGWS_DB_URI="@./database-uri.txt"
+export PGWS_DB_URI="postgres://localhost:5432/postgres"
 
 ## Size of connection pool used to issue notify commands (LISTEN commands are always issued on the same connection that is not part of the pool).
 export PGWS_POOL_SIZE=10
 
 ## Root path can be used to serve some static files for convenience when testing.
+## To run the server without giving access to any static files comment the line bellow.
 export PGWS_ROOT_PATH="./client-example"
 
 ## Sends a copy of every message received from websocket clients to the channel specified bellow as an aditional NOTIFY command.

@@ -1,7 +1,7 @@
 version: '3'
 services:
   db:
-    image: postgres:12-alpine
+    image: postgres:latest
     ports:
         - "5433:5432"
     environment:
@@ -13,15 +13,8 @@ services:
       PGWS_DB_URI: postgres://pgws:example@db/pgws
       PGWS_JWT_SECRET: "auwhfdnskjhewfi34uwehdlaehsfkuaeiskjnfduierhfsiweskjcnzeiluwhskdewishdnpwe"
       PGWS_ROOT_PATH: /home/postgres-websockets/client-example
+      PGWS_META_CHANNEL: 'server-info'
     ports:
         - "3000:3000"
-    depends_on:
-        - db
-  recorder:
-    image: diogob/pg-recorder
-    environment:
-      PGR_DB_URI: postgres://pgws:example@db/pgws
-      PGR_CHANNEL: postgres-websockets-listener
-      PGR_DISPATCHER: dispatch_notifications
     depends_on:
         - db
