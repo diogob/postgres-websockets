@@ -1,9 +1,10 @@
+cabal-version:       3.0
 name:                postgres-websockets
 version:             0.11.2.2
 synopsis:            Middleware to map LISTEN/NOTIFY messages to Websockets
 description:         WAI middleware that adds websockets capabilites on top of PostgreSQL's asynchronous notifications using LISTEN and NOTIFY commands. Fully functioning server included.
 homepage:            https://github.com/diogob/postgres-websockets#readme
-license:             BSD3
+license:             BSD-3-Clause
 license-file:        LICENSE
 author:              Diogo Biazus
 maintainer:          diogo@biazus.ca
@@ -11,11 +12,18 @@ copyright:           2016 Diogo Biazus
 category:            Web, Database, PostgreSQL
 build-type:          Simple
 -- extra-source-files:
-cabal-version:       >=1.10
+
+common warnings
+    ghc-options: -Wall
+
+common language
+    default-language: Haskell2010
+    default-extensions: OverloadedStrings, NoImplicitPrelude, LambdaCase, RecordWildCards, QuasiQuotes
 
 library
+  import:              warnings
+  import:              language
   hs-source-dirs:      src
-  ghc-options:         -Wall
   exposed-modules:     PostgresWebsockets
                      , PostgresWebsockets.Broadcast
                      , PostgresWebsockets.HasqlBroadcast
@@ -27,16 +35,16 @@ library
                      , PostgresWebsockets.Middleware
                      , PostgresWebsockets.Context
   build-depends:       base >= 4.7 && < 5
-                     , aeson >= 2.0 && < 2.2
+                     , aeson >= 2.0 && < 2.3
                      , alarmclock >= 0.7.0.2 && < 0.8
                      , auto-update >= 0.1.6 && < 0.2
                      , base64-bytestring >= 1.0.0.3 && < 1.3
                      , bytestring >= 0.11.5 && < 0.12
                      , either >= 5.0.1.1 && < 5.1
                      , envparse >= 0.5.0 && < 0.6
-                     , hasql >= 1.6.3 && < 1.7
+                     , hasql ^>= 1.7
                      , hasql-notifications >= 0.1.0.0 && < 0.3
-                     , hasql-pool >= 0.8 && < 0.10
+                     , hasql-pool ^>= 1.2
                      , http-types >= 0.12.3 && < 0.13
                      , jose >= 0.11 && < 0.12
                      , lens >= 5.2.3 && < 5.3
@@ -57,20 +65,22 @@ library
                      , websockets >= 0.9 && < 0.13
 
   default-language:    Haskell2010
-  default-extensions: OverloadedStrings, NoImplicitPrelude, LambdaCase, RecordWildCards
 
 executable postgres-websockets
+  import:              warnings
+  import:              language
   hs-source-dirs:      app
   main-is:             Main.hs
   other-modules:
-  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base >= 4.7 && < 5
                      , postgres-websockets
                      , protolude >= 0.2.3 && < 0.4
   default-language:    Haskell2010
-  default-extensions: OverloadedStrings, NoImplicitPrelude, QuasiQuotes
 
 test-suite postgres-websockets-test
+  import:              warnings
+  import:              language
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs
@@ -81,10 +91,10 @@ test-suite postgres-websockets-test
   build-depends:       base
                      , protolude >= 0.2.3 && < 0.4
                      , postgres-websockets
-                     , hspec >= 2.7.1 && < 2.11
-                     , aeson >= 2.0 && < 2.2
-                     , hasql >= 0.19
-                     , hasql-pool >= 0.8 && < 0.10
+                     , hspec >= 2.7.1 && < 2.12
+                     , aeson >= 2.0 && < 2.3
+                     , hasql ^>= 1.7
+                     , hasql-pool ^>= 1.2
                      , hasql-notifications >= 0.1.0.0 && < 0.3
                      , http-types >= 0.9
                      , time >= 1.8.0.2 && < 1.13
@@ -95,9 +105,8 @@ test-suite postgres-websockets-test
                      , network >= 2.8.0.1 && < 3.2
                      , lens >= 4.17.1 && < 5.3
                      , lens-aeson >= 1.0.0 && < 1.3
-  ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   default-language:    Haskell2010
-  default-extensions: OverloadedStrings, NoImplicitPrelude
 
 source-repository head
   type:     git
