@@ -57,7 +57,7 @@ jobs:
         cabal test
 
     - name: ${{ matrix.os }} binaries
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: Store binaries
         path: |
