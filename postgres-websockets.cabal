@@ -43,7 +43,7 @@ library
                      , either >= 5.0.1.1 && < 5.1
                      , envparse >= 0.5.0 && < 0.6
                      , hasql ^>= 1.7
-                     , hasql-notifications >= 0.1.0.0 && < 0.3
+                     , hasql-notifications >= 0.2.3.0 && < 0.3
                      , hasql-pool ^>= 1.2
                      , http-types >= 0.12.3 && < 0.13
                      , jose >= 0.11 && < 0.12
@@ -95,7 +95,7 @@ test-suite postgres-websockets-test
                      , aeson >= 2.0 && < 2.3
                      , hasql ^>= 1.7
                      , hasql-pool ^>= 1.2
-                     , hasql-notifications >= 0.1.0.0 && < 0.3
+                     , hasql-notifications >= 0.2.3.0 && < 0.3
                      , http-types >= 0.9
                      , time >= 1.8.0.2 && < 1.13
                      , unordered-containers >= 0.2
