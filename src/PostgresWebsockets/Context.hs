@@ -20,11 +20,13 @@ import PostgresWebsockets.Config (AppConfig (..))
 import PostgresWebsockets.HasqlBroadcast (newHasqlBroadcaster)
 import Protolude hiding (toS)
 import Protolude.Conv
+import PostgresWebsockets.ReplicantBroadcast (newReplicantBroadcaster)
 
 data Context = Context
   { ctxConfig :: AppConfig,
     ctxPool :: P.Pool,
-    ctxMulti :: Multiplexer,
+    ctxNotifications :: Multiplexer,
+    ctxChanges :: Multiplexer,
     ctxGetTime :: IO UTCTime
   }
 
@@ -34,6 +36,7 @@ mkContext conf@AppConfig {..} shutdownServer = do
   Context conf
     <$> P.acquire config
     <*> newHasqlBroadcaster shutdown (toS configListenChannel) configRetries configReconnectInterval pgSettings
+    <*> newReplicantBroadcaster shutdown configRetries configReconnectInterval ""
     <*> mkGetTime
   where
     config = P.settings [P.staticConnectionSettings pgSettings]
