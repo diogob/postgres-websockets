@@ -18,7 +18,7 @@ common warnings
 
 common language
     default-language: Haskell2010
-    default-extensions: OverloadedStrings, NoImplicitPrelude, LambdaCase, RecordWildCards, QuasiQuotes
+    default-extensions: OverloadedStrings, NoImplicitPrelude, LambdaCase, RecordWildCards, QuasiQuotes, TypeApplications
 
 library
   import:              warnings
@@ -27,6 +27,7 @@ library
   exposed-modules:     PostgresWebsockets
                      , PostgresWebsockets.Broadcast
                      , PostgresWebsockets.HasqlBroadcast
+                     , PostgresWebsockets.ReplicantBroadcast
                      , PostgresWebsockets.Claims
                      , PostgresWebsockets.Config
 
@@ -49,6 +50,7 @@ library
                      , jose >= 0.11 && < 0.12
                      , lens >= 5.2.3 && < 5.3
                      , postgresql-libpq >= 0.10.0 && < 0.11
+                     , postgresql-replicant ^>= 0.2
                      , protolude >= 0.2.3 && < 0.4
                      , retry >= 0.8.1.0 && < 0.10
                      , stm >= 2.5.0.0 && < 2.6

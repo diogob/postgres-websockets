@@ -1,0 +1,3 @@
+[submodule "postgresql-replicant"]
+	path = postgresql-replicant
+	url = git@github.com:diogob/postgresql-replicant.git
