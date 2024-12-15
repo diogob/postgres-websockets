@@ -15,11 +15,16 @@ where
 import APrelude
 import Data.Aeson (encode)
 import qualified Database.PostgreSQL.Replicant as PGR
+import qualified Hasql.Decoders as Decode
+import qualified Hasql.Encoders as SQL
+import qualified Hasql.Pool as SQL
+import qualified Hasql.Session as SQL
+import qualified Hasql.Statement as SQL
 import PostgresWebsockets.Broadcast
 
 -- | Returns a multiplexer from a connection URI, keeps trying to connect in case there is any error.
 --   This function also spawns a thread that keeps relaying the messages from the database to the multiplexer's listeners
-newReplicantBroadcaster :: IO () -> Int -> Maybe Int -> ByteString -> IO Multiplexer
+newReplicantBroadcaster :: IO () -> Int -> Maybe Int -> SQL.Pool -> ByteString -> IO Multiplexer
 newReplicantBroadcaster onConnectionFailure _maxRetries = newReplicantBroadcasterForChanges onConnectionFailure
 
 --
@@ -44,8 +49,8 @@ newReplicantBroadcaster onConnectionFailure _maxRetries = newReplicantBroadcaste
 --    onMessage multi "chat" (\ch ->
 --      forever $ fmap print (atomically $ readTChan ch)
 --   @
-newReplicantBroadcasterForChanges :: IO () -> Maybe Int -> ByteString -> IO Multiplexer
-newReplicantBroadcasterForChanges onConnectionFailure checkInterval _conURI = do
+newReplicantBroadcasterForChanges :: IO () -> Maybe Int -> SQL.Pool -> ByteString -> IO Multiplexer
+newReplicantBroadcasterForChanges onConnectionFailure checkInterval pool _conURI = do
   multi <- newMultiplexer openProducer $ const onConnectionFailure
   case checkInterval of
     Just i -> superviseMultiplexer multi i shouldRestart
@@ -74,12 +79,18 @@ newReplicantBroadcasterForChanges onConnectionFailure checkInterval _conURI = do
           PGR.withLogicalStream settings $ \changePayload -> do
             print ("Change received!" :: Text)
             print $ encode changePayload
-            writeMessage $ decodeUtf8 $ showBS $ encode changePayload
+            result <- SQL.use pool session
+            case result of
+              Right value -> writeMessage $ decodeUtf8 $ showBS $ encode value
+              Left _ -> print ("ERROR executing" :: Text)
             case changePayload of
               PGR.InformationMessage _infoMsg ->
                 pure Nothing
               PGR.ChangeMessage change ->
                 pure . Just $ PGR.changeNextLSN change
       where
-        writeMessage m = atomically $ writeTQueue msgQ $ toMsg m
+        session = SQL.statement () stmt
+        stmt = SQL.Statement "SELECT json_agg(row_to_json(t.*)) FROM test t" SQL.noParams singleJsonDecoder True
+        singleJsonDecoder = Decode.singleRow $ Decode.column $ Decode.nonNullable Decode.json
 
+        writeMessage m = atomically $ writeTQueue msgQ $ toMsg m

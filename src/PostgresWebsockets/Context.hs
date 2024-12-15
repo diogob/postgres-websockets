@@ -34,10 +34,11 @@ data Context = Context
 -- | Given a configuration and a shutdown action (performed when the Multiplexer's listen connection dies) produces the context necessary to run sessions
 mkContext :: AppConfig -> IO () -> IO Context
 mkContext conf@AppConfig {..} shutdownServer = do
-  Context conf
+  pool <- P.acquire config
+  pure (Context conf pool)
     <$> P.acquire config
     <*> newHasqlBroadcaster shutdown configListenChannel configRetries configReconnectInterval pgSettings
-    <*> newReplicantBroadcaster shutdown configRetries configReconnectInterval ""
+    <*> newReplicantBroadcaster shutdown configRetries configReconnectInterval pool ""
     <*> mkGetTime
   where
     config = P.settings [P.staticConnectionSettings [C.connection $ C.string $ decodeUtf8 pgSettings]]
