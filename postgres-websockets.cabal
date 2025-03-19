@@ -30,6 +30,7 @@ library
                      , PostgresWebsockets.Claims
                      , PostgresWebsockets.Config
 
+  autogen-modules:     Paths_postgres_websockets
   other-modules:       Paths_postgres_websockets
                      , PostgresWebsockets.Server
                      , PostgresWebsockets.Middleware
