@@ -50,8 +50,8 @@ library
                      , http-types >= 0.12.3 && < 0.13
                      , jose >= 0.11 && < 0.12
                      , lens >= 5.2.3 && < 5.4
-                     , mtl
-                     , async
+                     , mtl >=2.3.1 && <2.4
+                     , async >=2.2.5 && <2.3
                      , postgresql-libpq >= 0.10.0 && < 0.12
                      , retry >= 0.8.1.0 && < 0.10
                      , stm >= 2.5.0.0 && < 2.6
