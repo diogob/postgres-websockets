@@ -11,8 +11,8 @@ main = do
   hSetBuffering stderr NoBuffering
 
   putStrLn $
-    ("postgres-websockets ")
-      <> (unpack prettyVersion)
+    "postgres-websockets "
+      <> unpack prettyVersion
       <> " / Connects websockets to PostgreSQL asynchronous notifications."
 
   conf <- loadConfig
