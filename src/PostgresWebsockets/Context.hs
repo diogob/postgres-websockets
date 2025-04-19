@@ -7,6 +7,7 @@ module PostgresWebsockets.Context
   )
 where
 
+import APrelude
 import Control.AutoUpdate
   ( defaultUpdateSettings,
     mkAutoUpdate,
@@ -18,8 +19,6 @@ import qualified Hasql.Pool.Config as P
 import PostgresWebsockets.Broadcast (Multiplexer)
 import PostgresWebsockets.Config (AppConfig (..))
 import PostgresWebsockets.HasqlBroadcast (newHasqlBroadcaster)
-import Protolude hiding (toS)
-import Protolude.Conv
 
 data Context = Context
   { ctxConfig :: AppConfig,
@@ -33,15 +32,15 @@ mkContext :: AppConfig -> IO () -> IO Context
 mkContext conf@AppConfig {..} shutdownServer = do
   Context conf
     <$> P.acquire config
-    <*> newHasqlBroadcaster shutdown (toS configListenChannel) configRetries configReconnectInterval pgSettings
+    <*> newHasqlBroadcaster shutdown configListenChannel configRetries configReconnectInterval pgSettings
     <*> mkGetTime
   where
     config = P.settings [P.staticConnectionSettings pgSettings]
     shutdown =
       maybe
         shutdownServer
-        (const $ putText "Producer thread is dead")
+        (const $ putStrLn "Producer thread is dead")
         configReconnectInterval
     mkGetTime :: IO (IO UTCTime)
     mkGetTime = mkAutoUpdate defaultUpdateSettings {updateAction = getCurrentTime}
-    pgSettings = toS configDatabase
+    pgSettings = encodeUtf8 configDatabase

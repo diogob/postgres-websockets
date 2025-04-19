@@ -1,12 +1,12 @@
 module ServerSpec (spec) where
 
+import APrelude
 import Control.Lens
 import Data.Aeson.Lens
 import Network.Socket (withSocketsDo)
 import qualified Network.WebSockets as WS
 import PostgresWebsockets
 import PostgresWebsockets.Config
-import Protolude
 import Test.Hspec
 
 testServerConfig :: AppConfig
@@ -46,7 +46,7 @@ sendWsData uri msg =
     WS.runClient
       "127.0.0.1"
       (configPort testServerConfig)
-      (toS uri)
+      (unpack uri)
       (`WS.sendTextData` msg)
 
 testChannel :: Text
@@ -67,7 +67,7 @@ waitForWsData uri = do
         WS.runClient
           "127.0.0.1"
           (configPort testServerConfig)
-          (toS uri)
+          (unpack uri)
           ( \c -> do
               m <- WS.receiveData c
               putMVar msg m
@@ -84,7 +84,7 @@ waitForMultipleWsData messageCount uri = do
         WS.runClient
           "127.0.0.1"
           (configPort testServerConfig)
-          (toS uri)
+          (unpack uri)
           ( \c -> do
               m <- replicateM messageCount (WS.receiveData c)
               putMVar msg m

@@ -26,11 +26,10 @@ module PostgresWebsockets.Broadcast
   )
 where
 
+import APrelude
 import Control.Concurrent.STM.TChan
 import Control.Concurrent.STM.TQueue
 import qualified Data.Aeson as A
-import Protolude hiding (toS)
-import Protolude.Conv (toS)
 import qualified StmContainers.Map as M
 
 data Message = Message
@@ -63,7 +62,7 @@ instance A.ToJSON MultiplexerSnapshot
 -- | Given a multiplexer derive a type that can be printed for debugging or logging purposes
 takeSnapshot :: Multiplexer -> IO MultiplexerSnapshot
 takeSnapshot multi =
-  MultiplexerSnapshot <$> size <*> e <*> thread
+  MultiplexerSnapshot <$> size <*> e <*> (pack <$> thread)
   where
     size = atomically $ M.size $ channels multi
     thread = show <$> readMVar (producerThreadId multi)
@@ -113,7 +112,7 @@ superviseMultiplexer multi msInterval shouldRestart = do
           new <- reopenProducer multi
           void $ swapMVar (producerThreadId multi) new
           snapAfter <- takeSnapshot multi
-          putStrLn $
+          print $
             "Restarting producer. Multiplexer updated: "
               <> A.encode snapBefore
               <> " -> "
@@ -142,7 +141,7 @@ onMessage multi chan action = do
   where
     disposeListener _ = atomically $ do
       mC <- M.lookup chan (channels multi)
-      let c = fromMaybe (panic $ "trying to remove listener from non existing channel: " <> toS chan) mC
+      let c = fromMaybe (panic $ "trying to remove listener from non existing channel: " <> chan) mC
       M.delete chan (channels multi)
       when (listeners c - 1 > 0) $
         M.insert Channel {broadcast = broadcast c, listeners = listeners c - 1} chan (channels multi)
