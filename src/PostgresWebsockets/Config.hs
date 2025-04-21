@@ -14,6 +14,7 @@ module PostgresWebsockets.Config
   )
 where
 
+import APrelude
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Base64 as B64
 import Data.String (IsString (..))
@@ -22,8 +23,6 @@ import Data.Version (versionBranch)
 import Env
 import Network.Wai.Handler.Warp
 import Paths_postgres_websockets (version)
-import Protolude hiding (intercalate, optional, replace, toS, (<>))
-import Protolude.Conv
 
 -- | Config file settings for the server
 data AppConfig = AppConfig
@@ -45,7 +44,7 @@ data AppConfig = AppConfig
 
 -- | User friendly version number
 prettyVersion :: Text
-prettyVersion = intercalate "." $ map show $ versionBranch version
+prettyVersion = intercalate "." $ map showText $ versionBranch version
 
 -- | Load all postgres-websockets config from Environment variables. This can be used to use just the middleware or to feed into warpSettings
 loadConfig :: IO AppConfig
@@ -58,9 +57,9 @@ loadConfig =
 -- | Given a shutdown handler and an AppConfig builds a Warp Settings to start a stand-alone server
 warpSettings :: (IO () -> IO ()) -> AppConfig -> Settings
 warpSettings waitForShutdown AppConfig {..} =
-  setHost (fromString $ toS configHost)
+  setHost (fromString $ unpack configHost)
     . setPort configPort
-    . setServerName (toS $ "postgres-websockets/" <> prettyVersion)
+    . setServerName ("postgres-websockets/" <> encodeUtf8 prettyVersion)
     . setTimeout 3600
     . setInstallShutdownHandler waitForShutdown
     . setGracefulShutdownTimeout (Just 5)
@@ -72,7 +71,8 @@ warpSettings waitForShutdown AppConfig {..} =
 readOptions :: IO AppConfig
 readOptions =
   Env.parse (header "You need to configure some environment variables to start the service.") $
-    AppConfig <$> var (str <=< nonempty) "PGWS_DB_URI" (help "String to connect to PostgreSQL")
+    AppConfig
+      <$> var (str <=< nonempty) "PGWS_DB_URI" (help "String to connect to PostgreSQL")
       <*> optional (var str "PGWS_ROOT_PATH" (help "Root path to serve static files, unset to disable."))
       <*> var str "PGWS_HOST" (def "*4" <> helpDef show <> help "Address the server will listen for websocket connections")
       <*> var auto "PGWS_PORT" (def 3000 <> helpDef show <> help "Port the server will listen for websocket connections")
@@ -96,7 +96,7 @@ loadDatabaseURIFile :: AppConfig -> IO AppConfig
 loadDatabaseURIFile conf@AppConfig {..} =
   case stripPrefix "@" configDatabase of
     Nothing -> pure conf
-    Just filename -> setDatabase . strip <$> readFile (toS filename)
+    Just filename -> setDatabase . strip . pack <$> readFile (unpack filename)
   where
     setDatabase uri = conf {configDatabase = uri}
 
@@ -112,7 +112,7 @@ loadSecretFile conf = extractAndTransform secret
         transformString isB64
           =<< case stripPrefix "@" s of
             Nothing -> return . encodeUtf8 $ s
-            Just filename -> chomp <$> BS.readFile (toS filename)
+            Just filename -> chomp <$> BS.readFile (unpack filename)
       where
         chomp bs = fromMaybe bs (BS.stripSuffix "\n" bs)
 

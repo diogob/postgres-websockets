@@ -15,11 +15,11 @@ module PostgresWebsockets.HasqlBroadcast
   )
 where
 
+import APrelude
 import Control.Retry (RetryStatus (..), capDelay, exponentialBackoff, retrying)
 import Data.Aeson (Value (..), decode)
-import qualified Data.Aeson.KeyMap as JSON
 import qualified Data.Aeson.Key as Key
-
+import qualified Data.Aeson.KeyMap as JSON
 import Data.Either.Combinators (mapBoth)
 import Data.Function (id)
 import GHC.Show
@@ -30,8 +30,6 @@ import Hasql.Notifications
 import qualified Hasql.Session as H
 import qualified Hasql.Statement as H
 import PostgresWebsockets.Broadcast
-import Protolude hiding (putErrLn, show, toS)
-import Protolude.Conv
 
 -- | Returns a multiplexer from a connection URI, keeps trying to connect in case there is any error.
 --   This function also spawns a thread that keeps relaying the messages from the database to the multiplexer's listeners
@@ -44,7 +42,7 @@ newHasqlBroadcaster onConnectionFailure ch maxRetries checkInterval = newHasqlBr
 --   This function also spawns a thread that keeps relaying the messages from the database to the multiplexer's listeners
 newHasqlBroadcasterOrError :: IO () -> Text -> ByteString -> IO (Either ByteString Multiplexer)
 newHasqlBroadcasterOrError onConnectionFailure ch =
-  acquire >=> (sequence . mapBoth (toSL . show) (newHasqlBroadcasterForConnection . return))
+  acquire >=> (sequence . mapBoth showBS (newHasqlBroadcasterForConnection . return))
   where
     newHasqlBroadcasterForConnection = newHasqlBroadcasterForChannel onConnectionFailure ch Nothing
 
@@ -60,7 +58,7 @@ tryUntilConnected maxRetries =
     shouldRetry RetryStatus {..} con =
       case con of
         Left err -> do
-          putErrLn $ "Error connecting notification listener to database: " <> (toS . show) err
+          putErrLn $ "Error connecting notification listener to database: " <> showText err
           pure $ rsIterNumber < maxRetries - 1
         _ -> return False
 
@@ -94,16 +92,16 @@ newHasqlBroadcasterForChannel onConnectionFailure ch checkInterval getCon = do
   return multi
   where
     toMsg :: Text -> Text -> Message
-    toMsg c m = case decode (toS m) of
+    toMsg c m = case decode (fromStrict $ encodeUtf8 m) of
       Just v -> Message (channelDef c v) m
       Nothing -> Message c m
 
     lookupStringDef :: Text -> Text -> Value -> Text
     lookupStringDef key d (Object obj) =
-      case lookupDefault (String $ toS d) key obj of
-        String s -> toS s
-        _ -> toS d
-    lookupStringDef _ d _ = toS d
+      case lookupDefault (String d) key obj of
+        String s -> s
+        _ -> d
+    lookupStringDef _ d _ = d
 
     lookupDefault d key obj = fromMaybe d $ JSON.lookup (Key.fromText key) obj
 
@@ -116,11 +114,8 @@ newHasqlBroadcasterForChannel onConnectionFailure ch checkInterval getCon = do
       con <- getCon
       listen con $ toPgIdentifier ch
       waitForNotifications
-        (\c m -> atomically $ writeTQueue msgQ $ toMsg (toS c) (toS m))
+        (\c m -> atomically $ writeTQueue msgQ $ toMsg (decodeUtf8 c) (decodeUtf8 m))
         con
-
-putErrLn :: Text -> IO ()
-putErrLn = hPutStrLn stderr
 
 isListening :: Connection -> Text -> IO Bool
 isListening con ch = do

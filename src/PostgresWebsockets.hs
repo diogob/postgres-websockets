@@ -1,16 +1,16 @@
-{-|
-Module      : PostgresWebsockets
-Description : PostgresWebsockets main library interface.
-
-These are all function necessary to configure and start the server.
--}
+-- |
+-- Module      : PostgresWebsockets
+-- Description : PostgresWebsockets main library interface.
+--
+-- These are all function necessary to configure and start the server.
 module PostgresWebsockets
-  ( prettyVersion
-  , loadConfig
-  , serve
-  , postgresWsMiddleware
-  ) where
+  ( prettyVersion,
+    loadConfig,
+    serve,
+    postgresWsMiddleware,
+  )
+where
 
-import PostgresWebsockets.Middleware ( postgresWsMiddleware )
-import PostgresWebsockets.Server ( serve )
-import PostgresWebsockets.Config ( prettyVersion, loadConfig )
+import PostgresWebsockets.Config (loadConfig, prettyVersion)
+import PostgresWebsockets.Middleware (postgresWsMiddleware)
+import PostgresWebsockets.Server (serve)
