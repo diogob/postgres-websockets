@@ -18,7 +18,7 @@ import APrelude
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Base64 as B64
 import Data.String (IsString (..))
-import Data.Text (intercalate, pack, replace, strip, stripPrefix)
+import Data.Text (intercalate, replace, strip, stripPrefix)
 import Data.Version (versionBranch)
 import Env
 import Network.Wai.Handler.Warp
