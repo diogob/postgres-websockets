@@ -21,8 +21,6 @@ import Data.Aeson (Value (..), decode)
 import qualified Data.Aeson.Key as Key
 import qualified Data.Aeson.KeyMap as JSON
 import Data.Either.Combinators (mapBoth)
-import Data.Function (id)
-import GHC.Show
 import Hasql.Connection
 import qualified Hasql.Decoders as HD
 import qualified Hasql.Encoders as HE

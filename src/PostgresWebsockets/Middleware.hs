@@ -111,8 +111,7 @@ wsApp Context {..} pendingConn =
         when (hasWrite mode) $
           notifySession conn sendNotification chs
 
-        waitForever <- newEmptyMVar
-        void $ takeMVar waitForever
+        void $ forever $ threadDelay maxBound
 
 -- Having both channel and claims as parameters seem redundant
 -- But it allows the function to ignore the claims structure and the source
