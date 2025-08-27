@@ -28,7 +28,7 @@
 
 plat="$(uname -s)"
 arch=$(uname -m)
-ghver="0.1.20.0"
+ghver="0.1.50.2"
 : "${GHCUP_BASE_URL:=https://downloads.haskell.org/~ghcup}"
 
 export GHCUP_SKIP_UPDATE_CHECK=yes

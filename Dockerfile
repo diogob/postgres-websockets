@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim as builder
+FROM debian:trixie-slim as builder
 
 # Postgres-websockets repo metadata
 ARG GIT_REPO=https://github.com/diogob/postgres-websockets.git
@@ -10,6 +10,8 @@ RUN apt-get update \
         libpq-dev \
         wget \
         git \
+        gnupg \
+        lld \
         build-essential \
         libffi-dev \
         libgmp-dev \
@@ -41,7 +43,7 @@ RUN \
     && chmod +x ~/.ghcup/bin/ghcup \
     && ~/.ghcup/bin/ghcup config set gpg-setting GPGStrict
 
-ARG GHC=9.6.3
+ARG GHC=9.6.7
 ARG CABAL=latest
 
 # install GHC and cabal
@@ -54,7 +56,7 @@ RUN cabal build
 RUN cp `find dist-newstyle -executable -type f -name postgres-websockets` ./
 
 # Lightweight Final Image
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 # Install Runtime Dependencies
 RUN apt-get update \
