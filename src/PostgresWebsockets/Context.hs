@@ -16,6 +16,8 @@ import Control.AutoUpdate
 import Data.Time.Clock (UTCTime, getCurrentTime)
 import qualified Hasql.Pool as P
 import qualified Hasql.Pool.Config as P
+import qualified Hasql.Connection.Setting as C
+import qualified Hasql.Connection.Setting.Connection as C
 import PostgresWebsockets.Broadcast (Multiplexer)
 import PostgresWebsockets.Config (AppConfig (..))
 import PostgresWebsockets.HasqlBroadcast (newHasqlBroadcaster)
@@ -35,7 +37,7 @@ mkContext conf@AppConfig {..} shutdownServer = do
     <*> newHasqlBroadcaster shutdown configListenChannel configRetries configReconnectInterval pgSettings
     <*> mkGetTime
   where
-    config = P.settings [P.staticConnectionSettings pgSettings]
+    config = P.settings [P.staticConnectionSettings [C.connection $ C.string $ decodeUtf8 pgSettings]]
     shutdown =
       maybe
         shutdownServer

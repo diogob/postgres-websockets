@@ -21,7 +21,10 @@ import Data.Aeson (Value (..), decode)
 import qualified Data.Aeson.Key as Key
 import qualified Data.Aeson.KeyMap as JSON
 import Data.Either.Combinators (mapBoth)
-import Hasql.Connection
+import Hasql.Connection (Connection, ConnectionError)
+import qualified Hasql.Connection as HC
+import qualified Hasql.Connection.Setting as HC
+import qualified Hasql.Connection.Setting.Connection as HC
 import qualified Hasql.Decoders as HD
 import qualified Hasql.Encoders as HE
 import Hasql.Notifications
@@ -29,6 +32,8 @@ import qualified Hasql.Session as H
 import qualified Hasql.Statement as H
 import PostgresWebsockets.Broadcast
 
+acquire :: ByteString -> IO (Either ConnectionError Connection)
+acquire settings = HC.acquire  [HC.connection $ HC.string $ decodeUtf8 settings]
 -- | Returns a multiplexer from a connection URI, keeps trying to connect in case there is any error.
 --   This function also spawns a thread that keeps relaying the messages from the database to the multiplexer's listeners
 newHasqlBroadcaster :: IO () -> Text -> Int -> Maybe Int -> ByteString -> IO Multiplexer
