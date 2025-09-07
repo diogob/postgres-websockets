@@ -1,0 +1,5 @@
+ignore-project: False
+source-repository-package
+  type: git
+  location: /home/diogo/Projects/postgres-websockets/postgresql-replicant
+  tag: cabal-file

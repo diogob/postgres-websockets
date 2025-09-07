@@ -1,5 +1,5 @@
 ## PostgreSQL URI where the server will connect to issue NOTIFY and LISTEN commands
-export PGWS_DB_URI="postgres://localhost:5432/postgres"
+export PGWS_DB_URI="postgres://localhost:5432/postgres_ws_test"
 
 ## Size of connection pool used to issue notify commands (LISTEN commands are always issued on the same connection that is not part of the pool).
 export PGWS_POOL_SIZE=10
