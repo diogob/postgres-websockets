@@ -35,7 +35,7 @@ validateClaims ::
   UTCTime ->
   IO (Either Text ConnectionInfo)
 validateClaims requestChannel secret jwtToken time = runExceptT $ do
-  cl <- liftIO $ jwtClaims time (parseJWK secret) jwtToken
+  cl <- liftIO $ jwtClaims time (parseSecret secret) jwtToken
   cl' <- case cl of
     JWTClaims c -> pure c
     JWTInvalid JWTExpired -> throwError "Token expired"
@@ -82,13 +82,13 @@ data JWTAttempt
 -- |
 --  Receives the JWT secret (from config) and a JWT and returns a map
 --  of JWT claims.
-jwtClaims :: UTCTime -> JWK -> LByteString -> IO JWTAttempt
+jwtClaims :: UTCTime -> JWKSet -> LByteString -> IO JWTAttempt
 jwtClaims _ _ "" = return $ JWTClaims JSON.empty
-jwtClaims time jwk' payload = do
+jwtClaims time jwks payload = do
   let config = defaultJWTValidationSettings (const True)
   eJwt <- runExceptT $ do
     jwt <- decodeCompact payload
-    verifyClaimsAt config jwk' time jwt
+    verifyClaimsAt config jwks time (jwt :: SignedJWT)
   return $ case eJwt of
     Left e -> JWTInvalid e
     Right jwt -> JWTClaims . claims2map $ jwt
@@ -114,6 +114,8 @@ hs256jwk key =
   where
     km = OctKeyMaterial (OctKeyParameters (JOSE.Types.Base64Octets key))
 
-parseJWK :: ByteString -> JWK
-parseJWK str =
-  fromMaybe (hs256jwk str) (JSON.decode (fromStrict str) :: Maybe JWK)
+parseSecret :: ByteString -> JWKSet
+parseSecret str =
+  case JSON.decode (fromStrict str) :: Maybe JWKSet of
+    Just jwks -> jwks
+    Nothing -> JWKSet [fromMaybe (hs256jwk str) (JSON.decode (fromStrict str) :: Maybe JWK)]

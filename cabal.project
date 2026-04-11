@@ -1,0 +1,5 @@
+packages: .
+
+-- ram is an incompatible fork of memory that breaks jose compilation
+-- https://github.com/frasertweedale/hs-jose/issues/138
+constraints: ram < 0
