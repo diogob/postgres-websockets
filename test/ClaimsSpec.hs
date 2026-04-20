@@ -11,6 +11,14 @@ import Prelude
 secret :: ByteString
 secret = "reallyreallyreallyreallyverysafe"
 
+-- Same secret as a single JWK object
+jwkSecret :: ByteString
+jwkSecret = "{\"kty\":\"oct\",\"k\":\"cmVhbGx5cmVhbGx5cmVhbGx5cmVhbGx5dmVyeXNhZmU\",\"alg\":\"HS256\"}"
+
+-- Same secret wrapped in a JWKS envelope
+jwksSecret :: ByteString
+jwksSecret = "{\"keys\":[{\"kty\":\"oct\",\"k\":\"cmVhbGx5cmVhbGx5cmVhbGx5cmVhbGx5dmVyeXNhZmU\",\"alg\":\"HS256\"}]}"
+
 spec :: Spec
 spec =
   describe "validate claims" $ do
@@ -73,3 +81,34 @@ spec =
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjaGFubmVscyI6WyJ0ZXN0IiwidGVzdDIiXX0.akC1PEYk2DEZtLP2XjC6qXOGZJejmPx49qv-VeEtQYQ"
         time
         `shouldReturn` Left "Missing mode"
+
+    it "should validate a token using a JWK secret" $ do
+      time <- getCurrentTime
+      validateClaims
+        (Just "test")
+        jwkSecret
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2RlIjoiciIsImNoYW5uZWwiOiJ0ZXN0In0.1d4s-at2kWj8OSabHZHTbNh1dENF7NWy_r0ED3Rwf58"
+        time
+        `shouldReturn` Right (["test"], "r", JSON.fromList [("mode", String "r"), ("channel", String "test")])
+
+    it "should validate a token using a JWKS secret" $ do
+      time <- getCurrentTime
+      validateClaims
+        (Just "test")
+        jwksSecret
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2RlIjoiciIsImNoYW5uZWwiOiJ0ZXN0In0.1d4s-at2kWj8OSabHZHTbNh1dENF7NWy_r0ED3Rwf58"
+        time
+        `shouldReturn` Right (["test"], "r", JSON.fromList [("mode", String "r"), ("channel", String "test")])
+
+    it "should reject a token with wrong key in JWKS" $ do
+      time <- getCurrentTime
+      result <-
+        validateClaims
+          (Just "test")
+          "{\"keys\":[{\"kty\":\"oct\",\"k\":\"d3JvbmdrZXl3cm9uZ2tleXdyb25na2V5d3Jvbmdr\",\"alg\":\"HS256\"}]}"
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtb2RlIjoiciIsImNoYW5uZWwiOiJ0ZXN0In0.1d4s-at2kWj8OSabHZHTbNh1dENF7NWy_r0ED3Rwf58"
+          time
+      result `shouldSatisfy` isLeft
+  where
+    isLeft (Left _) = True
+    isLeft _ = False
