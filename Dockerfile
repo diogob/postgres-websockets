@@ -72,3 +72,4 @@ COPY --from=builder /app/postgres-websockets/client-example /home/postgres-webso
 
 # Set the Entry Point
 ENTRYPOINT ["postgres-websockets"]
+STOPSIGNAL SIGINT
