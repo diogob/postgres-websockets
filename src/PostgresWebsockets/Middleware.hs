@@ -103,10 +103,11 @@ wsApp Context {..} pendingConn =
           Nothing -> pure ()
           Just ch -> sendMessageWithTimestamp $ connectionOpenMessage (T.intercalate "," chs) ch
 
-        when (hasRead mode) $
-          forM_ chs $
-            flip (onMessage ctxMulti) $
+        when (hasRead mode) $ do
+          forM_ (filter (/= "database.changes") chs) $
+            flip (onMessage ctxNotifications) $
               WS.sendTextData conn . B.payload
+          forM_ (filter (== "database.changes") chs) $ flip (onMessage ctxChanges) $ WS.sendTextData conn . B.payload
 
         when (hasWrite mode) $
           notifySession conn sendNotification chs

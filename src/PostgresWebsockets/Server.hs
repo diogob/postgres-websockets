@@ -26,6 +26,7 @@ serve conf@AppConfig {..} = do
   let shutdown = putErrLn ("Broadcaster connection is dead" :: Text) >> putMVar shutdownSignal ()
   ctx <- mkContext conf shutdown
 
+  putStrLn "Listening to changes..."
   let waitForShutdown cl = void $ forkIO (takeMVar shutdownSignal >> cl)
       appSettings = warpSettings waitForShutdown conf
       app = postgresWsMiddleware ctx $ logStdout $ maybe dummyApp staticApp' configPath
