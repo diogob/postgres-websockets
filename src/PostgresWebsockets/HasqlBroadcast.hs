@@ -21,10 +21,10 @@ import Data.Aeson (Value (..), decode)
 import qualified Data.Aeson.Key as Key
 import qualified Data.Aeson.KeyMap as JSON
 import Data.Either.Combinators (mapBoth)
-import Hasql.Connection (Connection, ConnectionError)
+import Hasql.Connection (Connection)
+import Hasql.Errors (ConnectionError)
 import qualified Hasql.Connection as HC
-import qualified Hasql.Connection.Setting as HC
-import qualified Hasql.Connection.Setting.Connection as HC
+import qualified Hasql.Connection.Settings as HC
 import qualified Hasql.Decoders as HD
 import qualified Hasql.Encoders as HE
 import Hasql.Notifications
@@ -33,7 +33,7 @@ import qualified Hasql.Statement as H
 import PostgresWebsockets.Broadcast
 
 acquire :: ByteString -> IO (Either ConnectionError Connection)
-acquire settings = HC.acquire  [HC.connection $ HC.string $ decodeUtf8 settings]
+acquire settings = HC.acquire $ HC.connectionString $ decodeUtf8 settings
 -- | Returns a multiplexer from a connection URI, keeps trying to connect in case there is any error.
 --   This function also spawns a thread that keeps relaying the messages from the database to the multiplexer's listeners
 newHasqlBroadcaster :: IO () -> Text -> Int -> Maybe Int -> ByteString -> IO Multiplexer
@@ -122,7 +122,7 @@ newHasqlBroadcasterForChannel onConnectionFailure ch checkInterval getCon = do
 
 isListening :: Connection -> Text -> IO Bool
 isListening con ch = do
-  resultOrError <- H.run session con
+  resultOrError <- HC.use con session
   pure $ fromRight False resultOrError
   where
     session = H.statement chPattern isListeningStatement
@@ -130,7 +130,7 @@ isListening con ch = do
 
 isListeningStatement :: H.Statement Text Bool
 isListeningStatement =
-  H.Statement sql encoder decoder True
+  H.preparable sql encoder decoder
   where
     sql = "select exists (select * from pg_stat_activity where datname = current_database() and query ilike $1);"
     encoder = HE.param $ HE.nonNullable HE.text
