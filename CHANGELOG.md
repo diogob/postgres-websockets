@@ -1,9 +1,14 @@
 # CHANGELOG
 
+## 0.12.1.0
+
+- Update dependecies to use Hasql 1.10
+
 ## 0.12.0.0
 
 - Allow the use of sets of keys using kid to select the proper key to verify claims. - @yaroslav-ilin
 - Fix docker image so service gets stop signal.
+
 ## 0.11.2.1
 
 - Upgrade stackage to 21.14
