@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.12.1.1
+
+- Relax bounds for wai-app-static 3.2.1
+
 ## 0.12.1.0
 
 - Update dependecies to use Hasql 1.10
